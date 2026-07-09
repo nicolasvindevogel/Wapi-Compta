@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WAPI Compta</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #dde3ee;
+      --brand: #1f7a8c;
+      --brand-dark: #14586a;
+      --accent: #f2a541;
+      --danger: #b42318;
+      --ok: #12805c;
+      --radius: 8px;
+      --shadow: 0 12px 28px rgba(23, 32, 51, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Century Gothic", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+    }
+
+    .sidebar {
+      background: #102a43;
+      color: white;
+      padding: 22px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: white;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      color: #b9c6d3;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #d8e2ee;
+      text-align: left;
+      padding: 11px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .nav button.active,
+    .nav button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .main {
+      min-width: 0;
+    }
+
+    .topbar {
+      min-height: 70px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .user-pill {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input, select, textarea {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 11px;
+      background: white;
+      color: var(--ink);
+      width: 100%;
+    }
+
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 13px;
+      cursor: pointer;
+      background: var(--brand);
+      color: white;
+      font-weight: 700;
+    }
+
+    .btn.secondary {
+      background: #eef4f7;
+      color: var(--brand-dark);
+    }
+
+    .btn.danger {
+      background: var(--danger);
+    }
+
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 11px 9px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      background: #eef4f7;
+      color: var(--brand-dark);
+      font-weight: 700;
+    }
+
+    .badge.ok {
+      background: #e7f6ef;
+      color: var(--ok);
+    }
+
+    .badge.warn {
+      background: #fff4e0;
+      color: #8a5600;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .login-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(31, 122, 140, .92), rgba(16, 42, 67, .96)),
+        radial-gradient(circle at 80% 10%, rgba(242, 165, 65, .3), transparent 38%);
+    }
+
+    .login-card {
+      width: min(460px, 100%);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.22);
+      padding: 26px;
+    }
+
+    .login-card h1 {
+      margin: 0 0 8px;
+      font-size: 25px;
+    }
+
+    .login-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    .notice {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section id="setupScreen" class="login-wrap hidden">
+    <div class="login-card">
+      <h1>Configurer WAPI Compta</h1>
+      <p>Renseigne les informations publiques Supabase du projet.</p>
+      <div class="notice">
+        Tu peux reprendre les memes informations que dans ton soft principal :
+        Supabase URL et anon public key.
+      </div>
+      <form id="setupForm">
+        <label>
+          Supabase URL
+          <input id="setupUrl" placeholder="https://xxxx.supabase.co" required />
+        </label>
+        <br />
+        <label>
+          Supabase anon public key
+          <textarea id="setupAnon" placeholder="eyJhbGciOi..." required></textarea>
+        </label>
+        <br />
+        <button class="btn" type="submit">Enregistrer la configuration</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="loginScreen" class="login-wrap hidden">
+    <div class="login-card">
+      <h1>WAPI Compta</h1>
+      <p>Connexion securisee a la comptabilite copropriete.</p>
+      <form id="loginForm">
+        <label>
+          Email
+          <input id="loginEmail" type="email" autocomplete="email" required />
+        </label>
+        <br />
+        <label>
+          Mot de passe
+          <input id="loginPassword" type="password" autocomplete="current-password" required />
+        </label>
+        <br />
+        <button class="btn" type="submit">Se connecter</button>
+        <button class="btn secondary" type="button" id="resetConfigBtn">Modifier la configuration</button>
+        <div id="loginError" class="error"></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="appScreen" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">WC</div>
+        <div>
+          <div class="brand-title">WAPI Compta</div>
+          <div class="brand-subtitle">Comptabilite copropriete</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button data-view="dashboard" class="active">Tableau de bord</button>
+        <button data-view="copros">Coproprietes</button>
+        <button data-view="suppliers">Fournisseurs</button>
+        <button data-view="invoices">Factures</button>
+        <button data-view="accounts">Plan comptable</button>
+        <button data-view="entries">Ecritures</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h1 id="pageTitle" class="page-title">Tableau de bord</h1>
+        <div class="top-actions">
+          <span id="userPill" class="user-pill"></span>
+          <button id="refreshBtn" class="btn secondary" type="button">Actualiser</button>
+          <button id="logoutBtn" class="btn danger" type="button">Deconnexion</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="dashboardView" class="view">
+          <div class="grid">
+            <div class="stat">
+              <div class="stat-label">Coproprietes</div>
+              <div id="statCopros" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Fournisseurs</div>
+              <div id="statSuppliers" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Factures a valider</div>
+              <div id="statInvoices" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Montant factures</div>
+              <div id="statAmount" class="stat-value">0,00 EUR</div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Prochaine etape</h2>
+            <p>
+              Ce socle permet de creer les premieres coproprietes, fournisseurs et factures.
+              Ensuite, on ajoutera l'import de factures par email, puis l'OCR et la validation comptable.
+            </p>
+          </div>
+        </section>
+
+        <section id="coprosView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Coproprietes</h2>
+              <button class="btn" id="saveCoproBtn">Ajouter</button>
+            </div>
+            <div class="form-grid">
+              <label>Nom <input id="coproName" placeholder="Residence SARMA" /></label>
+              <label>Adresse <input id="coproAddress" placeholder="Rue..." /></label>
+              <label>Reference Optipro <input id="coproOptipro" placeholder="Optionnel" /></label>
+            </div>
+            <div id="coprosTable"></div>
+          </div>
+        </section>
+
+        <section id="suppliersView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Fournisseurs</h2>
+              <button class="btn" id="saveSupplierBtn">Ajouter</button>
+            </div>
+            <div class="form-grid">
+              <label>Nom <input id="supplierName" placeholder="Nom fournisseur" /></label>
+              <label>Email <input id="supplierEmail" type="email" placeholder="facturation@..." /></label>
+              <label>TVA <input id="supplierVat" placeholder="BE..." /></label>
+            </div>
+            <div id="suppliersTable"></div>
+          </div>
+        </section>
+
+        <section id="invoicesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Factures</h2>
+              <button class="btn" id="saveInvoiceBtn">Ajouter facture</button>
+            </div>
+            <div class="form-grid">
+              <label>Copropriete <select id="invoiceCopro"></select></label>
+              <label>Fournisseur <select id="invoiceSupplier"></select></label>
+              <label>Numero facture <input id="invoiceNumber" /></label>
+              <label>Date facture <input id="invoiceDate" type="date" /></label>
+              <label>Montant total <input id="invoiceAmount" type="number" step="0.01" /></label>
+              <label>Statut
+                <select id="invoiceStatus">
+                  <option value="draft">Brouillon</option>
+                  <option value="to_validate">A valider</option>
+                  <option value="validated">Validee</option>
+                  <option value="paid">Payee</option>
+                  <option value="rejected">Rejetee</option>
+                </select>
+              </label>
+            </div>
+            <label>Description <textarea id="invoiceDescription"></textarea></label>
+            <br />
+            <div id="invoicesTable"></div>
+          </div>
+        </section>
+
+        <section id="accountsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Plan comptable</h2>
+              <span class="badge">Base initiale</span>
+            </div>
+            <div id="accountsTable"></div>
+          </div>
+        </section>
+
+        <section id="entriesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Ecritures</h2>
+              <span class="badge warn">Lecture initiale</span>
+            </div>
+            <div id="entriesTable"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    const CONFIG_KEY = "wapi_compta_supabase_config";
+    let supabaseClient = null;
+    let currentUser = null;
+    let state = {
+      copros: [],
+      suppliers: [],
+      invoices: [],
+      accounts: [],
+      entries: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function money(value) {
+      return Number(value || 0).toLocaleString("fr-BE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + " EUR";
+    }
+
+    function getConfig() {
+      try {
+        return JSON.parse(localStorage.getItem(CONFIG_KEY) || "null");
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function setVisible(screenId) {
+      ["setupScreen", "loginScreen", "appScreen"].forEach((id) => $(id).classList.add("hidden"));
+      $(screenId).classList.remove("hidden");
+    }
+
+    function initSupabase() {
+      const config = getConfig();
+      if (!config || !config.url || !config.anonKey) return false;
+      supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+      return true;
+    }
+
+    async function boot() {
+      if (!initSupabase()) {
+        setVisible("setupScreen");
+        return;
+      }
+
+      const { data } = await supabaseClient.auth.getSession();
+      if (!data.session) {
+        setVisible("loginScreen");
+        return;
+      }
+
+      currentUser = data.session.user;
+      $("userPill").textContent = currentUser.email || "Utilisateur connecte";
+      setVisible("appScreen");
+      await loadAll();
+    }
+
+    async function loadAll() {
+      await Promise.all([
+        loadCopros(),
+        loadSuppliers(),
+        loadAccounts(),
+        loadInvoices(),
+        loadEntries()
+      ]);
+      renderAll();
+    }
+
+    async function loadCopros() {
+      const { data, error } = await supabaseClient
+        .from("compta_copros")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) return alert(error.message);
+      state.copros = data || [];
+    }
+
+    async function loadSuppliers() {
+      const { data, error } = await supabaseClient
+        .from("compta_suppliers")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) return alert(error.message);
+      state.suppliers = data || [];
+    }
+
+    async function loadAccounts() {
+      const { data, error } = await supabaseClient
+        .from("compta_accounts")
+        .select("*")
+        .order("code", { ascending: true });
+      if (error) return alert(error.message);
+      state.accounts = data || [];
+    }
+
+    async function loadInvoices() {
+      const { data, error } = await supabaseClient
+        .from("compta_invoices")
+        .select("*, compta_copros(name), compta_suppliers(name)")
+        .order("created_at", { ascending: false });
+      if (error) return alert(error.message);
+      state.invoices = data || [];
+    }
+
+    async function loadEntries() {
+      const { data, error } = await supabaseClient
+        .from("compta_entries")
+        .select("*, compta_copros(name)")
+        .order("entry_date", { ascending: false })
+        .limit(50);
+      if (error) return alert(error.message);
+      state.entries = data || [];
+    }
+
+    function renderAll() {
+      renderDashboard();
+      renderCopros();
+      renderSuppliers();
+      renderInvoiceSelects();
+      renderInvoices();
+      renderAccounts();
+      renderEntries();
+    }
+
+    function renderDashboard() {
+      $("statCopros").textContent = state.copros.length;
+      $("statSuppliers").textContent = state.suppliers.length;
+      $("statInvoices").textContent = state.invoices.filter((i) => i.status === "to_validate").length;
+      $("statAmount").textContent = money(state.invoices.reduce((sum, i) => sum + Number(i.amount_total || 0), 0));
+    }
+
+    function renderCopros() {
+      $("coprosTable").innerHTML = table([
+        "Nom", "Adresse", "Ref Optipro", "Statut"
+      ], state.copros.map((c) => [
+        c.name,
+        c.address || "",
+        c.optipro_ref || "",
+        c.active ? '<span class="badge ok">Active</span>' : '<span class="badge">Inactive</span>'
+      ]));
+    }
+
+    function renderSuppliers() {
+      $("suppliersTable").innerHTML = table([
+        "Nom", "Email", "TVA", "Statut"
+      ], state.suppliers.map((s) => [
+        s.name,
+        s.email || "",
+        s.vat_number || "",
+        s.active ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'
+      ]));
+    }
+
+    function renderInvoiceSelects() {
+      $("invoiceCopro").innerHTML = '<option value="">Choisir...</option>' +
+        state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+
+      $("invoiceSupplier").innerHTML = '<option value="">Choisir...</option>' +
+        state.suppliers.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+    }
+
+    function renderInvoices() {
+      $("invoicesTable").innerHTML = table([
+        "Date", "Copropriete", "Fournisseur", "Numero", "Montant", "Statut"
+      ], state.invoices.map((i) => [
+        i.invoice_date || "",
+        i.compta_copros?.name || "",
+        i.compta_suppliers?.name || "",
+        i.invoice_number || "",
+        money(i.amount_total),
+        statusBadge(i.status)
+      ]));
+    }
+
+    function renderAccounts() {
+      $("accountsTable").innerHTML = table([
+        "Code", "Libelle", "Type", "Statut"
+      ], state.accounts.map((a) => [
+        a.code,
+        a.label,
+        a.account_type,
+        a.active ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'
+      ]));
+    }
+
+    function renderEntries() {
+      $("entriesTable").innerHTML = table([
+        "Date", "Journal", "Copropriete", "Reference", "Libelle", "Statut"
+      ], state.entries.map((e) => [
+        e.entry_date || "",
+        e.journal_code || "",
+        e.compta_copros?.name || "",
+        e.reference || "",
+        e.label || "",
+        statusBadge(e.status)
+      ]));
+    }
+
+    function table(headers, rows) {
+      if (!rows.length) {
+        return '<div class="notice">Aucune donnee pour le moment.</div>';
+      }
+      return `
+        <table>
+          <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+          <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+        </table>
+      `;
+    }
+
+    function statusBadge(status) {
+      const labels = {
+        draft: "Brouillon",
+        to_validate: "A valider",
+        validated: "Validee",
+        paid: "Payee",
+        rejected: "Rejetee",
+        posted: "Comptabilisee",
+        cancelled: "Annulee"
+      };
+      const ok = ["validated", "paid", "posted"].includes(status);
+      const warn = ["to_validate", "draft"].includes(status);
+      return `<span class="badge ${ok ? "ok" : warn ? "warn" : ""}">${labels[status] || status || ""}</span>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function saveCopro() {
+      const payload = {
+        name: $("coproName").value.trim(),
+        address: $("coproAddress").value.trim() || null,
+        optipro_ref: $("coproOptipro").value.trim() || null,
+        created_by: currentUser.id
+      };
+      if (!payload.name) return alert("Indique le nom de la copropriete.");
+      const { error } = await supabaseClient.from("compta_copros").insert(payload);
+      if (error) return alert(error.message);
+      $("coproName").value = "";
+      $("coproAddress").value = "";
+      $("coproOptipro").value = "";
+      await loadAll();
+    }
+
+    async function saveSupplier() {
+      const payload = {
+        name: $("supplierName").value.trim(),
+        email: $("supplierEmail").value.trim() || null,
+        vat_number: $("supplierVat").value.trim() || null,
+        created_by: currentUser.id
+      };
+      if (!payload.name) return alert("Indique le nom du fournisseur.");
+      const { error } = await supabaseClient.from("compta_suppliers").insert(payload);
+      if (error) return alert(error.message);
+      $("supplierName").value = "";
+      $("supplierEmail").value = "";
+      $("supplierVat").value = "";
+      await loadAll();
+    }
+
+    async function saveInvoice() {
+      const payload = {
+        copro_id: $("invoiceCopro").value,
+        supplier_id: $("invoiceSupplier").value || null,
+        invoice_number: $("invoiceNumber").value.trim() || null,
+        invoice_date: $("invoiceDate").value || null,
+        amount_total: Number($("invoiceAmount").value || 0),
+        status: $("invoiceStatus").value,
+        description: $("invoiceDescription").value.trim() || null,
+        source: "manual",
+        created_by: currentUser.id
+      };
+
+      if (!payload.copro_id) return alert("Choisis une copropriete.");
+      if (!payload.amount_total) return alert("Indique un montant.");
+
+      const { error } = await supabaseClient.from("compta_invoices").insert(payload);
+      if (error) return alert(error.message);
+
+      $("invoiceNumber").value = "";
+      $("invoiceDate").value = "";
+      $("invoiceAmount").value = "";
+      $("invoiceDescription").value = "";
+      await loadAll();
+    }
+
+    document.querySelectorAll(".nav button").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".nav button").forEach((b) => b.classList.remove("active"));
+        button.classList.add("active");
+        document.querySelectorAll(".view").forEach((view) => view.classList.add("hidden"));
+        const view = button.dataset.view;
+        $(view + "View").classList.remove("hidden");
+        $("pageTitle").textContent = button.textContent;
+      });
+    });
+
+    $("setupForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({
+        url: $("setupUrl").value.trim(),
+        anonKey: $("setupAnon").value.trim()
+      }));
+      await boot();
+    });
+
+    $("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      $("loginError").textContent = "";
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: $("loginEmail").value.trim(),
+        password: $("loginPassword").value
+      });
+      if (error) {
+        $("loginError").textContent = error.message;
+        return;
+      }
+      currentUser = data.user;
+      $("userPill").textContent = currentUser.email || "Utilisateur connecte";
+      setVisible("appScreen");
+      await loadAll();
+    });
+
+    $("logoutBtn").addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      currentUser = null;
+      setVisible("loginScreen");
+    });
+
+    $("resetConfigBtn").addEventListener("click", () => {
+      localStorage.removeItem(CONFIG_KEY);
+      location.reload();
+    });
+
+    $("refreshBtn").addEventListener("click", loadAll);
+    $("saveCoproBtn").addEventListener("click", saveCopro);
+    $("saveSupplierBtn").addEventListener("click", saveSupplier);
+    $("saveInvoiceBtn").addEventListener("click", saveInvoice);
+
+    boot();
+  </script>
+</body>
+</html>
+
