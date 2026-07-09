@@ -340,6 +340,51 @@
       margin: 0;
     }
 
+    .status-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 16px;
+    }
+
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+
+    .queue-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .small-input {
+      min-width: 95px !important;
+      padding: 7px 8px !important;
+      font-size: 13px;
+    }
+
+    .wide-input {
+      min-width: 190px !important;
+    }
+
+    .confidence-bar {
+      width: 88px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e4e7ec;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .confidence-bar span {
+      display: block;
+      height: 100%;
+      background: var(--brand);
+    }
+
     .hidden {
       display: none !important;
     }
@@ -468,6 +513,7 @@
       </div>
       <nav class="nav">
         <button data-view="dashboard" class="active">Tableau de bord</button>
+        <button data-view="processing">Centre de traitement</button>
         <button data-view="copros">Coproprietes</button>
         <button data-view="lots">Lots</button>
         <button data-view="owners">Proprietaires</button>
@@ -516,13 +562,82 @@
               <div class="stat-label">Mouvements banque</div>
               <div id="statBankTransactions" class="stat-value">0</div>
             </div>
+            <div class="stat">
+              <div class="stat-label">A traiter</div>
+              <div id="statProcessingQueue" class="stat-value">0</div>
+            </div>
           </div>
           <div class="card">
             <h2>Prochaine etape</h2>
             <p>
-              Ce socle permet de creer les premieres coproprietes, fournisseurs et factures.
-              Ensuite, on ajoutera l'import de factures par email, puis l'OCR et la validation comptable.
+              WAPI Compta fonctionne maintenant autour d'un centre de traitement multi-coproprietes :
+              import massif, reconnaissance automatique, correction humaine, validation puis creation des factures, extraits ou ecritures.
             </p>
+          </div>
+        </section>
+
+        <section id="processingView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Centre de traitement multi-coproprietes</h2>
+              <span class="badge warn">Import massif -> validation -> comptabilisation</span>
+            </div>
+
+            <div class="notice">
+              Depose ici des factures PDF, CODA ou documents en masse. Le logiciel tente de reconnaitre la copropriete,
+              le fournisseur ou le compte bancaire. Tout reste modifiable avant validation.
+            </div>
+
+            <div class="form-grid">
+              <label>Type d'import
+                <select id="importType">
+                  <option value="invoice">Factures fournisseurs PDF</option>
+                  <option value="coda">CODA / extraits bancaires</option>
+                  <option value="document">Documents divers a classer</option>
+                </select>
+              </label>
+              <label>Libelle du lot <input id="importBatchLabel" placeholder="Ex: Factures du jour, CODA juillet..." /></label>
+              <label>Fichiers <input id="importFiles" type="file" multiple /></label>
+            </div>
+            <div class="top-actions" style="justify-content:flex-start; margin-bottom:14px;">
+              <button class="btn" id="importBatchBtn" type="button">Importer dans la file d'attente</button>
+              <button class="btn secondary" id="refreshProcessingBtn" type="button">Rafraichir</button>
+            </div>
+
+            <div class="status-strip">
+              <span id="queueTotalBadge" class="badge">0 element</span>
+              <span id="queueToCheckBadge" class="badge warn">0 a verifier</span>
+              <span id="queueReadyBadge" class="badge ok">0 prets</span>
+              <span id="queueValidatedBadge" class="badge ok">0 valides</span>
+            </div>
+
+            <div class="form-grid">
+              <label>Filtre statut
+                <select id="queueFilterStatus">
+                  <option value="active">A traiter</option>
+                  <option value="all">Tous</option>
+                  <option value="to_validate">Prets a valider</option>
+                  <option value="to_verify">A verifier</option>
+                  <option value="validated">Valides</option>
+                  <option value="rejected">Rejetes</option>
+                </select>
+              </label>
+              <label>Filtre type
+                <select id="queueFilterType">
+                  <option value="all">Tous</option>
+                  <option value="invoice">Factures</option>
+                  <option value="coda">CODA</option>
+                  <option value="document">Documents</option>
+                </select>
+              </label>
+              <label>Filtre copropriete <select id="queueFilterCopro"></select></label>
+            </div>
+
+            <h3>File de validation</h3>
+            <div id="validationQueueTable"></div>
+
+            <h3>Lots d'import recents</h3>
+            <div id="importBatchesTable"></div>
           </div>
         </section>
 
@@ -617,7 +732,14 @@
           <div class="card">
             <div class="toolbar">
               <h2>Factures</h2>
-              <button class="btn" id="saveInvoiceBtn">Ajouter facture</button>
+              <div class="top-actions">
+                <button class="btn secondary" id="goInvoiceImportBtn" type="button">Importer plusieurs factures</button>
+                <button class="btn" id="saveInvoiceBtn">Ajouter facture manuelle</button>
+              </div>
+            </div>
+            <div class="notice">
+              Pour les encodages de masse, utilise le Centre de traitement : les factures arrivent d'abord dans une file,
+              sont corrigees si besoin, puis validees en factures comptables.
             </div>
             <div class="form-grid">
               <label>Copropriete <select id="invoiceCopro"></select></label>
@@ -649,8 +771,8 @@
             </div>
 
             <div class="notice">
-              Cette premiere version permet de creer les comptes bancaires, encoder des mouvements
-              manuels et importer un fichier CODA en brut. Le parsing CODA detaille viendra ensuite.
+              Le module Banque consulte les comptes et mouvements. Pour les CODA, privilegie le Centre de traitement :
+              import groupé multi-coproprietes, detection de l'IBAN, verification et confirmation avant integration.
             </div>
 
             <h3>Compte bancaire</h3>
@@ -675,10 +797,14 @@
             <label>Description <textarea id="bankTxDescription" placeholder="Note interne, facture concernee, information utile..."></textarea></label>
 
             <h3>Import CODA</h3>
+            <div class="notice">
+              L'import direct ci-dessous reste disponible pour un cas isole. Pour plusieurs immeubles, utilise
+              <strong>Centre de traitement</strong> afin de confirmer toutes les coproprietes sur une seule page.
+            </div>
             <div class="form-grid">
               <label>Compte <select id="codaBankAccount"></select></label>
               <label>Fichier CODA <input id="codaFile" type="file" accept=".cod,.coda,.txt" /></label>
-              <label>&nbsp;<button class="btn secondary" id="importCodaBtn" type="button">Importer CODA brut</button></label>
+              <label>&nbsp;<button class="btn secondary" id="importCodaBtn" type="button">Importer CODA isole</button></label>
             </div>
             <div id="bankStatementsTable"></div>
 
@@ -759,6 +885,10 @@
       bankAccounts: [],
       bankStatements: [],
       bankTransactions: [],
+      importBatches: [],
+      importItems: [],
+      validationQueue: [],
+      recognitionRules: [],
       accounts: [],
       entries: []
     };
@@ -821,6 +951,10 @@
         loadBankAccounts(),
         loadBankStatements(),
         loadBankTransactions(),
+        loadImportBatches(),
+        loadImportItems(),
+        loadValidationQueue(),
+        loadRecognitionRules(),
         loadEntries()
       ]);
       renderAll();
@@ -909,6 +1043,46 @@
       state.bankTransactions = data || [];
     }
 
+    async function loadImportBatches() {
+      const { data, error } = await supabaseClient
+        .from("compta_import_batches")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) { state.importBatches = []; return console.warn(error.message); }
+      state.importBatches = data || [];
+    }
+
+    async function loadImportItems() {
+      const { data, error } = await supabaseClient
+        .from("compta_import_items")
+        .select("*, compta_import_batches(label), compta_copros(name), compta_suppliers(name), compta_bank_accounts(label, iban)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) { state.importItems = []; return console.warn(error.message); }
+      state.importItems = data || [];
+    }
+
+    async function loadValidationQueue() {
+      const { data, error } = await supabaseClient
+        .from("compta_validation_queue")
+        .select("*, compta_import_items(file_name, import_type, confidence, raw_data), compta_copros(name)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) { state.validationQueue = []; return console.warn(error.message); }
+      state.validationQueue = data || [];
+    }
+
+    async function loadRecognitionRules() {
+      const { data, error } = await supabaseClient
+        .from("compta_recognition_rules")
+        .select("*")
+        .eq("active", true)
+        .order("priority", { ascending: false });
+      if (error) { state.recognitionRules = []; return console.warn(error.message); }
+      state.recognitionRules = data || [];
+    }
+
     async function loadEntries() {
       const { data, error } = await supabaseClient
         .from("compta_entries")
@@ -921,6 +1095,7 @@
 
     function renderAll() {
       renderDashboard();
+      renderProcessing();
       renderCopros();
       renderLotSelects();
       renderLotDraftTable();
@@ -941,6 +1116,154 @@
       $("statInvoices").textContent = state.invoices.filter((i) => i.status === "to_validate").length;
       $("statAmount").textContent = money(state.invoices.reduce((sum, i) => sum + Number(i.amount_total || 0), 0));
       $("statBankTransactions").textContent = state.bankTransactions.length;
+      const activeQueue = state.validationQueue.filter((q) => !["validated", "rejected"].includes(q.status));
+      $("statProcessingQueue").textContent = activeQueue.length;
+    }
+
+    function renderProcessing() {
+      renderProcessingSelects();
+      renderQueueBadges();
+      renderValidationQueue();
+      renderImportBatches();
+    }
+
+    function renderProcessingSelects() {
+      const current = $("queueFilterCopro")?.value || "all";
+      const coproOptions = '<option value="all">Toutes</option>' +
+        state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      if ($("queueFilterCopro")) {
+        $("queueFilterCopro").innerHTML = coproOptions;
+        $("queueFilterCopro").value = current;
+      }
+    }
+
+    function renderQueueBadges() {
+      if (!$("queueTotalBadge")) return;
+      const active = state.validationQueue.filter((q) => !["validated", "rejected"].includes(q.status));
+      const toVerify = active.filter((q) => q.status === "to_verify");
+      const ready = active.filter((q) => q.status === "to_validate");
+      const validated = state.validationQueue.filter((q) => q.status === "validated");
+      $("queueTotalBadge").textContent = `${active.length} a traiter`;
+      $("queueToCheckBadge").textContent = `${toVerify.length} a verifier`;
+      $("queueReadyBadge").textContent = `${ready.length} prets`;
+      $("queueValidatedBadge").textContent = `${validated.length} valides`;
+    }
+
+    function getQueueRowsFiltered() {
+      const statusFilter = $("queueFilterStatus")?.value || "active";
+      const typeFilter = $("queueFilterType")?.value || "all";
+      const coproFilter = $("queueFilterCopro")?.value || "all";
+
+      return state.validationQueue.filter((q) => {
+        if (statusFilter === "active" && ["validated", "rejected"].includes(q.status)) return false;
+        if (statusFilter !== "all" && statusFilter !== "active" && q.status !== statusFilter) return false;
+        if (typeFilter !== "all" && q.target_type !== typeFilter) return false;
+        if (coproFilter !== "all" && q.copro_id !== coproFilter) return false;
+        return true;
+      });
+    }
+
+    function renderValidationQueue() {
+      if (!$("validationQueueTable")) return;
+      const rows = getQueueRowsFiltered();
+      if (!rows.length) {
+        $("validationQueueTable").innerHTML = '<div class="notice">Aucun element dans la file pour ce filtre.</div>';
+        return;
+      }
+
+      const coproOptions = (selected) => '<option value="">Non detectee</option>' +
+        state.copros.map((c) => `<option value="${c.id}" ${selected === c.id ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("");
+      const supplierOptions = (selected) => '<option value="">Non defini</option>' +
+        state.suppliers.map((s) => `<option value="${s.id}" ${selected === s.id ? "selected" : ""}>${escapeHtml(s.name)}</option>`).join("");
+      const bankOptions = (selected) => '<option value="">Non defini</option>' +
+        state.bankAccounts.map((b) => `<option value="${b.id}" ${selected === b.id ? "selected" : ""}>${escapeHtml(b.label)} - ${escapeHtml(b.iban || "")}</option>`).join("");
+
+      const body = rows.map((q) => {
+        const item = state.importItems.find((i) => i.id === q.item_id) || {};
+        const extracted = q.extracted_data || {};
+        const corrected = q.corrected_data || {};
+        const confidence = Math.round(Number(item.confidence || 0));
+        const typeValue = q.target_type || item.import_type || "document";
+        const selectedCopro = q.copro_id || corrected.copro_id || item.detected_copro_id || "";
+        const selectedSupplier = corrected.supplier_id || item.detected_supplier_id || "";
+        const selectedBank = corrected.bank_account_id || item.detected_bank_account_id || "";
+        const dateValue = corrected.date || extracted.date || "";
+        const amountValue = corrected.amount || extracted.amount || "";
+        const numberValue = corrected.reference || extracted.reference || "";
+        const notesValue = corrected.notes || q.notes || "";
+
+        return `
+          <tr data-queue-id="${q.id}">
+            <td>
+              ${statusBadge(q.status)}
+              <div class="confidence-bar"><span style="width:${Math.min(confidence, 100)}%"></span></div>
+              <small>${confidence}% confiance</small>
+            </td>
+            <td>
+              <strong>${escapeHtml(item.file_name || "Encodage manuel")}</strong><br>
+              <small>${escapeHtml(item.compta_import_batches?.label || "Lot manuel")}</small>
+            </td>
+            <td>
+              <select class="small-input" data-q-field="target_type">
+                <option value="invoice" ${typeValue === "invoice" ? "selected" : ""}>Facture</option>
+                <option value="coda" ${typeValue === "coda" ? "selected" : ""}>CODA</option>
+                <option value="document" ${typeValue === "document" ? "selected" : ""}>Document</option>
+              </select>
+            </td>
+            <td><select class="wide-input" data-q-field="copro_id">${coproOptions(selectedCopro)}</select></td>
+            <td>
+              <select class="wide-input" data-q-field="supplier_id">${supplierOptions(selectedSupplier)}</select>
+              <select class="wide-input" data-q-field="bank_account_id" style="margin-top:6px;">${bankOptions(selectedBank)}</select>
+            </td>
+            <td><input class="small-input" data-q-field="date" type="date" value="${escapeHtml(dateValue)}" /></td>
+            <td><input class="small-input" data-q-field="amount" type="number" step="0.01" value="${escapeHtml(amountValue)}" /></td>
+            <td><input class="wide-input" data-q-field="reference" value="${escapeHtml(numberValue)}" placeholder="N° facture / extrait" /></td>
+            <td><input class="wide-input" data-q-field="notes" value="${escapeHtml(notesValue)}" placeholder="Note / anomalie" /></td>
+            <td>
+              <div class="queue-row-actions">
+                <button class="btn secondary" type="button" data-save-queue="${q.id}">Enregistrer</button>
+                <button class="btn" type="button" data-validate-queue="${q.id}">Valider</button>
+                <button class="btn danger" type="button" data-reject-queue="${q.id}">Rejeter</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      $("validationQueueTable").innerHTML = `
+        <div class="table-wrap">
+          <table class="editable-table">
+            <thead>
+              <tr>
+                <th>Statut</th>
+                <th>Fichier</th>
+                <th>Type</th>
+                <th>Copropriete</th>
+                <th>Fournisseur / Compte</th>
+                <th>Date</th>
+                <th>Montant</th>
+                <th>Reference</th>
+                <th>Note</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderImportBatches() {
+      if (!$('importBatchesTable')) return;
+      $('importBatchesTable').innerHTML = table([
+        'Date', 'Type', 'Libelle', 'Elements', 'Statut'
+      ], state.importBatches.map((b) => [
+        new Date(b.created_at).toLocaleString('fr-BE'),
+        importTypeLabel(b.import_type),
+        b.label || '',
+        b.total_items || 0,
+        statusBadge(b.status)
+      ]));
     }
 
     function renderCopros() {
@@ -1161,6 +1484,14 @@
       `;
     }
 
+    function importTypeLabel(type) {
+      return {
+        invoice: "Factures",
+        coda: "CODA",
+        document: "Documents"
+      }[type] || type || "";
+    }
+
     function statusBadge(status) {
       const labels = {
         draft: "Brouillon",
@@ -1175,10 +1506,13 @@
         parsed: "Analyse",
         error: "Erreur",
         matched: "Lettre",
-        ignored: "Ignore"
+        ignored: "Ignore",
+        to_verify: "A verifier",
+        partial: "Partiel",
+        anomaly: "Anomalie"
       };
       const ok = ["validated", "paid", "posted", "matched"].includes(status);
-      const warn = ["to_validate", "draft", "to_parse", "imported"].includes(status);
+      const warn = ["to_validate", "to_verify", "draft", "to_parse", "imported", "partial"].includes(status);
       return `<span class="badge ${ok ? "ok" : warn ? "warn" : ""}">${labels[status] || status || ""}</span>`;
     }
 
@@ -1189,6 +1523,270 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function normalizeTextForDetection(value) {
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizeIban(value) {
+      return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    }
+
+    function detectCoproFromText(text) {
+      const normalized = normalizeTextForDetection(text);
+      let best = { copro: null, confidence: 0 };
+      for (const copro of state.copros) {
+        const name = normalizeTextForDetection(copro.name);
+        const ref = normalizeTextForDetection(copro.optipro_ref || "");
+        if (name && normalized.includes(name)) best = { copro, confidence: Math.max(best.confidence, 80) };
+        if (ref && normalized.includes(ref)) best = { copro, confidence: Math.max(best.confidence, 90) };
+      }
+      return best;
+    }
+
+    function detectSupplierFromText(text) {
+      const normalized = normalizeTextForDetection(text);
+      let best = { supplier: null, confidence: 0 };
+      for (const supplier of state.suppliers) {
+        const name = normalizeTextForDetection(supplier.name);
+        const vat = normalizeTextForDetection(supplier.vat_number || "");
+        if (name && normalized.includes(name)) best = { supplier, confidence: Math.max(best.confidence, 75) };
+        if (vat && normalized.includes(vat)) best = { supplier, confidence: Math.max(best.confidence, 88) };
+      }
+      return best;
+    }
+
+    function detectBankAccountFromText(text) {
+      const normalizedRaw = normalizeIban(text);
+      for (const account of state.bankAccounts) {
+        const iban = normalizeIban(account.iban);
+        if (iban && normalizedRaw.includes(iban)) return { account, confidence: 95 };
+      }
+      return { account: null, confidence: 0 };
+    }
+
+    function extractSimpleFieldsFromText(text, fileName, importType) {
+      const result = {};
+      const source = `${fileName || ""}\n${text || ""}`;
+      const dateMatch = source.match(/(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})|(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2})/);
+      if (dateMatch) {
+        if (dateMatch[1]) result.date = `${dateMatch[1]}-${String(dateMatch[2]).padStart(2, "0")}-${String(dateMatch[3]).padStart(2, "0")}`;
+        else result.date = `${dateMatch[6]}-${String(dateMatch[5]).padStart(2, "0")}-${String(dateMatch[4]).padStart(2, "0")}`;
+      }
+      const amountMatch = source.match(/(?:total|montant|eur|euro|€)[^0-9-]{0,18}(-?\d{1,6}(?:[ .]\d{3})*(?:,\d{2}|\.\d{2})?)/i);
+      if (amountMatch) result.amount = amountMatch[1].replace(/[ .](?=\d{3})/g, "").replace(",", ".");
+      if (importType === "invoice") {
+        const refMatch = source.match(/(?:facture|invoice|n°|numero|num)[^A-Z0-9]{0,10}([A-Z0-9][A-Z0-9\-\/]{2,})/i);
+        if (refMatch) result.reference = refMatch[1];
+      }
+      return result;
+    }
+
+    async function importFilesToQueue() {
+      const files = Array.from($("importFiles").files || []);
+      const importType = $("importType").value;
+      const label = $("importBatchLabel").value.trim() || `${importTypeLabel(importType)} - ${new Date().toLocaleDateString("fr-BE")}`;
+      if (!files.length) return alert("Choisis au moins un fichier a importer.");
+
+      try {
+        const { data: batch, error: batchError } = await supabaseClient
+          .from("compta_import_batches")
+          .insert({
+            import_type: importType,
+            label,
+            total_items: files.length,
+            status: "imported",
+            created_by: currentUser.id
+          })
+          .select("id")
+          .single();
+        if (batchError) throw batchError;
+
+        for (const file of files) {
+          const isText = /\.(cod|coda|txt|csv)$/i.test(file.name) || file.type.startsWith("text/");
+          const rawText = isText ? await readFileAsText(file) : "";
+          const detectionText = `${file.name}\n${rawText}`;
+          const bankDetection = detectBankAccountFromText(detectionText);
+          const coproFromBank = bankDetection.account ? state.copros.find((c) => c.id === bankDetection.account.copro_id) : null;
+          const coproDetection = coproFromBank ? { copro: coproFromBank, confidence: bankDetection.confidence } : detectCoproFromText(detectionText);
+          const supplierDetection = detectSupplierFromText(detectionText);
+          const confidence = Math.max(coproDetection.confidence || 0, supplierDetection.confidence || 0, bankDetection.confidence || 0, isText ? 35 : 15);
+          const extracted = extractSimpleFieldsFromText(rawText, file.name, importType);
+          const itemStatus = confidence >= 75 ? "to_validate" : "to_verify";
+
+          const { data: item, error: itemError } = await supabaseClient
+            .from("compta_import_items")
+            .insert({
+              batch_id: batch.id,
+              import_type: importType,
+              file_name: file.name,
+              file_size: file.size,
+              mime_type: file.type || null,
+              raw_text: rawText || null,
+              raw_data: {
+                file_name: file.name,
+                file_size: file.size,
+                mime_type: file.type || null,
+                note: isText ? "Texte lu par le navigateur" : "PDF/document place en file d'attente. OCR a connecter ensuite.",
+                extracted
+              },
+              detected_copro_id: coproDetection.copro?.id || null,
+              detected_supplier_id: supplierDetection.supplier?.id || null,
+              detected_bank_account_id: bankDetection.account?.id || null,
+              confidence,
+              status: itemStatus,
+              created_by: currentUser.id
+            })
+            .select("id")
+            .single();
+          if (itemError) throw itemError;
+
+          await supabaseClient.from("compta_validation_queue").insert({
+            item_id: item.id,
+            target_type: importType,
+            status: itemStatus,
+            copro_id: coproDetection.copro?.id || null,
+            extracted_data: extracted,
+            corrected_data: {
+              copro_id: coproDetection.copro?.id || null,
+              supplier_id: supplierDetection.supplier?.id || null,
+              bank_account_id: bankDetection.account?.id || null,
+              ...extracted
+            },
+            notes: confidence >= 75 ? "Detection automatique a confirmer." : "Detection incomplete : correction manuelle requise.",
+            created_by: currentUser.id
+          });
+        }
+
+        $("importFiles").value = "";
+        $("importBatchLabel").value = "";
+        await loadAll();
+        alert(`${files.length} element(s) importes dans la file de validation.`);
+      } catch (error) {
+        alert(error.message || "Erreur pendant l'import.");
+      }
+    }
+
+    function getQueuePayloadFromRow(queueId) {
+      const row = document.querySelector(`tr[data-queue-id="${queueId}"]`);
+      if (!row) return null;
+      const data = {};
+      row.querySelectorAll("[data-q-field]").forEach((input) => {
+        data[input.dataset.qField] = input.value || null;
+      });
+      return {
+        target_type: data.target_type || "document",
+        copro_id: data.copro_id || null,
+        supplier_id: data.supplier_id || null,
+        bank_account_id: data.bank_account_id || null,
+        date: data.date || null,
+        amount: data.amount ? Number(data.amount) : null,
+        reference: data.reference || null,
+        notes: data.notes || null
+      };
+    }
+
+    async function saveQueueCorrections(queueId) {
+      const payload = getQueuePayloadFromRow(queueId);
+      if (!payload) return;
+      const status = payload.copro_id && (payload.target_type !== "invoice" || payload.supplier_id) && (payload.target_type !== "coda" || payload.bank_account_id) ? "to_validate" : "to_verify";
+      const { error } = await supabaseClient
+        .from("compta_validation_queue")
+        .update({
+          target_type: payload.target_type,
+          copro_id: payload.copro_id,
+          corrected_data: payload,
+          notes: payload.notes,
+          status
+        })
+        .eq("id", queueId);
+      if (error) return alert(error.message);
+      await loadAll();
+    }
+
+    async function validateQueueItem(queueId) {
+      await saveQueueCorrections(queueId);
+      await loadValidationQueue();
+      const q = state.validationQueue.find((item) => item.id === queueId);
+      if (!q) return alert("Element introuvable.");
+      const corrected = q.corrected_data || {};
+      const importItem = state.importItems.find((i) => i.id === q.item_id) || {};
+
+      try {
+        if (q.target_type === "invoice") {
+          if (!corrected.copro_id) return alert("Choisis la copropriete.");
+          if (!corrected.supplier_id) return alert("Choisis le fournisseur.");
+          if (!corrected.amount) return alert("Indique le montant.");
+          await createInvoiceFromQueue(q, importItem, corrected);
+        } else if (q.target_type === "coda") {
+          if (!corrected.bank_account_id) return alert("Choisis le compte bancaire.");
+          await createBankStatementFromQueue(q, importItem, corrected);
+        } else {
+          // Document divers : on le marque comme valide/classe. Plus tard, il pourra alimenter une GED.
+        }
+
+        await supabaseClient.from("compta_validation_queue").update({
+          status: "validated",
+          validated_by: currentUser.id,
+          validated_at: new Date().toISOString()
+        }).eq("id", q.id);
+        if (q.item_id) await supabaseClient.from("compta_import_items").update({ status: "validated" }).eq("id", q.item_id);
+        await loadAll();
+      } catch (error) {
+        alert(error.message || "Validation impossible.");
+      }
+    }
+
+    async function createInvoiceFromQueue(q, item, corrected) {
+      const { error } = await supabaseClient.from("compta_invoices").insert({
+        copro_id: corrected.copro_id,
+        supplier_id: corrected.supplier_id,
+        invoice_number: corrected.reference || item.file_name || null,
+        invoice_date: corrected.date || null,
+        amount_total: Number(corrected.amount || 0),
+        status: "to_validate",
+        description: `Cree depuis Centre de traitement : ${item.file_name || "import"}. ${corrected.notes || ""}`,
+        source: "processing_center",
+        created_by: currentUser.id
+      });
+      if (error) throw error;
+    }
+
+    async function createBankStatementFromQueue(q, item, corrected) {
+      const bankAccount = state.bankAccounts.find((b) => b.id === corrected.bank_account_id);
+      if (!bankAccount) throw new Error("Compte bancaire introuvable.");
+      const { error } = await supabaseClient.from("compta_bank_statements").insert({
+        copro_id: bankAccount.copro_id,
+        bank_account_id: bankAccount.id,
+        file_name: item.file_name || corrected.reference || "CODA",
+        raw_coda: item.raw_text || null,
+        statement_number: corrected.reference || null,
+        statement_date: corrected.date || null,
+        status: "to_parse",
+        created_by: currentUser.id
+      });
+      if (error) throw error;
+    }
+
+    async function rejectQueueItem(queueId) {
+      if (!confirm("Rejeter cet element de la file ?")) return;
+      const { error } = await supabaseClient
+        .from("compta_validation_queue")
+        .update({ status: "rejected", validated_by: currentUser.id, validated_at: new Date().toISOString() })
+        .eq("id", queueId);
+      if (error) return alert(error.message);
+      await loadAll();
+    }
+
+    function switchToView(viewName) {
+      const button = document.querySelector(`.nav button[data-view="${viewName}"]`);
+      if (button) button.click();
     }
 
     async function saveCopro() {
@@ -1573,6 +2171,19 @@
       saveOwnerFromTable(ownerId);
     });
     $("bankTxFilterAccount").addEventListener("change", renderBankTransactions);
+    if ($("queueFilterStatus")) $("queueFilterStatus").addEventListener("change", renderValidationQueue);
+    if ($("queueFilterType")) $("queueFilterType").addEventListener("change", renderValidationQueue);
+    if ($("queueFilterCopro")) $("queueFilterCopro").addEventListener("change", renderValidationQueue);
+    if ($("validationQueueTable")) {
+      $("validationQueueTable").addEventListener("click", (event) => {
+        const saveId = event.target.dataset.saveQueue;
+        const validateId = event.target.dataset.validateQueue;
+        const rejectId = event.target.dataset.rejectQueue;
+        if (saveId) saveQueueCorrections(saveId);
+        if (validateId) validateQueueItem(validateId);
+        if (rejectId) rejectQueueItem(rejectId);
+      });
+    }
 
     $("setupForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -1612,6 +2223,12 @@
     });
 
     $("refreshBtn").addEventListener("click", loadAll);
+    if ($("importBatchBtn")) $("importBatchBtn").addEventListener("click", importFilesToQueue);
+    if ($("refreshProcessingBtn")) $("refreshProcessingBtn").addEventListener("click", loadAll);
+    if ($("goInvoiceImportBtn")) $("goInvoiceImportBtn").addEventListener("click", () => {
+      switchToView("processing");
+      $("importType").value = "invoice";
+    });
     $("saveCoproBtn").addEventListener("click", saveCopro);
     $("openLotModalBtn").addEventListener("click", openLotModal);
     $("closeLotModalBtn").addEventListener("click", closeLotModal);
