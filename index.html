@@ -310,6 +310,36 @@
       font-size: 13px;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 42, 67, .55);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      z-index: 50;
+    }
+
+    .modal {
+      width: min(620px, 100%);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+      padding: 20px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -439,7 +469,8 @@
       <nav class="nav">
         <button data-view="dashboard" class="active">Tableau de bord</button>
         <button data-view="copros">Coproprietes</button>
-        <button data-view="lots">Lots & proprietaires</button>
+        <button data-view="lots">Lots</button>
+        <button data-view="owners">Proprietaires</button>
         <button data-view="suppliers">Fournisseurs</button>
         <button data-view="invoices">Factures</button>
         <button data-view="accounts">Plan comptable</button>
@@ -508,8 +539,9 @@
         <section id="lotsView" class="view hidden">
           <div class="card">
             <div class="toolbar">
-              <h2>Lots & proprietaires</h2>
+              <h2>Lots</h2>
               <div class="top-actions">
+                <button class="btn secondary" id="openLotModalBtn" type="button">Ajout lot multiple</button>
                 <button class="btn secondary" id="addLotRowBtn" type="button">Ajouter une ligne</button>
                 <button class="btn" id="saveLotRowsBtn" type="button">Enregistrer les lignes</button>
               </div>
@@ -520,32 +552,8 @@
             </div>
 
             <div class="notice">
-              Utilise le generateur pour creer rapidement 10 appartements, des parkings ou des caves.
-              Les lignes restent modifiables avant l'enregistrement.
-            </div>
-
-            <div class="form-grid compact">
-              <label>Copropriete <select id="lotGenCopro"></select></label>
-              <label>Type
-                <select id="lotGenType">
-                  <option value="Appartement">Appartement</option>
-                  <option value="Parking">Parking</option>
-                  <option value="Cave">Cave</option>
-                  <option value="Garage">Garage</option>
-                  <option value="Commerce">Commerce</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </label>
-              <label>Prefixe <input id="lotGenPrefix" placeholder="A, AP, APT, P..." /></label>
-              <label>Nombre <input id="lotGenCount" type="number" min="1" value="10" /></label>
-              <label>Depart <input id="lotGenStart" type="number" min="0" value="1" /></label>
-              <label>Quotites/lot <input id="lotGenQuotities" type="number" step="0.0001" value="0" /></label>
-            </div>
-
-            <div class="form-grid">
-              <label>Date mutation par defaut <input id="lotGenMutationDate" type="date" /></label>
-              <label>Proprietaire par defaut <input id="lotGenOwner" placeholder="Optionnel" /></label>
-              <label>&nbsp;<button class="btn secondary" id="generateLotsBtn" type="button">Generer les lignes</button></label>
+              Encode les lots sous forme de tableau. Les proprietaires crees ici apparaitront ensuite
+              dans le module Proprietaires pour completer email, telephone et adresse.
             </div>
 
             <div class="summary-line">
@@ -558,6 +566,30 @@
 
             <h3>Lots deja enregistres</h3>
             <div id="lotsTable"></div>
+          </div>
+        </section>
+
+        <section id="ownersView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Proprietaires</h2>
+              <button class="btn" id="saveOwnerBtn" type="button">Ajouter proprietaire</button>
+            </div>
+
+            <div class="form-grid">
+              <label>Copropriete <select id="ownersFilterCopro"></select></label>
+              <label>Nom <input id="ownerName" placeholder="Nom du proprietaire" /></label>
+              <label>Email <input id="ownerEmail" type="email" placeholder="email@..." /></label>
+              <label>Telephone <input id="ownerPhone" placeholder="047..." /></label>
+              <label>Adresse <input id="ownerAddress" placeholder="Adresse postale" /></label>
+            </div>
+
+            <div class="notice">
+              Les proprietaires encodes dans les lots sont ajoutes automatiquement ici. Tu peux ensuite
+              completer leurs coordonnees ou ajouter un proprietaire manuellement.
+            </div>
+
+            <div id="ownersTable"></div>
           </div>
         </section>
 
@@ -625,6 +657,38 @@
         </section>
       </div>
     </main>
+  </section>
+
+  <section id="lotModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2>Ajout lot multiple</h2>
+          <p class="brand-subtitle">Genere les lignes, puis complete les quotites, proprietaires et dates dans le tableau.</p>
+        </div>
+        <button class="btn secondary" id="closeLotModalBtn" type="button">Fermer</button>
+      </div>
+      <div class="form-grid">
+        <label>Copropriete <select id="lotGenCopro"></select></label>
+        <label>Type
+          <select id="lotGenType">
+            <option value="Appartement">Appartement</option>
+            <option value="Parking">Parking</option>
+            <option value="Cave">Cave</option>
+            <option value="Garage">Garage</option>
+            <option value="Commerce">Commerce</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </label>
+        <label>Prefixe <input id="lotGenPrefix" placeholder="A, AP, APT, P..." /></label>
+        <label>Nombre <input id="lotGenCount" type="number" min="1" value="10" /></label>
+        <label>Depart <input id="lotGenStart" type="number" min="0" value="1" /></label>
+      </div>
+      <div class="top-actions">
+        <button class="btn secondary" id="cancelLotModalBtn" type="button">Annuler</button>
+        <button class="btn" id="generateLotsBtn" type="button">Generer les lignes</button>
+      </div>
+    </div>
   </section>
 
   <script>
@@ -772,6 +836,7 @@
       renderLotSelects();
       renderLotDraftTable();
       renderLots();
+      renderOwners();
       renderSuppliers();
       renderInvoiceSelects();
       renderInvoices();
@@ -803,9 +868,11 @@
         state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
       $("lotGenCopro").innerHTML = options;
       $("lotsFilterCopro").innerHTML = options;
+      $("ownersFilterCopro").innerHTML = options;
 
       if (!$("lotGenCopro").value && state.copros[0]) $("lotGenCopro").value = state.copros[0].id;
       if (!$("lotsFilterCopro").value && state.copros[0]) $("lotsFilterCopro").value = state.copros[0].id;
+      if (!$("ownersFilterCopro").value && state.copros[0]) $("ownersFilterCopro").value = state.copros[0].id;
     }
 
     function renderLotDraftTable() {
@@ -1000,11 +1067,22 @@
       state.lotDraftRows.push({
         lot_number: row.lot_number || "",
         lot_type: row.lot_type || "Appartement",
-        quotities: row.quotities ?? 0,
+        quotities: row.quotities ?? "",
         owner_name: row.owner_name || "",
         mutation_date: row.mutation_date || ""
       });
       renderLotDraftTable();
+    }
+
+    function openLotModal() {
+      if (!$("lotGenCopro").value && $("lotsFilterCopro").value) {
+        $("lotGenCopro").value = $("lotsFilterCopro").value;
+      }
+      $("lotModalBackdrop").classList.remove("hidden");
+    }
+
+    function closeLotModal() {
+      $("lotModalBackdrop").classList.add("hidden");
     }
 
     function generateLots() {
@@ -1012,22 +1090,21 @@
       const count = Number($("lotGenCount").value || 0);
       const start = Number($("lotGenStart").value || 1);
       const lotType = $("lotGenType").value;
-      const quotities = Number($("lotGenQuotities").value || 0);
-      const mutationDate = $("lotGenMutationDate").value || "";
-      const ownerName = $("lotGenOwner").value.trim();
 
       if (!$("lotGenCopro").value) return alert("Choisis une copropriete.");
       if (!count || count < 1) return alert("Indique un nombre de lots a generer.");
 
+      $("lotsFilterCopro").value = $("lotGenCopro").value;
       for (let i = 0; i < count; i++) {
         addLotRow({
           lot_number: `${prefix}${start + i}`,
           lot_type: lotType,
-          quotities,
-          owner_name: ownerName,
-          mutation_date: mutationDate
+          quotities: "",
+          owner_name: "",
+          mutation_date: ""
         });
       }
+      closeLotModal();
     }
 
     async function findOrCreateOwner(coproId, ownerName) {
@@ -1055,7 +1132,7 @@
     }
 
     async function saveLotRows() {
-      const coproId = $("lotGenCopro").value || $("lotsFilterCopro").value;
+      const coproId = $("lotsFilterCopro").value || $("lotGenCopro").value;
       if (!coproId) return alert("Choisis une copropriete.");
       if (!state.lotDraftRows.length) return alert("Aucune ligne a enregistrer.");
 
@@ -1072,6 +1149,12 @@
         for (const row of state.lotDraftRows) {
           const lotNumber = String(row.lot_number || "").trim();
           if (!lotNumber) continue;
+          if (row.quotities === "" || row.quotities === null || Number.isNaN(Number(row.quotities))) {
+            return alert(`Indique les quotites pour le lot ${lotNumber}.`);
+          }
+          if (!String(row.owner_name || "").trim()) {
+            return alert(`Indique le proprietaire pour le lot ${lotNumber}.`);
+          }
           if (existingNumbers.has(lotNumber.toLowerCase())) {
             skipped.push(lotNumber);
             continue;
@@ -1102,6 +1185,84 @@
       } catch (error) {
         alert(error.message);
       }
+    }
+
+    function renderOwners() {
+      const selectedCopro = $("ownersFilterCopro").value;
+      const owners = state.owners.filter((owner) => !selectedCopro || owner.copro_id === selectedCopro);
+
+      if (!owners.length) {
+        $("ownersTable").innerHTML = '<div class="notice">Aucun proprietaire pour cette copropriete.</div>';
+        return;
+      }
+
+      $("ownersTable").innerHTML = `
+        <div class="table-wrap">
+          <table class="editable-table">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Telephone</th>
+                <th>Adresse</th>
+                <th>Statut</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${owners.map((owner) => `
+                <tr>
+                  <td><input data-owner-id="${owner.id}" data-owner-field="display_name" value="${escapeHtml(owner.display_name)}" /></td>
+                  <td><input data-owner-id="${owner.id}" data-owner-field="email" type="email" value="${escapeHtml(owner.email || "")}" /></td>
+                  <td><input data-owner-id="${owner.id}" data-owner-field="phone" value="${escapeHtml(owner.phone || "")}" /></td>
+                  <td><input data-owner-id="${owner.id}" data-owner-field="address" value="${escapeHtml(owner.address || "")}" /></td>
+                  <td>${owner.active ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'}</td>
+                  <td><button class="btn secondary" type="button" data-save-owner-id="${owner.id}">Enregistrer</button></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function saveOwner() {
+      const coproId = $("ownersFilterCopro").value || state.copros[0]?.id;
+      const name = $("ownerName").value.trim();
+      if (!coproId) return alert("Choisis une copropriete.");
+      if (!name) return alert("Indique le nom du proprietaire.");
+
+      const { error } = await supabaseClient.from("compta_owners").insert({
+        copro_id: coproId,
+        display_name: name,
+        email: $("ownerEmail").value.trim() || null,
+        phone: $("ownerPhone").value.trim() || null,
+        address: $("ownerAddress").value.trim() || null,
+        created_by: currentUser.id
+      });
+      if (error) return alert(error.message);
+
+      $("ownerName").value = "";
+      $("ownerEmail").value = "";
+      $("ownerPhone").value = "";
+      $("ownerAddress").value = "";
+      await loadAll();
+    }
+
+    async function saveOwnerFromTable(ownerId) {
+      const rowInputs = Array.from(document.querySelectorAll(`[data-owner-id="${ownerId}"]`));
+      const payload = {};
+      rowInputs.forEach((input) => {
+        payload[input.dataset.ownerField] = input.value.trim() || null;
+      });
+
+      if (!payload.display_name) return alert("Le nom du proprietaire est obligatoire.");
+      const { error } = await supabaseClient
+        .from("compta_owners")
+        .update(payload)
+        .eq("id", ownerId);
+      if (error) return alert(error.message);
+      await loadAll();
     }
 
     async function saveInvoice() {
@@ -1156,6 +1317,12 @@
     });
 
     $("lotsFilterCopro").addEventListener("change", renderLots);
+    $("ownersFilterCopro").addEventListener("change", renderOwners);
+    $("ownersTable").addEventListener("click", (event) => {
+      const ownerId = event.target.dataset.saveOwnerId;
+      if (!ownerId) return;
+      saveOwnerFromTable(ownerId);
+    });
 
     $("setupForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -1196,9 +1363,16 @@
 
     $("refreshBtn").addEventListener("click", loadAll);
     $("saveCoproBtn").addEventListener("click", saveCopro);
+    $("openLotModalBtn").addEventListener("click", openLotModal);
+    $("closeLotModalBtn").addEventListener("click", closeLotModal);
+    $("cancelLotModalBtn").addEventListener("click", closeLotModal);
+    $("lotModalBackdrop").addEventListener("click", (event) => {
+      if (event.target.id === "lotModalBackdrop") closeLotModal();
+    });
     $("addLotRowBtn").addEventListener("click", () => addLotRow());
     $("generateLotsBtn").addEventListener("click", generateLots);
     $("saveLotRowsBtn").addEventListener("click", saveLotRows);
+    $("saveOwnerBtn").addEventListener("click", saveOwner);
     $("saveSupplierBtn").addEventListener("click", saveSupplier);
     $("saveInvoiceBtn").addEventListener("click", saveInvoice);
 
