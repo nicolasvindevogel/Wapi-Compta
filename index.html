@@ -193,6 +193,10 @@
       margin-bottom: 14px;
     }
 
+    .form-grid.compact {
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+    }
+
     label {
       display: grid;
       gap: 6px;
@@ -243,6 +247,21 @@
       border-collapse: collapse;
     }
 
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .editable-table input,
+    .editable-table select {
+      min-width: 120px;
+      padding: 8px 9px;
+    }
+
+    .editable-table input[type="number"] {
+      min-width: 95px;
+    }
+
     th, td {
       padding: 11px 9px;
       border-bottom: 1px solid var(--line);
@@ -279,6 +298,16 @@
     .badge.warn {
       background: #fff4e0;
       color: #8a5600;
+    }
+
+    .summary-line {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 13px;
     }
 
     .hidden {
@@ -344,7 +373,8 @@
       }
 
       .grid,
-      .form-grid {
+      .form-grid,
+      .form-grid.compact {
         grid-template-columns: 1fr;
       }
     }
@@ -409,6 +439,7 @@
       <nav class="nav">
         <button data-view="dashboard" class="active">Tableau de bord</button>
         <button data-view="copros">Coproprietes</button>
+        <button data-view="lots">Lots & proprietaires</button>
         <button data-view="suppliers">Fournisseurs</button>
         <button data-view="invoices">Factures</button>
         <button data-view="accounts">Plan comptable</button>
@@ -436,6 +467,10 @@
             <div class="stat">
               <div class="stat-label">Fournisseurs</div>
               <div id="statSuppliers" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Lots encodes</div>
+              <div id="statLots" class="stat-value">0</div>
             </div>
             <div class="stat">
               <div class="stat-label">Factures a valider</div>
@@ -467,6 +502,62 @@
               <label>Reference Optipro <input id="coproOptipro" placeholder="Optionnel" /></label>
             </div>
             <div id="coprosTable"></div>
+          </div>
+        </section>
+
+        <section id="lotsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Lots & proprietaires</h2>
+              <div class="top-actions">
+                <button class="btn secondary" id="addLotRowBtn" type="button">Ajouter une ligne</button>
+                <button class="btn" id="saveLotRowsBtn" type="button">Enregistrer les lignes</button>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label>Copropriete a afficher <select id="lotsFilterCopro"></select></label>
+            </div>
+
+            <div class="notice">
+              Utilise le generateur pour creer rapidement 10 appartements, des parkings ou des caves.
+              Les lignes restent modifiables avant l'enregistrement.
+            </div>
+
+            <div class="form-grid compact">
+              <label>Copropriete <select id="lotGenCopro"></select></label>
+              <label>Type
+                <select id="lotGenType">
+                  <option value="Appartement">Appartement</option>
+                  <option value="Parking">Parking</option>
+                  <option value="Cave">Cave</option>
+                  <option value="Garage">Garage</option>
+                  <option value="Commerce">Commerce</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </label>
+              <label>Prefixe <input id="lotGenPrefix" placeholder="A, AP, APT, P..." /></label>
+              <label>Nombre <input id="lotGenCount" type="number" min="1" value="10" /></label>
+              <label>Depart <input id="lotGenStart" type="number" min="0" value="1" /></label>
+              <label>Quotites/lot <input id="lotGenQuotities" type="number" step="0.0001" value="0" /></label>
+            </div>
+
+            <div class="form-grid">
+              <label>Date mutation par defaut <input id="lotGenMutationDate" type="date" /></label>
+              <label>Proprietaire par defaut <input id="lotGenOwner" placeholder="Optionnel" /></label>
+              <label>&nbsp;<button class="btn secondary" id="generateLotsBtn" type="button">Generer les lignes</button></label>
+            </div>
+
+            <div class="summary-line">
+              <span id="lotsSummary" class="badge">0 lot</span>
+              <span id="quotitiesSummary" class="badge">0 quotite</span>
+            </div>
+
+            <h3>Lignes a encoder</h3>
+            <div id="lotDraftTable"></div>
+
+            <h3>Lots deja enregistres</h3>
+            <div id="lotsTable"></div>
           </div>
         </section>
 
@@ -542,6 +633,9 @@
     let currentUser = null;
     let state = {
       copros: [],
+      owners: [],
+      lots: [],
+      lotDraftRows: [],
       suppliers: [],
       invoices: [],
       accounts: [],
@@ -598,6 +692,8 @@
     async function loadAll() {
       await Promise.all([
         loadCopros(),
+        loadOwners(),
+        loadLots(),
         loadSuppliers(),
         loadAccounts(),
         loadInvoices(),
@@ -613,6 +709,24 @@
         .order("name", { ascending: true });
       if (error) return alert(error.message);
       state.copros = data || [];
+    }
+
+    async function loadOwners() {
+      const { data, error } = await supabaseClient
+        .from("compta_owners")
+        .select("*")
+        .order("display_name", { ascending: true });
+      if (error) return alert(error.message);
+      state.owners = data || [];
+    }
+
+    async function loadLots() {
+      const { data, error } = await supabaseClient
+        .from("compta_lots")
+        .select("*, compta_copros(name), compta_owners(display_name)")
+        .order("lot_number", { ascending: true });
+      if (error) return alert(error.message);
+      state.lots = data || [];
     }
 
     async function loadSuppliers() {
@@ -655,6 +769,9 @@
     function renderAll() {
       renderDashboard();
       renderCopros();
+      renderLotSelects();
+      renderLotDraftTable();
+      renderLots();
       renderSuppliers();
       renderInvoiceSelects();
       renderInvoices();
@@ -665,6 +782,7 @@
     function renderDashboard() {
       $("statCopros").textContent = state.copros.length;
       $("statSuppliers").textContent = state.suppliers.length;
+      $("statLots").textContent = state.lots.length;
       $("statInvoices").textContent = state.invoices.filter((i) => i.status === "to_validate").length;
       $("statAmount").textContent = money(state.invoices.reduce((sum, i) => sum + Number(i.amount_total || 0), 0));
     }
@@ -677,6 +795,80 @@
         c.address || "",
         c.optipro_ref || "",
         c.active ? '<span class="badge ok">Active</span>' : '<span class="badge">Inactive</span>'
+      ]));
+    }
+
+    function renderLotSelects() {
+      const options = '<option value="">Choisir...</option>' +
+        state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      $("lotGenCopro").innerHTML = options;
+      $("lotsFilterCopro").innerHTML = options;
+
+      if (!$("lotGenCopro").value && state.copros[0]) $("lotGenCopro").value = state.copros[0].id;
+      if (!$("lotsFilterCopro").value && state.copros[0]) $("lotsFilterCopro").value = state.copros[0].id;
+    }
+
+    function renderLotDraftTable() {
+      if (!state.lotDraftRows.length) {
+        $("lotDraftTable").innerHTML = '<div class="notice">Aucune ligne en attente. Utilise le generateur ou ajoute une ligne manuellement.</div>';
+        return;
+      }
+
+      const rows = state.lotDraftRows.map((row, index) => `
+        <tr>
+          <td><input data-lot-row="${index}" data-lot-field="lot_number" value="${escapeHtml(row.lot_number)}" /></td>
+          <td>
+            <select data-lot-row="${index}" data-lot-field="lot_type">
+              ${["Appartement", "Parking", "Cave", "Garage", "Commerce", "Autre"].map((type) =>
+                `<option value="${type}" ${row.lot_type === type ? "selected" : ""}>${type}</option>`
+              ).join("")}
+            </select>
+          </td>
+          <td><input data-lot-row="${index}" data-lot-field="quotities" type="number" step="0.0001" value="${escapeHtml(row.quotities)}" /></td>
+          <td><input data-lot-row="${index}" data-lot-field="owner_name" list="ownersList" value="${escapeHtml(row.owner_name)}" /></td>
+          <td><input data-lot-row="${index}" data-lot-field="mutation_date" type="date" value="${escapeHtml(row.mutation_date)}" /></td>
+          <td><button class="btn danger" type="button" data-remove-lot-row="${index}">Supprimer</button></td>
+        </tr>
+      `).join("");
+
+      $("lotDraftTable").innerHTML = `
+        <datalist id="ownersList">
+          ${state.owners.map((owner) => `<option value="${escapeHtml(owner.display_name)}"></option>`).join("")}
+        </datalist>
+        <div class="table-wrap">
+          <table class="editable-table">
+            <thead>
+              <tr>
+                <th>Lot</th>
+                <th>Type</th>
+                <th>Quotites</th>
+                <th>Proprietaire</th>
+                <th>Date mutation</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderLots() {
+      const selectedCopro = $("lotsFilterCopro").value;
+      const lots = state.lots.filter((lot) => !selectedCopro || lot.copro_id === selectedCopro);
+      const totalQuotities = lots.reduce((sum, lot) => sum + Number(lot.quotities || 0), 0);
+      $("lotsSummary").textContent = `${lots.length} lot${lots.length > 1 ? "s" : ""}`;
+      $("quotitiesSummary").textContent = `${totalQuotities.toLocaleString("fr-BE")} quotites`;
+
+      $("lotsTable").innerHTML = table([
+        "Lot", "Type", "Quotites", "Proprietaire", "Date mutation", "Copropriete"
+      ], lots.map((lot) => [
+        lot.lot_number || "",
+        lot.lot_type || "",
+        Number(lot.quotities || 0).toLocaleString("fr-BE"),
+        lot.compta_owners?.display_name || "",
+        lot.mutation_date || "",
+        lot.compta_copros?.name || ""
       ]));
     }
 
@@ -804,6 +996,114 @@
       await loadAll();
     }
 
+    function addLotRow(row = {}) {
+      state.lotDraftRows.push({
+        lot_number: row.lot_number || "",
+        lot_type: row.lot_type || "Appartement",
+        quotities: row.quotities ?? 0,
+        owner_name: row.owner_name || "",
+        mutation_date: row.mutation_date || ""
+      });
+      renderLotDraftTable();
+    }
+
+    function generateLots() {
+      const prefix = $("lotGenPrefix").value.trim();
+      const count = Number($("lotGenCount").value || 0);
+      const start = Number($("lotGenStart").value || 1);
+      const lotType = $("lotGenType").value;
+      const quotities = Number($("lotGenQuotities").value || 0);
+      const mutationDate = $("lotGenMutationDate").value || "";
+      const ownerName = $("lotGenOwner").value.trim();
+
+      if (!$("lotGenCopro").value) return alert("Choisis une copropriete.");
+      if (!count || count < 1) return alert("Indique un nombre de lots a generer.");
+
+      for (let i = 0; i < count; i++) {
+        addLotRow({
+          lot_number: `${prefix}${start + i}`,
+          lot_type: lotType,
+          quotities,
+          owner_name: ownerName,
+          mutation_date: mutationDate
+        });
+      }
+    }
+
+    async function findOrCreateOwner(coproId, ownerName) {
+      const cleanName = ownerName.trim();
+      if (!cleanName) return null;
+
+      const existing = state.owners.find((owner) =>
+        owner.copro_id === coproId &&
+        owner.display_name.toLowerCase() === cleanName.toLowerCase()
+      );
+      if (existing) return existing.id;
+
+      const { data, error } = await supabaseClient
+        .from("compta_owners")
+        .insert({
+          copro_id: coproId,
+          display_name: cleanName,
+          created_by: currentUser.id
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function saveLotRows() {
+      const coproId = $("lotGenCopro").value || $("lotsFilterCopro").value;
+      if (!coproId) return alert("Choisis une copropriete.");
+      if (!state.lotDraftRows.length) return alert("Aucune ligne a enregistrer.");
+
+      const existingNumbers = new Set(
+        state.lots
+          .filter((lot) => lot.copro_id === coproId)
+          .map((lot) => lot.lot_number.trim().toLowerCase())
+      );
+
+      const payloads = [];
+      const skipped = [];
+
+      try {
+        for (const row of state.lotDraftRows) {
+          const lotNumber = String(row.lot_number || "").trim();
+          if (!lotNumber) continue;
+          if (existingNumbers.has(lotNumber.toLowerCase())) {
+            skipped.push(lotNumber);
+            continue;
+          }
+
+          const ownerId = await findOrCreateOwner(coproId, row.owner_name || "");
+          payloads.push({
+            copro_id: coproId,
+            owner_id: ownerId,
+            lot_number: lotNumber,
+            lot_type: row.lot_type || "Appartement",
+            quotities: Number(row.quotities || 0),
+            mutation_date: row.mutation_date || null,
+            created_by: currentUser.id
+          });
+        }
+
+        if (!payloads.length) {
+          return alert(skipped.length ? `Aucun lot ajoute. Lots deja existants : ${skipped.join(", ")}` : "Aucune ligne complete a enregistrer.");
+        }
+
+        const { error } = await supabaseClient.from("compta_lots").insert(payloads);
+        if (error) throw error;
+
+        state.lotDraftRows = [];
+        await loadAll();
+        alert(`${payloads.length} lot(s) ajoute(s).${skipped.length ? " Doublons ignores : " + skipped.join(", ") : ""}`);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
     async function saveInvoice() {
       const payload = {
         copro_id: $("invoiceCopro").value,
@@ -840,6 +1140,22 @@
         $("pageTitle").textContent = button.textContent;
       });
     });
+
+    $("lotDraftTable").addEventListener("input", (event) => {
+      const rowIndex = event.target.dataset.lotRow;
+      const field = event.target.dataset.lotField;
+      if (rowIndex === undefined || !field) return;
+      state.lotDraftRows[Number(rowIndex)][field] = event.target.value;
+    });
+
+    $("lotDraftTable").addEventListener("click", (event) => {
+      const rowIndex = event.target.dataset.removeLotRow;
+      if (rowIndex === undefined) return;
+      state.lotDraftRows.splice(Number(rowIndex), 1);
+      renderLotDraftTable();
+    });
+
+    $("lotsFilterCopro").addEventListener("change", renderLots);
 
     $("setupForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -880,6 +1196,9 @@
 
     $("refreshBtn").addEventListener("click", loadAll);
     $("saveCoproBtn").addEventListener("click", saveCopro);
+    $("addLotRowBtn").addEventListener("click", () => addLotRow());
+    $("generateLotsBtn").addEventListener("click", generateLots);
+    $("saveLotRowsBtn").addEventListener("click", saveLotRows);
     $("saveSupplierBtn").addEventListener("click", saveSupplier);
     $("saveInvoiceBtn").addEventListener("click", saveInvoice);
 
@@ -887,4 +1206,3 @@
   </script>
 </body>
 </html>
-
