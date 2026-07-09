@@ -473,6 +473,7 @@
         <button data-view="owners">Proprietaires</button>
         <button data-view="suppliers">Fournisseurs</button>
         <button data-view="invoices">Factures</button>
+        <button data-view="bank">Banque</button>
         <button data-view="accounts">Plan comptable</button>
         <button data-view="entries">Ecritures</button>
       </nav>
@@ -510,6 +511,10 @@
             <div class="stat">
               <div class="stat-label">Montant factures</div>
               <div id="statAmount" class="stat-value">0,00 EUR</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Mouvements banque</div>
+              <div id="statBankTransactions" class="stat-value">0</div>
             </div>
           </div>
           <div class="card">
@@ -636,6 +641,55 @@
           </div>
         </section>
 
+        <section id="bankView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Banque</h2>
+              <span class="badge">Consultation, encodage et CODA</span>
+            </div>
+
+            <div class="notice">
+              Cette premiere version permet de creer les comptes bancaires, encoder des mouvements
+              manuels et importer un fichier CODA en brut. Le parsing CODA detaille viendra ensuite.
+            </div>
+
+            <h3>Compte bancaire</h3>
+            <div class="form-grid">
+              <label>Copropriete <select id="bankAccountCopro"></select></label>
+              <label>Libelle <input id="bankAccountLabel" placeholder="Compte courant" /></label>
+              <label>IBAN <input id="bankAccountIban" placeholder="BE..." /></label>
+              <label>BIC <input id="bankAccountBic" placeholder="Optionnel" /></label>
+              <label>&nbsp;<button class="btn" id="saveBankAccountBtn" type="button">Ajouter compte</button></label>
+            </div>
+            <div id="bankAccountsTable"></div>
+
+            <h3>Encodage manuel d'un mouvement</h3>
+            <div class="form-grid">
+              <label>Compte <select id="bankTxAccount"></select></label>
+              <label>Date <input id="bankTxDate" type="date" /></label>
+              <label>Montant <input id="bankTxAmount" type="number" step="0.01" placeholder="-125.50 ou 250.00" /></label>
+              <label>Communication <input id="bankTxCommunication" placeholder="Communication bancaire" /></label>
+              <label>Contrepartie <input id="bankTxCounterparty" placeholder="Nom payeur/fournisseur" /></label>
+              <label>&nbsp;<button class="btn" id="saveBankTxBtn" type="button">Encoder mouvement</button></label>
+            </div>
+            <label>Description <textarea id="bankTxDescription" placeholder="Note interne, facture concernee, information utile..."></textarea></label>
+
+            <h3>Import CODA</h3>
+            <div class="form-grid">
+              <label>Compte <select id="codaBankAccount"></select></label>
+              <label>Fichier CODA <input id="codaFile" type="file" accept=".cod,.coda,.txt" /></label>
+              <label>&nbsp;<button class="btn secondary" id="importCodaBtn" type="button">Importer CODA brut</button></label>
+            </div>
+            <div id="bankStatementsTable"></div>
+
+            <h3>Mouvements bancaires</h3>
+            <div class="form-grid">
+              <label>Filtrer par compte <select id="bankTxFilterAccount"></select></label>
+            </div>
+            <div id="bankTransactionsTable"></div>
+          </div>
+        </section>
+
         <section id="accountsView" class="view hidden">
           <div class="card">
             <div class="toolbar">
@@ -702,6 +756,9 @@
       lotDraftRows: [],
       suppliers: [],
       invoices: [],
+      bankAccounts: [],
+      bankStatements: [],
+      bankTransactions: [],
       accounts: [],
       entries: []
     };
@@ -761,6 +818,9 @@
         loadSuppliers(),
         loadAccounts(),
         loadInvoices(),
+        loadBankAccounts(),
+        loadBankStatements(),
+        loadBankTransactions(),
         loadEntries()
       ]);
       renderAll();
@@ -820,6 +880,35 @@
       state.invoices = data || [];
     }
 
+    async function loadBankAccounts() {
+      const { data, error } = await supabaseClient
+        .from("compta_bank_accounts")
+        .select("*, compta_copros(name)")
+        .order("label", { ascending: true });
+      if (error) return alert(error.message);
+      state.bankAccounts = data || [];
+    }
+
+    async function loadBankStatements() {
+      const { data, error } = await supabaseClient
+        .from("compta_bank_statements")
+        .select("*, compta_bank_accounts(label, iban), compta_copros(name)")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) return alert(error.message);
+      state.bankStatements = data || [];
+    }
+
+    async function loadBankTransactions() {
+      const { data, error } = await supabaseClient
+        .from("compta_bank_transactions")
+        .select("*, compta_bank_accounts(label, iban), compta_copros(name)")
+        .order("transaction_date", { ascending: false })
+        .limit(100);
+      if (error) return alert(error.message);
+      state.bankTransactions = data || [];
+    }
+
     async function loadEntries() {
       const { data, error } = await supabaseClient
         .from("compta_entries")
@@ -840,6 +929,7 @@
       renderSuppliers();
       renderInvoiceSelects();
       renderInvoices();
+      renderBank();
       renderAccounts();
       renderEntries();
     }
@@ -850,6 +940,7 @@
       $("statLots").textContent = state.lots.length;
       $("statInvoices").textContent = state.invoices.filter((i) => i.status === "to_validate").length;
       $("statAmount").textContent = money(state.invoices.reduce((sum, i) => sum + Number(i.amount_total || 0), 0));
+      $("statBankTransactions").textContent = state.bankTransactions.length;
     }
 
     function renderCopros() {
@@ -971,6 +1062,69 @@
       ]));
     }
 
+    function renderBank() {
+      const coproOptions = '<option value="">Choisir...</option>' +
+        state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      $("bankAccountCopro").innerHTML = coproOptions;
+
+      const accountOptions = '<option value="">Choisir...</option>' +
+        state.bankAccounts.map((account) => {
+          const label = `${account.compta_copros?.name || ""} - ${account.label || ""} ${account.iban ? "(" + account.iban + ")" : ""}`;
+          return `<option value="${account.id}">${escapeHtml(label)}</option>`;
+        }).join("");
+      $("bankTxAccount").innerHTML = accountOptions;
+      $("codaBankAccount").innerHTML = accountOptions;
+      $("bankTxFilterAccount").innerHTML = '<option value="">Tous les comptes</option>' + accountOptions.replace('<option value="">Choisir...</option>', "");
+
+      if (!$("bankAccountCopro").value && state.copros[0]) $("bankAccountCopro").value = state.copros[0].id;
+
+      $("bankAccountsTable").innerHTML = table([
+        "Copropriete", "Libelle", "IBAN", "BIC", "Statut"
+      ], state.bankAccounts.map((account) => [
+        account.compta_copros?.name || "",
+        account.label || "",
+        account.iban || "",
+        account.bic || "",
+        account.active ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'
+      ]));
+
+      $("bankStatementsTable").innerHTML = table([
+        "Date import", "Copropriete", "Compte", "Fichier", "Statut"
+      ], state.bankStatements.map((statement) => [
+        new Date(statement.created_at).toLocaleDateString("fr-BE"),
+        statement.compta_copros?.name || "",
+        statement.compta_bank_accounts?.label || "",
+        statement.file_name || "",
+        statusBadge(statement.status)
+      ]));
+
+      renderBankTransactions();
+    }
+
+    function renderBankTransactions() {
+      const accountId = $("bankTxFilterAccount").value;
+      const rows = state.bankTransactions.filter((tx) => !accountId || tx.bank_account_id === accountId);
+      const total = rows.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+
+      $("bankTransactionsTable").innerHTML = `
+        <div class="summary-line">
+          <span class="badge">${rows.length} mouvement${rows.length > 1 ? "s" : ""}</span>
+          <span class="badge ${total >= 0 ? "ok" : "warn"}">${money(total)}</span>
+        </div>
+        ${table([
+          "Date", "Copropriete", "Compte", "Montant", "Contrepartie", "Communication", "Statut"
+        ], rows.map((tx) => [
+          tx.transaction_date || "",
+          tx.compta_copros?.name || "",
+          tx.compta_bank_accounts?.label || "",
+          money(tx.amount),
+          tx.counterparty_name || "",
+          tx.communication || tx.description || "",
+          statusBadge(tx.status)
+        ]))}
+      `;
+    }
+
     function renderAccounts() {
       $("accountsTable").innerHTML = table([
         "Code", "Libelle", "Type", "Statut"
@@ -1015,10 +1169,16 @@
         paid: "Payee",
         rejected: "Rejetee",
         posted: "Comptabilisee",
-        cancelled: "Annulee"
+        cancelled: "Annulee",
+        imported: "Importe",
+        to_parse: "A traiter",
+        parsed: "Analyse",
+        error: "Erreur",
+        matched: "Lettre",
+        ignored: "Ignore"
       };
-      const ok = ["validated", "paid", "posted"].includes(status);
-      const warn = ["to_validate", "draft"].includes(status);
+      const ok = ["validated", "paid", "posted", "matched"].includes(status);
+      const warn = ["to_validate", "draft", "to_parse", "imported"].includes(status);
       return `<span class="badge ${ok ? "ok" : warn ? "warn" : ""}">${labels[status] || status || ""}</span>`;
     }
 
@@ -1291,6 +1451,95 @@
       await loadAll();
     }
 
+    async function saveBankAccount() {
+      const payload = {
+        copro_id: $("bankAccountCopro").value,
+        label: $("bankAccountLabel").value.trim(),
+        iban: $("bankAccountIban").value.trim() || null,
+        bic: $("bankAccountBic").value.trim() || null,
+        created_by: currentUser.id
+      };
+
+      if (!payload.copro_id) return alert("Choisis une copropriete.");
+      if (!payload.label) return alert("Indique le libelle du compte.");
+
+      const { error } = await supabaseClient.from("compta_bank_accounts").insert(payload);
+      if (error) return alert(error.message);
+
+      $("bankAccountLabel").value = "";
+      $("bankAccountIban").value = "";
+      $("bankAccountBic").value = "";
+      await loadAll();
+    }
+
+    async function saveBankTransaction() {
+      const accountId = $("bankTxAccount").value;
+      const account = state.bankAccounts.find((item) => item.id === accountId);
+      const amount = Number($("bankTxAmount").value || 0);
+
+      if (!account) return alert("Choisis un compte bancaire.");
+      if (!$("bankTxDate").value) return alert("Indique la date du mouvement.");
+      if (!amount) return alert("Indique le montant du mouvement.");
+
+      const { error } = await supabaseClient.from("compta_bank_transactions").insert({
+        copro_id: account.copro_id,
+        bank_account_id: account.id,
+        transaction_date: $("bankTxDate").value,
+        amount,
+        communication: $("bankTxCommunication").value.trim() || null,
+        counterparty_name: $("bankTxCounterparty").value.trim() || null,
+        description: $("bankTxDescription").value.trim() || null,
+        source: "manual",
+        status: "imported",
+        created_by: currentUser.id
+      });
+      if (error) return alert(error.message);
+
+      $("bankTxDate").value = "";
+      $("bankTxAmount").value = "";
+      $("bankTxCommunication").value = "";
+      $("bankTxCounterparty").value = "";
+      $("bankTxDescription").value = "";
+      await loadAll();
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+      });
+    }
+
+    async function importCoda() {
+      const accountId = $("codaBankAccount").value;
+      const account = state.bankAccounts.find((item) => item.id === accountId);
+      const file = $("codaFile").files[0];
+
+      if (!account) return alert("Choisis un compte bancaire.");
+      if (!file) return alert("Choisis un fichier CODA.");
+
+      try {
+        const raw = await readFileAsText(file);
+        const { error } = await supabaseClient.from("compta_bank_statements").insert({
+          copro_id: account.copro_id,
+          bank_account_id: account.id,
+          file_name: file.name,
+          raw_coda: raw,
+          status: "to_parse",
+          created_by: currentUser.id
+        });
+        if (error) throw error;
+
+        $("codaFile").value = "";
+        await loadAll();
+        alert("Fichier CODA importe. Il est conserve en brut et pret pour le traitement detaille.");
+      } catch (error) {
+        alert(error.message || "Impossible de lire le fichier CODA.");
+      }
+    }
+
     document.querySelectorAll(".nav button").forEach((button) => {
       button.addEventListener("click", () => {
         document.querySelectorAll(".nav button").forEach((b) => b.classList.remove("active"));
@@ -1323,6 +1572,7 @@
       if (!ownerId) return;
       saveOwnerFromTable(ownerId);
     });
+    $("bankTxFilterAccount").addEventListener("change", renderBankTransactions);
 
     $("setupForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -1375,6 +1625,9 @@
     $("saveOwnerBtn").addEventListener("click", saveOwner);
     $("saveSupplierBtn").addEventListener("click", saveSupplier);
     $("saveInvoiceBtn").addEventListener("click", saveInvoice);
+    $("saveBankAccountBtn").addEventListener("click", saveBankAccount);
+    $("saveBankTxBtn").addEventListener("click", saveBankTransaction);
+    $("importCodaBtn").addEventListener("click", importCoda);
 
     boot();
   </script>
