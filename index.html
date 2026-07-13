@@ -433,6 +433,134 @@
       margin-top: 10px;
     }
 
+
+    #appScreen.sidebar-collapsed {
+      grid-template-columns: 88px 1fr;
+    }
+
+    .sidebar {
+      transition: width .22s ease, padding .22s ease;
+      overflow-y: auto;
+    }
+
+    .sidebar-toggle {
+      border: 0;
+      background: #eef4f7;
+      color: var(--brand-dark);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .nav {
+      display: grid;
+      gap: 12px;
+    }
+
+    .menu-group {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      background: rgba(255,255,255,.04);
+      overflow: hidden;
+    }
+
+    .menu-group__header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 0;
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .menu-group__label,
+    .nav__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .menu-group__icon,
+    .nav-icon {
+      width: 22px;
+      text-align: center;
+      flex: 0 0 22px;
+    }
+
+    .menu-group__caret {
+      font-size: 12px;
+      opacity: .85;
+      transition: transform .2s ease;
+    }
+
+    .menu-group.collapsed .menu-group__caret {
+      transform: rotate(-90deg);
+    }
+
+    .menu-group.collapsed .menu-group__body {
+      display: none;
+    }
+
+    .menu-group__body {
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav button[data-view] {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #d8e2ee;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .nav button[data-view].active,
+    .nav button[data-view]:hover {
+      background: rgba(255,255,255,.14);
+      color: white;
+    }
+
+    #appScreen.sidebar-collapsed .brand-title,
+    #appScreen.sidebar-collapsed .brand-subtitle,
+    #appScreen.sidebar-collapsed .menu-group__text,
+    #appScreen.sidebar-collapsed .nav-label,
+    #appScreen.sidebar-collapsed .menu-group__caret {
+      display: none;
+    }
+
+    #appScreen.sidebar-collapsed .menu-group__header,
+    #appScreen.sidebar-collapsed .nav button[data-view] {
+      justify-content: center;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    #appScreen.sidebar-collapsed .menu-group__body {
+      padding: 6px;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .stack-grid {
+      display: grid;
+      gap: 16px;
+    }
+
     @media (max-width: 980px) {
       .app-shell {
         grid-template-columns: 1fr;
@@ -444,7 +572,11 @@
       }
 
       .nav {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
+      }
+
+      .split-grid {
+        grid-template-columns: 1fr;
       }
 
       .grid,
@@ -512,22 +644,64 @@
         </div>
       </div>
       <nav class="nav">
-        <button data-view="dashboard" class="active">Tableau de bord</button>
-        <button data-view="processing">Centre de traitement</button>
-        <button data-view="copros">Coproprietes</button>
-        <button data-view="lots">Lots</button>
-        <button data-view="owners">Proprietaires</button>
-        <button data-view="suppliers">Fournisseurs</button>
-        <button data-view="invoices">Factures</button>
-        <button data-view="bank">Banque</button>
-        <button data-view="accounts">Plan comptable</button>
-        <button data-view="entries">Ecritures</button>
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🧭</span><span class="menu-group__text">Pilotage</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="dashboard" data-title="Tableau de bord" class="active" title="Tableau de bord"><span class="nav__item"><span class="nav-icon">🏠</span><span class="nav-label">Tableau de bord</span></span></button>
+            <button data-view="processing" data-title="Centre de traitement" title="Centre de traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Centre de traitement</span></span></button>
+            <button data-view="bank" data-title="Banque" title="Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Banque</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🗂️</span><span class="menu-group__text">Referentiels</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="copros" data-title="Coproprietes" title="Coproprietes"><span class="nav__item"><span class="nav-icon">🏢</span><span class="nav-label">Coproprietes</span></span></button>
+            <button data-view="lots" data-title="Lots" title="Lots"><span class="nav__item"><span class="nav-icon">🔢</span><span class="nav-label">Lots</span></span></button>
+            <button data-view="owners" data-title="Proprietaires" title="Proprietaires"><span class="nav__item"><span class="nav-icon">👤</span><span class="nav-label">Proprietaires</span></span></button>
+            <button data-view="suppliers" data-title="Fournisseurs" title="Fournisseurs"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Fournisseurs</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">📘</span><span class="menu-group__text">Comptabilite</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="invoices" data-title="Factures" title="Factures"><span class="nav__item"><span class="nav-icon">📄</span><span class="nav-label">Factures</span></span></button>
+            <button data-view="accounts" data-title="Plan comptable" title="Plan comptable"><span class="nav__item"><span class="nav-icon">📚</span><span class="nav-label">Plan comptable</span></span></button>
+            <button data-view="entries" data-title="Ecritures" title="Ecritures"><span class="nav__item"><span class="nav-icon">✍️</span><span class="nav-label">Ecritures</span></span></button>
+            <button data-view="od" data-title="Operations diverses" title="Operations diverses"><span class="nav__item"><span class="nav-icon">⚙️</span><span class="nav-label">Operations diverses</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">📊</span><span class="menu-group__text">Etats comptables</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="balance" data-title="Balance" title="Balance"><span class="nav__item"><span class="nav-icon">📈</span><span class="nav-label">Balance</span></span></button>
+            <button data-view="bilan" data-title="Bilan" title="Bilan"><span class="nav__item"><span class="nav-icon">🧮</span><span class="nav-label">Bilan</span></span></button>
+            <button data-view="journals" data-title="Journaux" title="Journaux"><span class="nav__item"><span class="nav-icon">🗃️</span><span class="nav-label">Journaux</span></span></button>
+          </div>
+        </div>
       </nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <h1 id="pageTitle" class="page-title">Tableau de bord</h1>
+        <div class="top-actions" style="justify-content:flex-start;">
+          <button id="toggleSidebarBtn" class="sidebar-toggle" type="button">☰ Menu</button>
+          <h1 id="pageTitle" class="page-title">Tableau de bord</h1>
+        </div>
         <div class="top-actions">
           <span id="userPill" class="user-pill"></span>
           <button id="refreshBtn" class="btn secondary" type="button">Actualiser</button>
@@ -835,6 +1009,85 @@
             <div id="entriesTable"></div>
           </div>
         </section>
+
+        <section id="odView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Operations diverses</h2>
+              <span class="badge warn">Saisie rapide OD</span>
+            </div>
+            <div class="notice">
+              Cette vue te permet d'encoder rapidement une operation diverse. La ventilation ligne a ligne pourra etre approfondie ensuite,
+              mais l'essentiel est deja trace dans le journal OD.
+            </div>
+            <div class="form-grid">
+              <label>Copropriete <select id="odCopro"></select></label>
+              <label>Date <input id="odDate" type="date" /></label>
+              <label>Reference <input id="odReference" placeholder="OD-2026-001" /></label>
+              <label>Compte debit <select id="odDebitAccount"></select></label>
+              <label>Compte credit <select id="odCreditAccount"></select></label>
+              <label>Montant <input id="odAmount" type="number" step="0.01" /></label>
+            </div>
+            <label>Libelle <textarea id="odLabel" placeholder="Ex: Reprise de charge, regularisation, transfert interne..."></textarea></label>
+            <br />
+            <button class="btn" id="saveOdBtn" type="button">Enregistrer l'operation diverse</button>
+            <h3 style="margin-top:18px;">Journal OD recent</h3>
+            <div id="odEntriesTable"></div>
+          </div>
+        </section>
+
+        <section id="balanceView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Balance</h2>
+              <span class="badge">Vue de synthese</span>
+            </div>
+            <div class="notice">
+              Cette balance est une vue de synthese evolutive basee sur les banques, les factures et les ecritures deja enregistrees.
+              Elle sert de base de travail en attendant la comptabilite analytique complete ligne par ligne.
+            </div>
+            <div id="balanceTable"></div>
+          </div>
+        </section>
+
+        <section id="bilanView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Bilan</h2>
+              <span class="badge">Actif / Passif indicatifs</span>
+            </div>
+            <div class="split-grid">
+              <div class="card" style="box-shadow:none;">
+                <h3>Actif</h3>
+                <div id="bilanActifTable"></div>
+              </div>
+              <div class="card" style="box-shadow:none;">
+                <h3>Passif</h3>
+                <div id="bilanPassifTable"></div>
+              </div>
+            </div>
+            <div class="summary-line" id="bilanSummary"></div>
+          </div>
+        </section>
+
+        <section id="journalsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Journaux</h2>
+              <span class="badge">Synthese par journal</span>
+            </div>
+            <div class="split-grid">
+              <div>
+                <h3>Resume des journaux</h3>
+                <div id="journalsTable"></div>
+              </div>
+              <div>
+                <h3>Ecritures recentes</h3>
+                <div id="recentJournalEntriesTable"></div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   </section>
@@ -1107,6 +1360,10 @@
       renderBank();
       renderAccounts();
       renderEntries();
+      renderODModule();
+      renderBalanceModule();
+      renderBilanModule();
+      renderJournalsModule();
     }
 
     function renderDashboard() {
@@ -1472,6 +1729,108 @@
       ]));
     }
 
+
+    function renderODModule() {
+      if (!$('odCopro')) return;
+      const coproCurrent = $('odCopro').value || '';
+      const accountDebitCurrent = $('odDebitAccount').value || '';
+      const accountCreditCurrent = $('odCreditAccount').value || '';
+      const coproOptions = '<option value="">Choisir...</option>' + state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      const accountOptions = '<option value="">Choisir...</option>' + state.accounts.map((a) => `<option value="${a.id}">${escapeHtml((a.code || '') + ' - ' + (a.label || ''))}</option>`).join('');
+      $('odCopro').innerHTML = coproOptions;
+      $('odDebitAccount').innerHTML = accountOptions;
+      $('odCreditAccount').innerHTML = accountOptions;
+      $('odCopro').value = coproCurrent || (state.copros[0]?.id || '');
+      $('odDebitAccount').value = accountDebitCurrent;
+      $('odCreditAccount').value = accountCreditCurrent;
+
+      const odEntries = state.entries.filter((e) => String(e.journal_code || '').toUpperCase() === 'OD');
+      $('odEntriesTable').innerHTML = table([
+        'Date', 'Reference', 'Copropriete', 'Libelle', 'Statut'
+      ], odEntries.map((e) => [
+        e.entry_date || '',
+        e.reference || '',
+        e.compta_copros?.name || '',
+        e.label || '',
+        statusBadge(e.status)
+      ]));
+    }
+
+    function computeAccountingSnapshot() {
+      const bankBalances = state.bankAccounts.map((account) => {
+        const balance = state.bankTransactions
+          .filter((tx) => tx.bank_account_id === account.id)
+          .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+        return { account, balance };
+      });
+
+      const unpaidInvoices = state.invoices.filter((invoice) => !['paid', 'rejected'].includes(invoice.status));
+      const unpaidBySupplier = {};
+      for (const inv of unpaidInvoices) {
+        const key = inv.compta_suppliers?.name || 'Fournisseur non defini';
+        unpaidBySupplier[key] = (unpaidBySupplier[key] || 0) + Number(inv.amount_total || 0);
+      }
+
+      const journalSummary = {};
+      for (const entry of state.entries) {
+        const code = entry.journal_code || 'N/A';
+        if (!journalSummary[code]) journalSummary[code] = { code, count: 0, lastDate: '' };
+        journalSummary[code].count += 1;
+        if (!journalSummary[code].lastDate || String(entry.entry_date || '') > journalSummary[code].lastDate) {
+          journalSummary[code].lastDate = entry.entry_date || '';
+        }
+      }
+
+      return {
+        bankBalances,
+        totalBank: bankBalances.reduce((sum, item) => sum + item.balance, 0),
+        unpaidInvoices,
+        totalUnpaid: unpaidInvoices.reduce((sum, inv) => sum + Number(inv.amount_total || 0), 0),
+        totalCharges: state.invoices.filter((inv) => inv.status !== 'rejected').reduce((sum, inv) => sum + Number(inv.amount_total || 0), 0),
+        odCount: state.entries.filter((e) => String(e.journal_code || '').toUpperCase() === 'OD').length,
+        unpaidBySupplier,
+        journalSummary: Object.values(journalSummary).sort((a, b) => a.code.localeCompare(b.code))
+      };
+    }
+
+    function renderBalanceModule() {
+      if (!$('balanceTable')) return;
+      const snap = computeAccountingSnapshot();
+      const rows = [
+        ['55 - Banques', 'Somme des mouvements bancaires encodes', money(snap.totalBank)],
+        ['44 - Fournisseurs a payer', 'Factures non payees / non rejetees', money(snap.totalUnpaid)],
+        ['60/61 - Charges', 'Total des factures fournisseurs conservees', money(snap.totalCharges)],
+        ['OD - Operations diverses', "Nombre d'OD enregistrees", snap.odCount],
+        ['File de traitement', 'Elements restant a traiter', state.validationQueue.filter((q) => !['validated','rejected'].includes(q.status)).length]
+      ];
+      $('balanceTable').innerHTML = table(['Rubrique', 'Base de calcul', 'Valeur'], rows);
+    }
+
+    function renderBilanModule() {
+      if (!$('bilanActifTable')) return;
+      const snap = computeAccountingSnapshot();
+      const actifRows = snap.bankBalances.length
+        ? snap.bankBalances.map((item) => [item.account.compta_copros?.name || '', `${item.account.label || ''} ${item.account.iban ? '(' + item.account.iban + ')' : ''}`, money(item.balance)])
+        : [['-', 'Aucun compte bancaire encode', money(0)]];
+      const passifRows = Object.entries(snap.unpaidBySupplier).length
+        ? Object.entries(snap.unpaidBySupplier).map(([supplier, amount]) => ['Factures a payer', supplier, money(amount)])
+        : [['-', 'Aucune dette fournisseur ouverte', money(0)]];
+      $('bilanActifTable').innerHTML = table(['Copropriete', 'Actif', 'Montant'], actifRows);
+      $('bilanPassifTable').innerHTML = table(['Nature', 'Detail', 'Montant'], passifRows);
+      $('bilanSummary').innerHTML = `
+        <span class="badge ok">Total actif : ${money(snap.totalBank)}</span>
+        <span class="badge warn">Total passif : ${money(snap.totalUnpaid)}</span>
+        <span class="badge">Charges cumulees : ${money(snap.totalCharges)}</span>
+      `;
+    }
+
+    function renderJournalsModule() {
+      if (!$('journalsTable')) return;
+      const snap = computeAccountingSnapshot();
+      $('journalsTable').innerHTML = table(['Journal', 'Nb ecritures', 'Derniere date'], snap.journalSummary.map((j) => [j.code, j.count, j.lastDate || '']));
+      $('recentJournalEntriesTable').innerHTML = table(['Date', 'Journal', 'Reference', 'Libelle'], state.entries.slice(0, 20).map((e) => [e.entry_date || '', e.journal_code || '', e.reference || '', e.label || '']));
+    }
+
     function table(headers, rows) {
       if (!rows.length) {
         return '<div class="notice">Aucune donnee pour le moment.</div>';
@@ -1785,7 +2144,7 @@
     }
 
     function switchToView(viewName) {
-      const button = document.querySelector(`.nav button[data-view="${viewName}"]`);
+      const button = document.querySelector(`.nav [data-view="${viewName}"]`);
       if (button) button.click();
     }
 
@@ -2023,6 +2382,44 @@
       await loadAll();
     }
 
+
+    async function saveOD() {
+      const coproId = $('odCopro').value;
+      const entryDate = $('odDate').value;
+      const debitId = $('odDebitAccount').value;
+      const creditId = $('odCreditAccount').value;
+      const amount = Number($('odAmount').value || 0);
+      const reference = $('odReference').value.trim() || `OD-${new Date().toISOString().slice(0,10)}`;
+      const label = $('odLabel').value.trim();
+      if (!coproId) return alert('Choisis la copropriete.');
+      if (!entryDate) return alert("Indique la date de l'operation diverse.");
+      if (!debitId || !creditId) return alert('Choisis un compte debit et un compte credit.');
+      if (!amount) return alert("Indique le montant de l'operation diverse.");
+      if (!label) return alert("Indique le libelle de l'operation diverse.");
+      const debit = state.accounts.find((a) => a.id === debitId);
+      const credit = state.accounts.find((a) => a.id === creditId);
+      const fullLabel = `${label} | Debit ${debit?.code || ''} ${debit?.label || ''} / Credit ${credit?.code || ''} ${credit?.label || ''} | ${money(amount)}`;
+      const payload = {
+        copro_id: coproId,
+        journal_code: 'OD',
+        entry_date: entryDate,
+        reference,
+        label: fullLabel,
+        status: 'draft',
+        created_by: currentUser.id
+      };
+      const { error } = await supabaseClient.from('compta_entries').insert(payload);
+      if (error) return alert(error.message);
+      $('odDate').value = '';
+      $('odReference').value = '';
+      $('odAmount').value = '';
+      $('odLabel').value = '';
+      $('odDebitAccount').value = '';
+      $('odCreditAccount').value = '';
+      await loadAll();
+      alert('Operation diverse enregistree.');
+    }
+
     async function saveInvoice() {
       const payload = {
         copro_id: $("invoiceCopro").value,
@@ -2138,15 +2535,28 @@
       }
     }
 
-    document.querySelectorAll(".nav button").forEach((button) => {
+    document.querySelectorAll(".nav [data-view]").forEach((button) => {
       button.addEventListener("click", () => {
-        document.querySelectorAll(".nav button").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".nav [data-view]").forEach((b) => b.classList.remove("active"));
         button.classList.add("active");
         document.querySelectorAll(".view").forEach((view) => view.classList.add("hidden"));
         const view = button.dataset.view;
         $(view + "View").classList.remove("hidden");
-        $("pageTitle").textContent = button.textContent;
+        $("pageTitle").textContent = button.dataset.title || button.textContent.trim();
       });
+    });
+
+    document.querySelectorAll('[data-group-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const group = button.closest('[data-group]');
+        if (!group) return;
+        if ($('appScreen').classList.contains('sidebar-collapsed')) return;
+        group.classList.toggle('collapsed');
+      });
+    });
+
+    $('toggleSidebarBtn').addEventListener('click', () => {
+      $('appScreen').classList.toggle('sidebar-collapsed');
     });
 
     $("lotDraftTable").addEventListener("input", (event) => {
@@ -2242,6 +2652,7 @@
     $("saveOwnerBtn").addEventListener("click", saveOwner);
     $("saveSupplierBtn").addEventListener("click", saveSupplier);
     $("saveInvoiceBtn").addEventListener("click", saveInvoice);
+    $("saveOdBtn").addEventListener("click", saveOD);
     $("saveBankAccountBtn").addEventListener("click", saveBankAccount);
     $("saveBankTxBtn").addEventListener("click", saveBankTransaction);
     $("importCodaBtn").addEventListener("click", importCoda);
