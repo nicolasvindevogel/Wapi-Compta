@@ -5555,7 +5555,119 @@
       if(t?.dataset?.printThirdGrouped!==undefined) printThirdRowsV11(rowsForCurrentThirdBalanceV11(), true);
     });
 
-        boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
+    
+
+    // ---- V11.1 correctif création budget ----
+    async function createBudgetFromModal() {
+      const coproId = $('modalBudgetHeaderCopro')?.value || state.activeCoproId || $('budgetCoproFilter')?.value || '';
+      const yearId = $('modalBudgetHeaderYear')?.value || null;
+      const label = ($('modalBudgetHeaderLabel')?.value || '').trim();
+      const copyFrom = $('modalBudgetCopyFrom')?.value || '';
+      if (!coproId) return alert('Choisis une copropriété pour créer le budget.');
+      if (!label) return alert('Indique un libellé pour le budget.');
+
+      const budgetPayload = {
+        copro_id: coproId,
+        fiscal_year_id: yearId,
+        label,
+        status: 'draft',
+        copied_from_budget_id: copyFrom || null,
+        created_by: currentUser.id
+      };
+
+      const { data: budget, error } = await supabaseClient
+        .from('compta_budgets')
+        .insert(budgetPayload)
+        .select('id, copro_id, fiscal_year_id, label, status, created_at')
+        .single();
+
+      if (error) {
+        const msg = String(error.message || error.details || error.hint || error);
+        if (msg.includes('compta_budgets') || msg.includes('relation') || msg.includes('column')) {
+          alert('Le budget ne peut pas être créé car la structure SQL Budget n’est pas correctement installée. Exécute le SQL correctif V11.1 dans Supabase, puis réessaie. Détail : ' + msg);
+        } else {
+          alert(msg);
+        }
+        return;
+      }
+
+      const rows = [];
+      if (copyFrom) {
+        state.budgetLines
+          .filter((l) => l.budget_id === copyFrom)
+          .forEach((l) => rows.push({
+            budget_id: budget.id,
+            copro_id: coproId,
+            fiscal_year_id: yearId,
+            distribution_key_id: l.distribution_key_id,
+            account_id: l.account_id,
+            label: l.label,
+            amount: l.amount,
+            created_by: currentUser.id
+          }));
+      } else {
+        document.querySelectorAll('[data-budget-key-check]').forEach((cb) => {
+          if (!cb.checked) return;
+          const keyId = cb.dataset.budgetKeyCheck;
+          Array.from(document.querySelector(`[data-budget-accounts-for-key="${keyId}"]`)?.selectedOptions || []).forEach((opt) => {
+            rows.push({
+              budget_id: budget.id,
+              copro_id: coproId,
+              fiscal_year_id: yearId,
+              distribution_key_id: keyId,
+              account_id: opt.value,
+              label: null,
+              amount: 0,
+              created_by: currentUser.id
+            });
+          });
+        });
+      }
+
+      if (rows.length) {
+        const { error: lineErr } = await supabaseClient.from('compta_budget_lines').insert(rows);
+        if (lineErr) {
+          alert('Le budget a été créé, mais certaines lignes n’ont pas été ajoutées : ' + lineErr.message);
+        }
+      }
+
+      state.selectedBudgetHeaderId = '';
+      closeAppModal();
+      await loadAll();
+      if ($('budgetCoproFilter') && !state.activeCoproId) $('budgetCoproFilter').value = coproId;
+      if ($('budgetFiscalYearFilter') && yearId) $('budgetFiscalYearFilter').value = yearId;
+      if ($('budgetHeaderFilter')) $('budgetHeaderFilter').value = '';
+      state.selectedBudgetHeaderId = '';
+      renderBudgets();
+      alert('Budget créé. Il apparaît maintenant dans la liste des budgets. Clique sur Ouvrir pour le modifier.');
+    }
+
+    function renderBudgets() {
+      if (!$('budgetsTable')) return;
+      const previousCopro = state.activeCoproId || $('budgetCoproFilter')?.value || '';
+      const previousYear = $('budgetFiscalYearFilter')?.value || '';
+      const previousHeader = state.selectedBudgetHeaderId || $('budgetHeaderFilter')?.value || '';
+
+      $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
+      else $('budgetCoproFilter').value = previousCopro;
+
+      const coproId = state.activeCoproId || $('budgetCoproFilter').value || '';
+      $('budgetFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>!coproId||y.copro_id===coproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      if (previousYear && Array.from($('budgetFiscalYearFilter').options).some((o)=>o.value===previousYear)) $('budgetFiscalYearFilter').value = previousYear;
+
+      const yearId = $('budgetFiscalYearFilter')?.value || '';
+      const headers = state.budgetHeaders.filter((b)=>(!coproId||b.copro_id===coproId)&&(!yearId||b.fiscal_year_id===yearId));
+      $('budgetHeaderFilter').innerHTML = '<option value="">Liste des budgets</option>' + headers.map((b)=>`<option value="${b.id}" ${previousHeader===b.id?'selected':''}>${escapeHtml(b.label)}</option>`).join('');
+      if (previousHeader && headers.some((b)=>b.id===previousHeader)) state.selectedBudgetHeaderId = previousHeader;
+      else state.selectedBudgetHeaderId = '';
+
+      applyActiveCoproLocksV11();
+      if (state.selectedBudgetHeaderId) renderBudgetDetailV11(state.selectedBudgetHeaderId);
+      else renderBudgetListV11();
+    }
+
+    boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
 </body>
 </html>
