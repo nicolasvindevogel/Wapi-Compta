@@ -1095,6 +1095,105 @@
       }
     }
 
+  
+
+    /* ---- V8: editions en popup pour garder les listes propres ---- */
+    .app-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .54);
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      z-index: 120;
+      backdrop-filter: blur(5px);
+    }
+
+    .app-modal {
+      width: min(1040px, 100%);
+      max-height: min(88vh, 900px);
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.28);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.5);
+    }
+
+    .app-modal.narrow { width: min(720px, 100%); }
+    .app-modal.wide { width: min(1180px, 100%); }
+
+    .app-modal__header {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      padding:18px 20px;
+      border-bottom:1px solid #e7edf4;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbfe 100%);
+    }
+
+    .app-modal__title { margin:0; font-size:22px; letter-spacing:-.02em; }
+    .app-modal__subtitle { color:var(--muted); font-size:13px; margin-top:4px; }
+    .app-modal__close {
+      border:1px solid #dce6ef;
+      background:#fff;
+      color:#314256;
+      width:38px;
+      height:38px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+    }
+
+    .app-modal__body {
+      padding:20px;
+      overflow:auto;
+      background:#fbfdff;
+    }
+
+    .app-modal__footer {
+      padding:14px 20px;
+      border-top:1px solid #e7edf4;
+      background:#fff;
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .popup-form {
+      display:grid;
+      gap:16px;
+    }
+
+    .popup-form .form-grid,
+    .popup-form .list-filters {
+      margin-bottom:0;
+      background:#fff;
+    }
+
+    .hidden-editor {
+      display:none !important;
+    }
+
+    .modal-help {
+      border:1px solid #d4e9f1;
+      background:#eef8fb;
+      color:#1e4451;
+      border-radius:14px;
+      padding:12px 14px;
+      line-height:1.45;
+      font-size:13px;
+    }
+
+    @media (max-width: 760px) {
+      .app-modal-backdrop { padding:10px; }
+      .app-modal { max-height:94vh; border-radius:14px; }
+      .app-modal__header, .app-modal__body, .app-modal__footer { padding:14px; }
+    }
+
   </style>
 </head>
 <body>
@@ -1349,13 +1448,14 @@
           <div class="card">
             <div class="toolbar">
               <h2>Coproprietes</h2>
-              <button class="btn" id="saveCoproBtn">Ajouter</button>
+              <button class="btn" id="saveCoproBtn">Nouvelle copropriete</button>
             </div>
-            <div class="form-grid">
+            <div id="inlineCoproEditor" class="hidden-editor"><div class="form-grid">
               <label>Nom <input id="coproName" placeholder="Residence SARMA" /></label>
               <label>Adresse <input id="coproAddress" placeholder="Rue..." /></label>
               <label>Reference Optipro <input id="coproOptipro" placeholder="Optionnel" /></label>
-            </div>
+            </div></div>
+            <div class="notice">La creation s’ouvre en popup pour garder la liste des coproprietes propre.</div>
             <div id="coprosTable"></div>
           </div>
         </section>
@@ -1386,7 +1486,7 @@
 
         <section id="ownersView" class="view hidden">
           <div class="card">
-            <div class="toolbar"><h2>Identites / Tiers</h2><button class="btn" id="saveOwnerBtn" type="button">Ajouter le tiers</button></div>
+            <div class="toolbar"><h2>Identites / Tiers</h2><button class="btn" id="saveOwnerBtn" type="button">Nouveau tiers</button></div>
             <div class="identity-type-tabs">
               <button class="tab-btn active" data-identity-type="owner" type="button">Coproprietaires</button>
               <button class="tab-btn" data-identity-type="supplier" type="button">Fournisseurs</button>
@@ -1394,11 +1494,7 @@
             </div>
             <div class="list-filters">
               <label>Copropriete <select id="ownersFilterCopro"></select></label>
-              <label>Nom <input id="identityName" placeholder="Nom / denomination" /></label>
-              <label>Email <input id="identityEmail" type="email" placeholder="email@..." /></label>
-              <label>Telephone <input id="identityPhone" placeholder="047..." /></label>
-              <label>Adresse <input id="identityAddress" placeholder="Adresse postale" /></label>
-              <label>Compte bancaire <input id="identityIban" placeholder="BE..." /></label>
+              <label>Recherche <input id="identityListSearch" placeholder="Nom, email, telephone..." /></label>
             </div>
             <div class="notice">Trie entre coproprietaires, fournisseurs et occupants. Ouvre une fiche pour completer les infos, visualiser les lots et les quotites.</div>
             <div id="ownersTable"></div>
@@ -1425,9 +1521,10 @@
           <div class="card">
             <div class="toolbar">
               <h2>Factures fournisseurs</h2>
-              <div class="top-actions"><button class="btn secondary" id="toggleInvoiceColorsBtn" type="button">Couleurs paiement</button><button class="btn secondary" id="goInvoiceImportBtn" type="button">Importer plusieurs factures</button><button class="btn" id="newInvoiceBtn" type="button">Nouvelle facture</button><button class="btn" id="saveInvoiceBtn" type="button">Enregistrer facture</button></div>
+              <div class="top-actions"><button class="btn secondary" id="toggleInvoiceColorsBtn" type="button">Couleurs paiement</button><button class="btn secondary" id="goInvoiceImportBtn" type="button">Importer plusieurs factures</button><button class="btn" id="newInvoiceBtn" type="button">Nouvelle facture</button><button class="btn hidden-editor" id="saveInvoiceBtn" type="button">Enregistrer facture</button></div>
             </div>
-            <div class="notice">Chaque facture doit etre classee dans un compte comptable. Les couleurs sont activables : vert = payee/lettree, orange = envoyee en paiement, rouge = non payee, jaune = domiciliation.</div>
+            <div class="notice">Chaque facture doit etre classee dans un compte comptable. Les couleurs sont activables : vert = payee/lettree, orange = envoyee en paiement, rouge = non payee, jaune = domiciliation. Les creations et modifications s'ouvrent maintenant en popup pour garder la liste propre.</div>
+            <div id="inlineInvoiceEditor" class="hidden-editor">
             <div class="form-grid">
               <label>Copropriete <select id="invoiceCopro"></select></label>
               <label>Fournisseur <select id="invoiceSupplier"></select></label>
@@ -1439,6 +1536,7 @@
               <label>Statut dossier<select id="invoiceStatus"><option value="draft">Brouillon</option><option value="to_validate">A valider</option><option value="validated">Validee</option><option value="paid">Payee</option><option value="rejected">Rejetee</option></select></label>
             </div>
             <label>Description <textarea id="invoiceDescription"></textarea></label><br />
+            </div>
             <div id="invoicesTable"></div>
           </div>
         </section>
@@ -2073,6 +2171,20 @@
         <button class="btn secondary" id="cancelLotModalBtn" type="button">Annuler</button>
         <button class="btn" id="generateLotsBtn" type="button">Generer les lignes</button>
       </div>
+    </div>
+  </section>
+
+  <section id="globalModalBackdrop" class="app-modal-backdrop hidden">
+    <div id="globalModal" class="app-modal">
+      <div class="app-modal__header">
+        <div>
+          <h2 id="globalModalTitle" class="app-modal__title">Edition</h2>
+          <div id="globalModalSubtitle" class="app-modal__subtitle"></div>
+        </div>
+        <button id="globalModalCloseBtn" class="app-modal__close" type="button">×</button>
+      </div>
+      <div id="globalModalBody" class="app-modal__body"></div>
+      <div id="globalModalFooter" class="app-modal__footer"></div>
     </div>
   </section>
 
@@ -4007,7 +4119,333 @@
     const originalRenderAllV6 = renderAll;
     renderAll = function() { originalRenderAllV6(); renderFinancialLedger(); renderExpensesList(); };
 
-    boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
+
+    // ---- V8: ouverture des editions et creations en popup ----
+    function openAppModal(title, bodyHtml, footerHtml = '', options = {}) {
+      const modal = $('globalModal');
+      $('globalModalTitle').textContent = title || 'Edition';
+      $('globalModalSubtitle').textContent = options.subtitle || '';
+      $('globalModalBody').innerHTML = bodyHtml || '';
+      $('globalModalFooter').innerHTML = footerHtml || '<button class="btn secondary" type="button" data-modal-close>Fermer</button>';
+      modal.classList.remove('narrow', 'wide');
+      if (options.size) modal.classList.add(options.size);
+      $('globalModalBackdrop').classList.remove('hidden');
+    }
+
+    function closeAppModal() {
+      $('globalModalBackdrop').classList.add('hidden');
+      $('globalModalBody').innerHTML = '';
+      $('globalModalFooter').innerHTML = '';
+    }
+
+    $('globalModalCloseBtn').addEventListener('click', closeAppModal);
+    $('globalModalBackdrop').addEventListener('click', (event) => {
+      if (event.target.id === 'globalModalBackdrop' || event.target.dataset.modalClose !== undefined) closeAppModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !$('globalModalBackdrop').classList.contains('hidden')) closeAppModal();
+    });
+
+    function optionList(items, valueKey, labelFn, selected = '') {
+      return '<option value="">Choisir...</option>' + items.map((item) => `<option value="${item[valueKey]}" ${item[valueKey] === selected ? 'selected' : ''}>${escapeHtml(labelFn(item))}</option>`).join('');
+    }
+
+    function coproOptions(selected = '') { return optionList(state.copros, 'id', (c) => c.name, selected); }
+    function supplierOptions(selected = '') { return optionList(state.suppliers, 'id', (s) => s.name, selected); }
+    function ownerOptionsForCopro(coproId, selected = '') { return optionList(state.owners.filter((o) => !coproId || o.copro_id === coproId), 'id', (o) => o.display_name, selected); }
+    function accountOptions(selected = '') { return optionList(state.accounts, 'id', (a) => `${a.code || ''} - ${a.label || ''}`, selected); }
+
+    function modalFormFooter(saveAction, dangerAction = '') {
+      return `<button class="btn secondary" type="button" data-modal-close>Annuler</button>${dangerAction}<button class="btn" type="button" id="${saveAction}">Enregistrer</button>`;
+    }
+
+    // Lots: ouverture en popup, plus de panneau detail sous la liste
+    function openLotDetail(lotId) {
+      state.selectedLotId = lotId;
+      const lot = state.lots.find((l) => l.id === lotId);
+      if (!lot) return;
+      const body = `
+        <div class="popup-form">
+          <div class="modal-help">La fiche du lot s'ouvre en popup pour conserver la liste lisible. La suppression physique reste bloquee si le lot est deja utilise; l'archivage est privilegie.</div>
+          <div class="form-grid">
+            <label>Code / lot <input id="modalLotNumber" value="${escapeHtml(lot.lot_number || '')}" /></label>
+            <label>Reference <input id="modalLotReference" value="${escapeHtml(lot.reference || '')}" /></label>
+            <label>Nature de bien <input id="modalLotType" value="${escapeHtml(lot.lot_type || '')}" /></label>
+            <label>Quotites generales <input id="modalLotQuotities" type="number" step="0.0001" value="${escapeHtml(lot.quotities ?? '')}" /></label>
+            <label>Proprietaire actuel <select id="modalLotOwner">${ownerOptionsForCopro(lot.copro_id, lot.owner_id || '')}</select></label>
+            <label>Date mutation <input id="modalLotMutation" type="date" value="${escapeHtml(lot.mutation_date || '')}" /></label>
+            <label>Adresse <input id="modalLotAddress" value="${escapeHtml(lot.address || '')}" /></label>
+            <label>Localite <input id="modalLotCity" value="${escapeHtml(lot.city || '')}" /></label>
+            <label>Etage / niveau <input id="modalLotFloor" value="${escapeHtml(lot.floor || '')}" /></label>
+          </div>
+          <label>Notes <textarea id="modalLotNotes">${escapeHtml(lot.notes || '')}</textarea></label>
+        </div>`;
+      const archiveLabel = lot.active === false ? 'Reactiver' : 'Archiver';
+      const footer = `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn secondary" type="button" id="modalArchiveLotBtn">${archiveLabel}</button><button class="btn danger" type="button" id="modalDeleteLotBtn">Supprimer</button><button class="btn" type="button" id="modalSaveLotBtn">Enregistrer</button>`;
+      openAppModal(`Lot ${lot.lot_number || ''}`, body, footer, { subtitle: lot.compta_copros?.name || coproContextLabel(), size: 'wide' });
+      $('modalSaveLotBtn').onclick = saveSelectedLotFromModal;
+      $('modalArchiveLotBtn').onclick = toggleArchiveSelectedLotFromModal;
+      $('modalDeleteLotBtn').onclick = deleteSelectedLotFromModal;
+    }
+
+    function renderLotDetail() {
+      const panel = $('lotDetailPanel');
+      if (panel) { panel.classList.add('hidden'); panel.innerHTML = ''; }
+    }
+
+    async function saveSelectedLotFromModal() {
+      const lot = state.lots.find((l) => l.id === state.selectedLotId);
+      if (!lot) return;
+      const payload = {
+        lot_number: $('modalLotNumber').value.trim(),
+        reference: $('modalLotReference').value.trim() || null,
+        lot_type: $('modalLotType').value.trim() || null,
+        quotities: Number($('modalLotQuotities').value || 0),
+        owner_id: $('modalLotOwner').value || null,
+        mutation_date: $('modalLotMutation').value || null,
+        address: $('modalLotAddress').value.trim() || null,
+        city: $('modalLotCity').value.trim() || null,
+        floor: $('modalLotFloor').value.trim() || null,
+        notes: $('modalLotNotes').value.trim() || null
+      };
+      if (!payload.lot_number) return alert('Le code du lot est obligatoire.');
+      const { error } = await supabaseClient.from('compta_lots').update(payload).eq('id', lot.id);
+      if (error) return alert(error.message);
+      await syncGeneralDistributionItem(lot.copro_id, lot.id, payload.quotities);
+      closeAppModal();
+      await loadAll();
+    }
+
+    async function toggleArchiveSelectedLotFromModal() {
+      const lot = state.lots.find((l) => l.id === state.selectedLotId);
+      if (!lot) return;
+      const { error } = await supabaseClient.from('compta_lots').update({ active: lot.active === false ? true : false }).eq('id', lot.id);
+      if (error) return alert(error.message);
+      closeAppModal();
+      await loadAll();
+    }
+
+    async function deleteSelectedLotFromModal() {
+      const lot = state.lots.find((l) => l.id === state.selectedLotId);
+      if (!lot) return;
+      const distCount = state.distributionItems.filter((i) => i.lot_id === lot.id).length;
+      if (Boolean(lot.owner_id) || Number(lot.quotities || 0) !== 0 || distCount > 0) {
+        alert('Suppression physique refusee : ce lot est deja utilise. Archive-le plutot.');
+        return;
+      }
+      if (!confirm('Supprimer definitivement ce lot ?')) return;
+      const { error } = await supabaseClient.from('compta_lots').delete().eq('id', lot.id);
+      if (error) return alert(error.message);
+      closeAppModal();
+      await loadAll();
+    }
+
+    // Identites / tiers en popup
+    function openIdentityModal(type = state.selectedIdentityType || 'owner', id = null) {
+      state.selectedIdentityType = type;
+      state.selectedIdentityId = id;
+      const types = identityRecords();
+      const map = { owner: types.owners, supplier: types.suppliers, occupant: types.occupants };
+      const rec = id ? (map[type] || []).find((r) => r.id === id) : null;
+      const title = rec ? `Fiche ${type === 'owner' ? 'coproprietaire' : type === 'supplier' ? 'fournisseur' : 'occupant'}` : `Nouveau ${type === 'owner' ? 'coproprietaire' : type === 'supplier' ? 'fournisseur' : 'occupant'}`;
+      const coproId = rec?.copro_id || state.activeCoproId || $('ownersFilterCopro')?.value || '';
+      const lots = type === 'owner' && rec ? state.lots.filter((lot) => lot.owner_id === rec.id) : [];
+      const totalQ = lots.reduce((s, l) => s + Number(l.quotities || 0), 0);
+      const body = `
+        <div class="popup-form">
+          <div class="modal-help">Les tiers s'editent dans une fenetre dediee. La liste reste lisible et tu peux revenir rapidement au contexte global.</div>
+          <div class="form-grid">
+            ${type !== 'supplier' ? `<label>Copropriete <select id="modalIdentityCopro">${coproOptions(coproId)}</select></label>` : ''}
+            <label>Nom <input id="modalIdentityName" value="${escapeHtml(rec?._name || '')}" /></label>
+            <label>Email <input id="modalIdentityEmail" value="${escapeHtml(rec?._email || '')}" /></label>
+            <label>Telephone <input id="modalIdentityPhone" value="${escapeHtml(rec?._phone || '')}" /></label>
+            <label>Adresse <input id="modalIdentityAddress" value="${escapeHtml(rec?._address || '')}" /></label>
+            <label>IBAN <input id="modalIdentityIban" value="${escapeHtml(rec?._iban || '')}" /></label>
+          </div>
+          ${rec && type !== 'supplier' ? `<div class="summary-line"><span class="badge">Lots : ${lots.length}</span><span class="badge">Quotites : ${Number(totalQ).toLocaleString('fr-BE')}</span><span class="badge">${escapeHtml(lots.map((l) => l.lot_number).join(', ') || 'Aucun lot lie')}</span></div>` : ''}
+        </div>`;
+      openAppModal(title, body, modalFormFooter('modalSaveIdentityBtn'), { subtitle: rec?._name || coproContextLabel(), size: 'wide' });
+      $('modalSaveIdentityBtn').onclick = saveIdentityFromModal;
+    }
+
+    function selectIdentity(type, id) { openIdentityModal(type, id); }
+    function renderIdentityDetail() { const panel = $('identityDetailPanel'); if (panel) { panel.classList.add('hidden'); panel.innerHTML = ''; } }
+    async function saveIdentity() { openIdentityModal(state.selectedIdentityType || 'owner', null); }
+
+    async function saveIdentityFromModal() {
+      const type = state.selectedIdentityType || 'owner';
+      const id = state.selectedIdentityId;
+      const name = $('modalIdentityName').value.trim();
+      if (!name) return alert('Indique le nom / la denomination.');
+      let tableName = 'compta_owners';
+      let payload = {
+        email: $('modalIdentityEmail').value.trim() || null,
+        phone: $('modalIdentityPhone').value.trim() || null,
+        address: $('modalIdentityAddress').value.trim() || null,
+        iban: $('modalIdentityIban').value.trim() || null
+      };
+      if (type === 'owner') payload.display_name = name;
+      if (type === 'supplier') { tableName = 'compta_suppliers'; payload.name = name; }
+      if (type === 'occupant') { tableName = 'compta_occupants'; payload.display_name = name; }
+      if (type !== 'supplier') {
+        payload.copro_id = $('modalIdentityCopro').value || state.activeCoproId || $('ownersFilterCopro').value || null;
+        if (!payload.copro_id) return alert('Choisis une copropriete.');
+      }
+      if (!id) payload.created_by = currentUser.id;
+      const req = id ? supabaseClient.from(tableName).update(payload).eq('id', id) : supabaseClient.from(tableName).insert(payload);
+      const { error } = await req;
+      if (error) return alert(error.message);
+      closeAppModal();
+      await loadAll();
+    }
+
+    // Factures en popup
+    function invoiceModalHtml(invoice = null) {
+      const payment = invoice ? invoicePaymentStatus(invoice) : 'unpaid';
+      return `
+        <div class="popup-form">
+          <div class="modal-help">Compte comptable obligatoire. La couleur de la liste reste determinee par l'etat de paiement.</div>
+          <div class="form-grid">
+            <label>Copropriete <select id="modalInvoiceCopro">${coproOptions(invoice?.copro_id || state.activeCoproId || '')}</select></label>
+            <label>Fournisseur <select id="modalInvoiceSupplier">${supplierOptions(invoice?.supplier_id || '')}</select></label>
+            <label>Compte comptable <select id="modalInvoiceAccount">${accountOptions(invoice?.account_id || '')}</select></label>
+            <label>Numero facture <input id="modalInvoiceNumber" value="${escapeHtml(invoice?.invoice_number || '')}" /></label>
+            <label>Date facture <input id="modalInvoiceDate" type="date" value="${escapeHtml(invoice?.invoice_date || '')}" /></label>
+            <label>Montant total <input id="modalInvoiceAmount" type="number" step="0.01" value="${escapeHtml(invoice?.amount_total || '')}" /></label>
+            <label>Etat paiement<select id="modalInvoicePaymentStatus"><option value="unpaid" ${payment==='unpaid'?'selected':''}>Non payee</option><option value="payment_sent" ${payment==='payment_sent'?'selected':''}>Envoyee en paiement</option><option value="paid" ${payment==='paid'?'selected':''}>Payee / lettree</option><option value="domiciliation" ${payment==='domiciliation'?'selected':''}>Domiciliation</option></select></label>
+            <label>Statut dossier<select id="modalInvoiceStatus"><option value="draft" ${(invoice?.status||'draft')==='draft'?'selected':''}>Brouillon</option><option value="to_validate" ${invoice?.status==='to_validate'?'selected':''}>A valider</option><option value="validated" ${invoice?.status==='validated'?'selected':''}>Validee</option><option value="paid" ${invoice?.status==='paid'?'selected':''}>Payee</option><option value="rejected" ${invoice?.status==='rejected'?'selected':''}>Rejetee</option></select></label>
+          </div>
+          <label>Description <textarea id="modalInvoiceDescription">${escapeHtml(invoice?.description || '')}</textarea></label>
+          ${invoice?.file_data_url ? '<div class="summary-line"><span class="badge ok">PDF disponible</span></div>' : ''}
+        </div>`;
+    }
+
+    function openInvoiceModal(invoiceId = null) {
+      state.selectedInvoiceId = invoiceId;
+      const invoice = invoiceId ? state.invoices.find((i) => i.id === invoiceId) : null;
+      const danger = invoice ? `<button class="btn danger" type="button" id="modalDeleteInvoiceBtn">Supprimer</button>` : '';
+      openAppModal(invoice ? `Facture ${invoice.invoice_number || ''}` : 'Nouvelle facture', invoiceModalHtml(invoice), modalFormFooter('modalSaveInvoiceBtn', danger), { subtitle: invoice?.compta_suppliers?.name || 'Encodage manuel', size: 'wide' });
+      $('modalSaveInvoiceBtn').onclick = saveInvoiceFromModal;
+      if ($('modalDeleteInvoiceBtn')) $('modalDeleteInvoiceBtn').onclick = () => deleteInvoice(invoiceId);
+    }
+
+    function clearInvoiceForm() { state.selectedInvoiceId = null; openInvoiceModal(null); }
+    function editInvoice(id) { openInvoiceModal(id); }
+
+    async function saveInvoiceFromModal() {
+      const accountId = $('modalInvoiceAccount').value;
+      if (!accountId) return alert('Le compte comptable est obligatoire.');
+      const paymentStatus = $('modalInvoicePaymentStatus').value;
+      const payload = {
+        copro_id: state.activeCoproId || $('modalInvoiceCopro').value,
+        supplier_id: $('modalInvoiceSupplier').value || null,
+        account_id: accountId,
+        invoice_number: $('modalInvoiceNumber').value.trim() || null,
+        invoice_date: $('modalInvoiceDate').value || null,
+        amount_total: Number($('modalInvoiceAmount').value || 0),
+        status: paymentStatus === 'paid' ? 'paid' : $('modalInvoiceStatus').value,
+        payment_status: paymentStatus,
+        sent_to_payment: paymentStatus === 'payment_sent',
+        is_direct_debit: paymentStatus === 'domiciliation',
+        description: $('modalInvoiceDescription').value.trim() || null,
+        source: 'manual',
+        created_by: currentUser.id
+      };
+      if (!payload.copro_id) return alert('Choisis une copropriete.');
+      if (!payload.supplier_id) return alert('Choisis un fournisseur.');
+      if (!payload.amount_total) return alert('Indique un montant.');
+      const req = state.selectedInvoiceId ? supabaseClient.from('compta_invoices').update(payload).eq('id', state.selectedInvoiceId) : supabaseClient.from('compta_invoices').insert(payload);
+      const { error } = await req;
+      if (error) return alert(error.message);
+      closeAppModal();
+      state.selectedInvoiceId = null;
+      await loadAll();
+    }
+
+
+    async function deleteInvoice(id) {
+      const inv = state.invoices.find((i) => i.id === id);
+      if (!inv) return;
+      if (invoicePaymentStatus(inv) === 'paid') return alert('Facture payee/lettree : suppression refusee. Passe par une annulation/contre-ecriture plus tard.');
+      if (!confirm('Supprimer cette facture ?')) return;
+      const { error } = await supabaseClient.from('compta_invoices').delete().eq('id', id);
+      if (error) return alert(error.message);
+      closeAppModal();
+      await loadAll();
+    }
+
+    function showInvoicePdf(invoiceId) {
+      const inv = state.invoices.find((i) => i.id === invoiceId);
+      if (!inv?.file_data_url) return alert('Aucun PDF rattache.');
+      const body = `<iframe src="${inv.file_data_url}" style="width:100%;height:70vh;border:0;border-radius:12px;background:#fff;"></iframe>`;
+      openAppModal(`PDF facture ${inv.invoice_number || ''}`, body, '<button class="btn secondary" type="button" data-modal-close>Fermer</button>', { size: 'wide' });
+    }
+
+    // Grand livre financier : modification et lettrage en popup
+    function renderFinancialLedgerDetail() {
+      const tx = state.bankTransactions.find((t) => t.id === state.selectedFinancialTxId);
+      const panel = $('financialLedgerDetailPanel');
+      if (panel) { panel.classList.add('hidden'); panel.innerHTML = ''; }
+      if (!tx) return;
+      const tierType = tx.tier_type || '';
+      let docs = [];
+      if (Number(tx.amount) < 0 && tierType === 'supplier' && tx.tier_id) docs = state.invoices.filter((i) => i.supplier_id === tx.tier_id && invoicePaymentStatus(i) !== 'paid');
+      if (Number(tx.amount) > 0 && tierType === 'owner' && tx.tier_id) docs = state.ownerCalls.filter((c) => c.owner_id === tx.tier_id && c.status !== 'paid');
+      const body = `
+        <div class="popup-form">
+          <div class="modal-help">Modifie le tiers ou le montant, puis lettre uniquement les elements ouverts du tiers selectionne.</div>
+          <div class="form-grid">
+            <label>Type tiers<select id="txDetailTierType"><option value="">Aucun</option><option value="owner" ${tierType==='owner'?'selected':''}>Coproprietaire</option><option value="supplier" ${tierType==='supplier'?'selected':''}>Fournisseur</option><option value="occupant" ${tierType==='occupant'?'selected':''}>Occupant</option></select></label>
+            <label>Tiers<select id="txDetailTier"></select></label>
+            <label>Montant<input id="txDetailAmount" type="number" step="0.01" value="${tx.amount || 0}"></label>
+            <label>Communication<input id="txDetailCommunication" value="${escapeHtml(tx.communication || '')}"></label>
+          </div>
+          <h3>Elements lettrables du tiers</h3>
+          <div id="txLetteringDocs">${docs.length ? table(['Document','Date','Montant','Action'], docs.map((d) => [d.invoice_number || d.label || d.id, d.invoice_date || d.due_date || '', money(d.amount_total || d.amount_due || 0), `<button class="btn small" data-apply-lettering="${d.id}" type="button">Lettrer</button>`])) : '<div class="notice">Aucun element lettrable pour ce tiers. Corrige le tiers si necessaire.</div>'}</div>
+        </div>`;
+      const footer = `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" type="button" id="saveTxDetailBtn">Enregistrer ligne</button>`;
+      openAppModal(`Ligne extrait ${tx.statement_number || ''}`, body, footer, { subtitle: tx.reconciled ? 'Lettre' : 'A lettrer', size: 'wide' });
+      updateTxDetailTierSelect();
+      $('txDetailTierType').onchange = updateTxDetailTierSelect;
+      $('saveTxDetailBtn').onclick = saveTxDetail;
+      $('txLetteringDocs').onclick = (e) => { const id = e.target?.dataset?.applyLettering; if (id) applyLettering(id); };
+    }
+
+
+    function openCoproModal() {
+      const body = `
+        <div class="popup-form">
+          <div class="modal-help">Encode la copropriete dans une fenetre dediee. La liste reste disponible derriere sans etre deformee par un formulaire.</div>
+          <div class="form-grid">
+            <label>Nom <input id="modalCoproName" placeholder="Residence SARMA" /></label>
+            <label>Adresse <input id="modalCoproAddress" placeholder="Rue..." /></label>
+            <label>Reference Optipro <input id="modalCoproOptipro" placeholder="Optionnel" /></label>
+          </div>
+        </div>`;
+      openAppModal('Nouvelle copropriete', body, modalFormFooter('modalSaveCoproBtn'), { subtitle: 'Creation rapide', size: 'narrow' });
+      $('modalSaveCoproBtn').onclick = saveCoproFromModal;
+    }
+
+    async function saveCoproFromModal() {
+      const payload = {
+        name: $('modalCoproName').value.trim(),
+        address: $('modalCoproAddress').value.trim() || null,
+        optipro_ref: $('modalCoproOptipro').value.trim() || null,
+        created_by: currentUser.id
+      };
+      if (!payload.name) return alert('Indique le nom de la copropriete.');
+      const { error } = await supabaseClient.from('compta_copros').insert(payload);
+      if (error) return alert(error.message);
+      closeAppModal();
+      await loadAll();
+    }
+
+    async function saveCopro() { openCoproModal(); }
+
+    // Les boutons "Nouveau" ouvrent maintenant des popups.
+    $('newInvoiceBtn').addEventListener('click', () => openInvoiceModal(null));
+
+        boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
 </body>
 </html>
