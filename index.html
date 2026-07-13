@@ -1194,6 +1194,34 @@
       .app-modal__header, .app-modal__body, .app-modal__footer { padding:14px; }
     }
 
+  
+
+    /* ---- V9: popups partout, financier simplifie, budgets/appels ---- */
+    .segment-tabs { display:flex; gap:8px; flex-wrap:wrap; margin: 8px 0 16px; }
+    .segment-tab { border:1px solid #dce6ef; background:#fff; color:var(--ink); padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .segment-tab.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.16); }
+    .module-pane.hidden { display:none !important; }
+    .quick-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+    .clean-list-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:14px 0 10px; }
+    .manual-lines-table input, .manual-lines-table select { min-width:110px; padding:8px 9px; }
+    .manual-lines-table .line-label { min-width:220px; }
+    .invoice-row--paid { background:#d9f8e7 !important; box-shadow: inset 5px 0 0 #12b76a; }
+    .invoice-row--payment-sent { background:#fff0d5 !important; box-shadow: inset 5px 0 0 #f79009; }
+    .invoice-row--unpaid { background:#ffe4e0 !important; box-shadow: inset 5px 0 0 #f04438; }
+    .invoice-row--domiciliation { background:#fff8c5 !important; box-shadow: inset 5px 0 0 #eaaa08; }
+    .invoice-row--partial { background:#e5edff !important; box-shadow: inset 5px 0 0 #6172f3; }
+    .badge.partial { background:#e5edff; color:#3538cd; }
+    .budget-key-card { border:1px solid #e4ebf3; border-radius:16px; padding:16px; background:#fff; margin:14px 0; box-shadow:var(--shadow); }
+    .budget-key-card h3 { display:flex; justify-content:space-between; gap:12px; align-items:center; margin:0 0 12px; }
+    .call-status-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin:12px 0; }
+    .call-card { background:#fff; border:1px solid #e4ebf3; border-radius:14px; padding:14px; box-shadow:var(--shadow); }
+    .call-card strong { display:block; font-size:20px; margin-top:4px; }
+    .line-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 9px; border-radius:999px; background:#f1f5f9; color:#334155; font-weight:700; font-size:12px; }
+    .strong-alert { border:1px solid #fecaca; background:#fff1f0; color:#9f1239; padding:12px; border-radius:12px; font-weight:800; }
+    .statement-card.manual { border-left:6px solid var(--brand); }
+    .statement-card.coda { border-left:6px solid var(--accent); }
+    @media (max-width:980px){ .call-status-grid{grid-template-columns:1fr 1fr;} .quick-actions{justify-content:flex-start;} }
+
   </style>
 </head>
 <body>
@@ -1543,18 +1571,36 @@
 
         <section id="bankView" class="view hidden">
           <div class="card">
-            <div class="toolbar"><h2>Financier / Encodage extraits</h2><span class="badge">Manuel + CODA a valider</span></div>
-            <div class="notice">L'import des fichiers reste dans le Centre de traitement. Ici, on confirme les CODA importes et on encode manuellement les extraits. Chaque extrait valide alimente ensuite le Grand livre financier.</div>
-            <h3>Comptes bancaires</h3>
-            <div class="form-grid"><label>Copropriete <select id="bankAccountCopro"></select></label><label>Libelle <input id="bankAccountLabel" placeholder="Compte courant" /></label><label>IBAN <input id="bankAccountIban" placeholder="BE..." /></label><label>BIC <input id="bankAccountBic" placeholder="Optionnel" /></label><label>&nbsp;<button class="btn" id="saveBankAccountBtn" type="button">Ajouter compte</button></label></div><div id="bankAccountsTable"></div>
-            <h3>CODA importes a confirmer</h3>
-            <div class="list-filters"><label>Copropriete <select id="codaFilterCopro"></select></label><label>Etat <select id="codaFilterStatus"><option value="">Tous</option><option value="imported">Importe</option><option value="to_parse">A confirmer</option><option value="validated">Traite</option><option value="rejected">Rejete</option></select></label><label>Extrait / fichier <input id="codaFilterText" placeholder="Extrait, nom fichier, IBAN..." /></label><label>&nbsp;<button class="btn secondary" id="refreshCodaBtn" type="button">Actualiser</button></label></div>
-            <div id="bankStatementsTable"></div>
-            <h3>Encodage manuel d'un extrait</h3>
-            <div class="form-grid"><label>Compte <select id="manualStatementAccount"></select></label><label>N° extrait <input id="manualStatementNumber" placeholder="Ex: 037" /></label><label>Date extrait <input id="manualStatementDate" type="date" /></label><label>Solde initial <input id="manualStatementOpening" type="number" step="0.01" /></label><label>Solde final <input id="manualStatementClosing" type="number" step="0.01" /></label><label>&nbsp;<button class="btn" id="saveManualStatementBtn" type="button">Creer extrait</button></label></div>
-            <h3>Ajouter une ligne d'extrait</h3>
-            <div class="form-grid"><label>Extrait <select id="bankTxStatement"></select></label><label>Date valeur <input id="bankTxDate" type="date" /></label><label>Montant <input id="bankTxAmount" type="number" step="0.01" placeholder="-125.50 ou 250.00" /></label><label>Type tiers <select id="bankTxTierType"><option value="">Aucun</option><option value="owner">Coproprietaire</option><option value="supplier">Fournisseur</option><option value="occupant">Occupant</option></select></label><label>Tiers <select id="bankTxTier"></select></label><label>&nbsp;<button class="btn" id="saveBankTxBtn" type="button">Ajouter ligne</button></label></div>
-            <div class="form-grid"><label>Communication <input id="bankTxCommunication" placeholder="Communication bancaire" /></label><label>Contrepartie <input id="bankTxCounterparty" placeholder="Nom payeur/fournisseur" /></label></div><label>Description <textarea id="bankTxDescription"></textarea></label>
+            <div class="toolbar">
+              <h2>Financier</h2>
+              <div class="quick-actions">
+                <button class="btn secondary" id="newBankAccountBtn" type="button">Nouveau compte</button>
+                <button class="btn" id="newManualStatementBtn" type="button">Nouvel extrait manuel</button>
+              </div>
+            </div>
+            <div class="notice">L'import des fichiers reste dans le Centre de traitement. Ici tu choisis : encodage manuel des extraits ou validation des CODA importés.</div>
+            <div class="segment-tabs">
+              <button class="segment-tab active" type="button" data-bank-tab="manual">Encodage manuel</button>
+              <button class="segment-tab" type="button" data-bank-tab="coda">CODA importés</button>
+              <button class="segment-tab" type="button" data-bank-tab="accounts">Comptes bancaires</button>
+            </div>
+            <div id="bankPaneManual" class="module-pane">
+              <div class="clean-list-header"><h3>Extraits manuels encodés</h3><span class="badge">Liste résumé</span></div>
+              <div id="manualStatementsTable"></div>
+            </div>
+            <div id="bankPaneCoda" class="module-pane hidden">
+              <div class="list-filters"><label>Copropriete <select id="codaFilterCopro"></select></label><label>Etat <select id="codaFilterStatus"><option value="">Tous</option><option value="imported">Importe</option><option value="to_parse">A confirmer</option><option value="validated">Traite</option><option value="rejected">Rejete</option></select></label><label>Extrait / fichier <input id="codaFilterText" placeholder="Extrait, nom fichier, IBAN..." /></label><label>&nbsp;<button class="btn secondary" id="refreshCodaBtn" type="button">Actualiser</button></label></div>
+              <div id="bankStatementsTable"></div>
+            </div>
+            <div id="bankPaneAccounts" class="module-pane hidden">
+              <div class="clean-list-header"><h3>Comptes bancaires</h3><span class="badge">Copropriété active ou global</span></div>
+              <div id="bankAccountsTable"></div>
+            </div>
+            <div class="hidden-editor" style="display:none;">
+              <select id="bankAccountCopro"></select><input id="bankAccountLabel"><input id="bankAccountIban"><input id="bankAccountBic"><button id="saveBankAccountBtn" type="button"></button>
+              <select id="manualStatementAccount"></select><input id="manualStatementNumber"><input id="manualStatementDate" type="date"><input id="manualStatementOpening" type="number"><input id="manualStatementClosing" type="number"><button id="saveManualStatementBtn" type="button"></button>
+              <select id="bankTxStatement"></select><input id="bankTxDate" type="date"><input id="bankTxAmount" type="number"><select id="bankTxTierType"></select><select id="bankTxTier"></select><input id="bankTxCommunication"><input id="bankTxCounterparty"><textarea id="bankTxDescription"></textarea><button id="saveBankTxBtn" type="button"></button>
+            </div>
           </div>
         </section>
 
@@ -1719,46 +1765,30 @@
 
         <section id="exercisesView" class="view hidden">
           <div class="card">
-            <div class="toolbar">
-              <h2>Exercices comptables</h2>
-              <span class="badge warn">Module a structurer</span>
-            </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Gestion des exercices : dates, statut ouvert/clôturé, période de décompte et verrouillage progressif.</p>
-            <div class="module-grid"><div class="module-card"><h3>Créer exercice</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Verrouiller période</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Préparer clôture</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="toolbar"><h2>Exercices comptables</h2><button class="btn" id="newFiscalYearBtn" type="button">Nouvel exercice</button></div>
+            <div class="notice">Crée un exercice, nomme-le et définis ses dates. Les budgets et appels s'appuient ensuite sur cet exercice.</div>
+            <div id="fiscalYearsTable"></div>
           </div>
         </section>
 
         <section id="budgetsView" class="view hidden">
           <div class="card">
-            <div class="toolbar">
-              <h2>Budgets</h2>
-              <span class="badge warn">Module a structurer</span>
-            </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Préparer les budgets annuels par compte, par clé de répartition et par copropriété active.</p>
-            <div class="module-grid"><div class="module-card"><h3>Budget N+1</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Comparatif N/N-1</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Préparer appels</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="toolbar"><h2>Budgets</h2><div class="quick-actions"><button class="btn secondary" id="newBudgetLineBtn" type="button">Ajouter ligne budget</button><button class="btn" id="prepareCallsFromBudgetBtn" type="button">Préparer appels</button></div></div>
+            <div class="notice">Le budget s'affiche d'abord par clé de répartition. Sous chaque clé, ajoute les comptes de classe 6 et les montants. Le total par clé et le total général sont calculés automatiquement.</div>
+            <div class="list-filters"><label>Copropriete <select id="budgetCoproFilter"></select></label><label>Exercice <select id="budgetFiscalYearFilter"></select></label></div>
+            <div id="budgetSummary" class="summary-line"></div>
+            <div id="budgetsTable"></div>
           </div>
         </section>
 
         <section id="callsView" class="view hidden">
           <div class="card">
-            <div class="toolbar">
-              <h2>Appels de fonds</h2>
-              <span class="badge warn">Module a structurer</span>
-            </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Générer des appels de fonds depuis budget, quotités, provisions fixes ou appels extraordinaires.</p>
-            <div class="module-grid"><div class="module-card"><h3>Préparation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Validation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Export PDF / situation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="toolbar"><h2>Appels de fonds</h2><div class="quick-actions"><button class="btn" id="newCallProjectBtn" type="button">Nouvel appel</button><button class="btn secondary" id="printAllCallsBtn" type="button">PDF tous</button></div></div>
+            <div class="notice">Crée un appel : fonds de réserve, fonds de roulement, provisions sur charges ou appel extraordinaire. Les provisions sur charges peuvent se baser sur le budget et la périodicité choisie.</div>
+            <div class="list-filters"><label>Copropriete <select id="callsCoproFilter"></select></label><label>Exercice <select id="callsFiscalYearFilter"></select></label><label>Statut <select id="callsStatusFilter"><option value="">Tous</option><option value="unpaid">Non payé</option><option value="partial">Partiel</option><option value="paid">Payé</option></select></label></div>
+            <div id="callsSummary" class="call-status-grid"></div>
+            <h3>Appels comptabilisés / en attente</h3>
+            <div id="callsTable"></div>
           </div>
         </section>
 
@@ -2220,7 +2250,11 @@
       paymentMatches: [],
       selectedFinancialTxId: null,
       selectedInvoiceId: null,
-      invoiceColorMode: localStorage.getItem("wapi_invoice_color_mode") === "1"
+      invoiceColorMode: localStorage.getItem("wapi_invoice_color_mode") === "1",
+      fiscalYears: [],
+      budgetLines: [],
+      callHeaders: [],
+      manualStatementDraftLines: []
     };
 
     const $ = (id) => document.getElementById(id);
@@ -2324,7 +2358,10 @@
         loadDistributionKeys(),
         loadDistributionItems(),
         loadOwnerCalls(),
-        loadPaymentMatches()
+        loadPaymentMatches(),
+        loadFiscalYears(),
+        loadBudgetLines(),
+        loadCallHeaders()
       ]);
       renderAll();
     }
@@ -2345,6 +2382,34 @@
         .order("created_at", { ascending: false });
       if (error) { console.warn(error.message); state.paymentMatches = []; return; }
       state.paymentMatches = data || [];
+    }
+
+
+    async function loadFiscalYears() {
+      const { data, error } = await supabaseClient
+        .from("compta_fiscal_years")
+        .select("*, compta_copros(name)")
+        .order("starts_on", { ascending: false });
+      if (error) { console.warn(error.message); state.fiscalYears = []; return; }
+      state.fiscalYears = data || [];
+    }
+
+    async function loadBudgetLines() {
+      const { data, error } = await supabaseClient
+        .from("compta_budget_lines")
+        .select("*, compta_copros(name), compta_fiscal_years(label), compta_distribution_keys(name), compta_accounts(code,label)")
+        .order("created_at", { ascending: false });
+      if (error) { console.warn(error.message); state.budgetLines = []; return; }
+      state.budgetLines = data || [];
+    }
+
+    async function loadCallHeaders() {
+      const { data, error } = await supabaseClient
+        .from("compta_calls")
+        .select("*, compta_copros(name), compta_fiscal_years(label)")
+        .order("call_date", { ascending: false });
+      if (error) { console.warn(error.message); state.callHeaders = []; return; }
+      state.callHeaders = data || [];
     }
 
     async function loadOccupants() {
@@ -4312,7 +4377,7 @@
             <label>Numero facture <input id="modalInvoiceNumber" value="${escapeHtml(invoice?.invoice_number || '')}" /></label>
             <label>Date facture <input id="modalInvoiceDate" type="date" value="${escapeHtml(invoice?.invoice_date || '')}" /></label>
             <label>Montant total <input id="modalInvoiceAmount" type="number" step="0.01" value="${escapeHtml(invoice?.amount_total || '')}" /></label>
-            <label>Etat paiement<select id="modalInvoicePaymentStatus"><option value="unpaid" ${payment==='unpaid'?'selected':''}>Non payee</option><option value="payment_sent" ${payment==='payment_sent'?'selected':''}>Envoyee en paiement</option><option value="paid" ${payment==='paid'?'selected':''}>Payee / lettree</option><option value="domiciliation" ${payment==='domiciliation'?'selected':''}>Domiciliation</option></select></label>
+            <label>Etat paiement<select id="modalInvoicePaymentStatus"><option value="unpaid" ${payment==='unpaid'?'selected':''}>Non payee</option><option value="payment_sent" ${payment==='payment_sent'?'selected':''}>Envoyee en paiement</option><option value="partial" ${payment==='partial'?'selected':''}>Partiellement payee</option><option value="paid" ${payment==='paid'?'selected':''}>Payee / lettree</option><option value="domiciliation" ${payment==='domiciliation'?'selected':''}>Domiciliation</option></select></label>
             <label>Statut dossier<select id="modalInvoiceStatus"><option value="draft" ${(invoice?.status||'draft')==='draft'?'selected':''}>Brouillon</option><option value="to_validate" ${invoice?.status==='to_validate'?'selected':''}>A valider</option><option value="validated" ${invoice?.status==='validated'?'selected':''}>Validee</option><option value="paid" ${invoice?.status==='paid'?'selected':''}>Payee</option><option value="rejected" ${invoice?.status==='rejected'?'selected':''}>Rejetee</option></select></label>
           </div>
           <label>Description <textarea id="modalInvoiceDescription">${escapeHtml(invoice?.description || '')}</textarea></label>
@@ -4444,6 +4509,353 @@
 
     // Les boutons "Nouveau" ouvrent maintenant des popups.
     $('newInvoiceBtn').addEventListener('click', () => openInvoiceModal(null));
+
+
+
+    // ---- V9 : financier popup, budgets, appels, exercices ----
+    function paidAmountForInvoice(invoiceId) {
+      return state.paymentMatches.filter((m) => m.invoice_id === invoiceId).reduce((s, m) => s + Number(m.amount || 0), 0);
+    }
+
+    function invoicePaymentStatus(invoice) {
+      const explicit = invoice.payment_status || invoice.status;
+      const paid = paidAmountForInvoice(invoice.id) || Number(invoice.amount_paid || 0);
+      const total = Number(invoice.amount_total || 0);
+      if (total > 0 && paid > 0 && paid < total) return 'partial';
+      if (total > 0 && paid >= total) return 'paid';
+      if (invoice.is_direct_debit || explicit === 'domiciliation') return 'domiciliation';
+      if (invoice.sent_to_payment || explicit === 'payment_sent') return 'payment_sent';
+      if (explicit === 'paid') return 'paid';
+      return 'unpaid';
+    }
+
+    function invoiceRowClass(invoice) {
+      if (!state.invoiceColorMode) return '';
+      const s = invoicePaymentStatus(invoice);
+      if (s === 'paid') return 'invoice-row--paid';
+      if (s === 'partial') return 'invoice-row--partial';
+      if (s === 'payment_sent') return 'invoice-row--payment-sent';
+      if (s === 'domiciliation') return 'invoice-row--domiciliation';
+      return 'invoice-row--unpaid';
+    }
+
+    function paymentStatusBadge(s) {
+      if (s === 'paid') return '<span class="badge ok">Payée</span>';
+      if (s === 'partial') return '<span class="badge partial">Partiellement payée</span>';
+      if (s === 'payment_sent') return '<span class="badge warn">Envoyée en paiement</span>';
+      if (s === 'domiciliation') return '<span class="badge warn">Domiciliation</span>';
+      return '<span class="badge" style="background:#ffe4e0;color:#b42318;">Non payée</span>';
+    }
+
+    function setBankTab(tab) {
+      document.querySelectorAll('[data-bank-tab]').forEach((b) => b.classList.toggle('active', b.dataset.bankTab === tab));
+      ['manual','coda','accounts'].forEach((name) => {
+        const pane = $('bankPane' + name.charAt(0).toUpperCase() + name.slice(1));
+        if (pane) pane.classList.toggle('hidden', name !== tab);
+      });
+    }
+
+    function statementLines(statementId) {
+      return state.bankTransactions.filter((t) => t.statement_id === statementId || (!t.statement_id && state.bankStatements.find((s) => s.id === statementId)?.bank_account_id === t.bank_account_id));
+    }
+
+    function renderManualStatements() {
+      if (!$('manualStatementsTable')) return;
+      const coproId = state.activeCoproId || '';
+      const manual = state.bankStatements.filter((s) => (!coproId || s.copro_id === coproId) && ((s.file_name || '').toLowerCase().includes('manuel') || s.source === 'manual'));
+      $('manualStatementsTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Extrait</th><th>Date</th><th>Copropriété</th><th>Compte</th><th>Débit</th><th>Crédit</th><th>Solde final</th><th>Actions</th></tr></thead><tbody>${manual.map((s) => {
+        const tx = statementLines(s.id);
+        const debit = tx.filter((t)=>Number(t.amount)<0).reduce((sum,t)=>sum+Math.abs(Number(t.amount)),0);
+        const credit = tx.filter((t)=>Number(t.amount)>0).reduce((sum,t)=>sum+Number(t.amount),0);
+        return `<tr><td>${escapeHtml(s.statement_number || '-')}</td><td>${s.statement_date || ''}</td><td>${escapeHtml(s.compta_copros?.name || '')}</td><td>${escapeHtml(s.compta_bank_accounts?.label || '')}</td><td>${money(debit)}</td><td>${money(credit)}</td><td>${money(s.closing_balance || (Number(s.opening_balance||0)+credit-debit))}</td><td><button class="btn secondary small" data-open-manual-statement="${s.id}" type="button">Ouvrir</button></td></tr>`;
+      }).join('') || '<tr><td colspan="8">Aucun extrait manuel.</td></tr>'}</tbody></table></div>`;
+    }
+
+    function renderBank() {
+      const coproOptions = '<option value="">Toutes / choisir...</option>' + state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if ($('bankAccountCopro')) $('bankAccountCopro').innerHTML = coproOptions;
+      if ($('codaFilterCopro')) $('codaFilterCopro').innerHTML = coproOptions;
+      const accountOpts = bankAccountOptions();
+      if ($('manualStatementAccount')) $('manualStatementAccount').innerHTML = accountOpts;
+      if ($('bankTxStatement')) $('bankTxStatement').innerHTML = '<option value="">Choisir...</option>' + state.bankStatements.map((s)=>`<option value="${s.id}">${escapeHtml((s.statement_number||s.file_name||'Extrait')+' - '+(s.compta_copros?.name||''))}</option>`).join('');
+      if ($('bankTxTier')) $('bankTxTier').innerHTML = '<option value="">Choisir type tiers</option>';
+      if (state.activeCoproId && $('bankAccountCopro')) $('bankAccountCopro').value = state.activeCoproId;
+      if (state.activeCoproId && $('codaFilterCopro')) $('codaFilterCopro').value = state.activeCoproId;
+      $('bankAccountsTable').innerHTML = table(['Copropriété','Libellé','IBAN','BIC','Statut'], state.bankAccounts.filter((a)=>!state.activeCoproId||a.copro_id===state.activeCoproId).map((a)=>[a.compta_copros?.name||'',a.label||'',a.iban||'',a.bic||'',a.active?'<span class="badge ok">Actif</span>':'<span class="badge">Inactif</span>']));
+      renderManualStatements();
+      renderBankStatementsForValidation();
+    }
+
+    function addManualStatementDraftLine(line = {}) {
+      state.manualStatementDraftLines.push({
+        transaction_date: line.transaction_date || $('manualModalDate')?.value || new Date().toISOString().slice(0,10),
+        label: line.label || '',
+        movement_type: line.movement_type || 'credit',
+        tier_type: line.tier_type || 'owner',
+        tier_id: line.tier_id || '',
+        amount: line.amount || '',
+        letter_target_id: line.letter_target_id || '',
+        communication: line.communication || ''
+      });
+      renderManualStatementDraftLines();
+    }
+
+    function tierOptionsForType(type, selected = '') {
+      let list = [];
+      if (type === 'owner') list = state.owners;
+      if (type === 'supplier') list = state.suppliers;
+      if (type === 'occupant') list = state.occupants;
+      return '<option value="">Choisir...</option>' + list.map((x) => `<option value="${x.id}" ${selected===x.id?'selected':''}>${escapeHtml(x.display_name || x.name || '')}</option>`).join('');
+    }
+
+    function letterableOptionsForLine(line, selected = '') {
+      if (!line.tier_id) return '<option value="">Choisis un tiers</option>';
+      if (line.movement_type === 'debit' && line.tier_type === 'supplier') {
+        const docs = state.invoices.filter((i)=>i.supplier_id===line.tier_id && invoicePaymentStatus(i)!=='paid');
+        return '<option value="">Pas de lettrage</option>' + docs.map((i)=>`<option value="${i.id}" ${selected===i.id?'selected':''}>${escapeHtml(i.invoice_number || 'Facture')} - ${money(Number(i.amount_total||0)-paidAmountForInvoice(i.id))}</option>`).join('');
+      }
+      if (line.movement_type === 'credit' && line.tier_type === 'owner') {
+        const docs = state.ownerCalls.filter((c)=>c.owner_id===line.tier_id && c.status!=='paid');
+        return '<option value="">Pas de lettrage</option>' + docs.map((c)=>`<option value="${c.id}" ${selected===c.id?'selected':''}>${escapeHtml(c.label || 'Appel')} - ${money(Number(c.amount_due||0)-Number(c.amount_paid||0))}</option>`).join('');
+      }
+      return '<option value="">Aucun document lettrable</option>';
+    }
+
+    function renderManualStatementDraftLines() {
+      const holder = $('manualStatementLinesHolder');
+      if (!holder) return;
+      holder.innerHTML = `<div class="table-wrap"><table class="manual-lines-table"><thead><tr><th>Date</th><th>Libellé</th><th>Type</th><th>Tiers</th><th>Montant</th><th>Lettrage</th><th></th></tr></thead><tbody>${state.manualStatementDraftLines.map((line, idx)=>`
+        <tr>
+          <td><input type="date" data-ms-row="${idx}" data-ms-field="transaction_date" value="${escapeHtml(line.transaction_date)}"></td>
+          <td><input class="line-label" data-ms-row="${idx}" data-ms-field="label" value="${escapeHtml(line.label)}" placeholder="Libellé / communication"></td>
+          <td><select data-ms-row="${idx}" data-ms-field="movement_type"><option value="credit" ${line.movement_type==='credit'?'selected':''}>Encaissement</option><option value="debit" ${line.movement_type==='debit'?'selected':''}>Paiement</option></select></td>
+          <td><select data-ms-row="${idx}" data-ms-field="tier_type"><option value="owner" ${line.tier_type==='owner'?'selected':''}>Copropriétaire</option><option value="supplier" ${line.tier_type==='supplier'?'selected':''}>Fournisseur</option><option value="occupant" ${line.tier_type==='occupant'?'selected':''}>Occupant</option></select><select data-ms-row="${idx}" data-ms-field="tier_id" style="margin-top:6px;">${tierOptionsForType(line.tier_type, line.tier_id)}</select></td>
+          <td><input type="number" step="0.01" data-ms-row="${idx}" data-ms-field="amount" value="${escapeHtml(line.amount)}"></td>
+          <td><select data-ms-row="${idx}" data-ms-field="letter_target_id">${letterableOptionsForLine(line, line.letter_target_id)}</select></td>
+          <td><button class="btn danger small" type="button" data-remove-ms-line="${idx}">×</button></td>
+        </tr>`).join('') || '<tr><td colspan="7">Aucune ligne. Clique sur Ajouter une ligne.</td></tr>'}</tbody></table></div>`;
+      const total = state.manualStatementDraftLines.reduce((sum,l)=>sum+(l.movement_type==='debit'?-Math.abs(Number(l.amount||0)):Math.abs(Number(l.amount||0))),0);
+      const summary = $('manualStatementLinesSummary');
+      if (summary) summary.innerHTML = `<span class="badge">Lignes : ${state.manualStatementDraftLines.length}</span><span class="badge ${total>=0?'ok':'warn'}">Solde mouvements : ${money(total)}</span>`;
+    }
+
+    function openManualStatementModal(statementId = null) {
+      const st = statementId ? state.bankStatements.find((s)=>s.id===statementId) : null;
+      state.manualStatementDraftLines = st ? statementLines(st.id).map((t)=>({ transaction_date:t.transaction_date||st.statement_date||'', label:t.communication||t.description||'', movement_type:Number(t.amount)<0?'debit':'credit', tier_type:t.tier_type||'owner', tier_id:t.tier_id||'', amount:Math.abs(Number(t.amount||0)), letter_target_id:t.invoice_id||t.owner_call_id||'', communication:t.communication||'' })) : [];
+      const body = `<div class="popup-form">
+        <div class="modal-help">Encode uniquement l'essentiel : date, libellé, paiement/encaissement, tiers, montant et lettrage. Tu peux ajouter plusieurs lignes dans le même extrait.</div>
+        <div class="form-grid">
+          <label>Compte bancaire <select id="manualModalAccount">${bankAccountOptions(st?.bank_account_id || '')}</select></label>
+          <label>N° extrait <input id="manualModalNumber" value="${escapeHtml(st?.statement_number || '')}" placeholder="Ex: 037"></label>
+          <label>Date extrait <input id="manualModalDate" type="date" value="${escapeHtml(st?.statement_date || new Date().toISOString().slice(0,10))}"></label>
+          <label>Solde initial <input id="manualModalOpening" type="number" step="0.01" value="${escapeHtml(st?.opening_balance ?? 0)}"></label>
+        </div>
+        <div class="clean-list-header"><h3>Lignes de l'extrait</h3><button class="btn secondary" id="addManualLineBtn" type="button">Ajouter une ligne</button></div>
+        <div id="manualStatementLinesSummary" class="summary-line"></div>
+        <div id="manualStatementLinesHolder"></div>
+      </div>`;
+      const footer = `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn secondary" id="manualSaveNextBtn" type="button">Valider et suivant</button><button class="btn" id="manualSaveCloseBtn" type="button">Valider et fermer</button>`;
+      openAppModal(st ? `Extrait manuel ${st.statement_number || ''}` : 'Nouvel extrait manuel', body, footer, { subtitle:'Encodage multiligne', size:'wide' });
+      if (!state.manualStatementDraftLines.length) addManualStatementDraftLine(); else renderManualStatementDraftLines();
+      $('addManualLineBtn').onclick = () => addManualStatementDraftLine();
+      $('manualStatementLinesHolder').oninput = handleManualStatementLineChange;
+      $('manualStatementLinesHolder').onchange = handleManualStatementLineChange;
+      $('manualStatementLinesHolder').onclick = (e)=>{ const idx=e.target?.dataset?.removeMsLine; if(idx!==undefined){ state.manualStatementDraftLines.splice(Number(idx),1); renderManualStatementDraftLines(); }};
+      $('manualSaveCloseBtn').onclick = () => saveManualStatementFromModal('close', statementId);
+      $('manualSaveNextBtn').onclick = () => saveManualStatementFromModal('next', statementId);
+    }
+
+    function handleManualStatementLineChange(e) {
+      const idx = e.target?.dataset?.msRow;
+      const field = e.target?.dataset?.msField;
+      if (idx === undefined || !field) return;
+      state.manualStatementDraftLines[Number(idx)][field] = e.target.value;
+      if (['tier_type','tier_id','movement_type'].includes(field)) renderManualStatementDraftLines();
+    }
+
+    async function saveManualStatementFromModal(mode = 'close', statementId = null) {
+      const account = state.bankAccounts.find((a)=>a.id===$('manualModalAccount').value);
+      if (!account) return alert('Choisis un compte bancaire.');
+      const number = $('manualModalNumber').value.trim();
+      if (!number) return alert('Indique le numéro d’extrait.');
+      const opening = Number($('manualModalOpening').value || 0);
+      const lines = state.manualStatementDraftLines.filter((l)=>Number(l.amount || 0)>0);
+      if (!lines.length) return alert('Ajoute au moins une ligne avec un montant.');
+      const movementTotal = lines.reduce((sum,l)=>sum+(l.movement_type==='debit'?-Math.abs(Number(l.amount)):Math.abs(Number(l.amount))),0);
+      const closing = opening + movementTotal;
+      let stId = statementId;
+      if (!stId) {
+        const { data, error } = await supabaseClient.from('compta_bank_statements').insert({ copro_id:account.copro_id, bank_account_id:account.id, statement_number:number, statement_date:$('manualModalDate').value||null, opening_balance:opening, closing_balance:closing, computed_balance:closing, balance_check_status:'manual', status:'validated', file_name:'Encodage manuel', source:'manual', created_by:currentUser.id }).select('id').single();
+        if (error) return alert(error.message);
+        stId = data.id;
+      } else {
+        const { error } = await supabaseClient.from('compta_bank_statements').update({ bank_account_id:account.id, copro_id:account.copro_id, statement_number:number, statement_date:$('manualModalDate').value||null, opening_balance:opening, closing_balance:closing, computed_balance:closing, status:'validated' }).eq('id', stId);
+        if (error) return alert(error.message);
+        await supabaseClient.from('compta_bank_transactions').delete().eq('statement_id', stId);
+      }
+      for (const line of lines) {
+        const amount = line.movement_type === 'debit' ? -Math.abs(Number(line.amount)) : Math.abs(Number(line.amount));
+        const insertPayload = { copro_id:account.copro_id, bank_account_id:account.id, statement_id:stId, statement_number:number, transaction_date:line.transaction_date||$('manualModalDate').value||null, amount, communication:line.label||line.communication||null, counterparty_name:tierName(line.tier_type,line.tier_id)||null, description:line.label||null, tier_type:line.tier_type||null, tier_id:line.tier_id||null, source:'manual', status:'imported', reconciliation_status:'unlettered', reconciled:false, created_by:currentUser.id };
+        const { data: tx, error } = await supabaseClient.from('compta_bank_transactions').insert(insertPayload).select('id,amount').single();
+        if (error) return alert(error.message);
+        if (line.letter_target_id) await applyLetteringToTransaction(tx.id, line.letter_target_id);
+      }
+      await loadAll();
+      if (mode === 'next') { state.manualStatementDraftLines = []; openManualStatementModal(null); }
+      else closeAppModal();
+    }
+
+    async function applyLetteringToTransaction(txId, docId) {
+      let actualTx = state.bankTransactions.find((t)=>t.id===txId);
+      if (!actualTx) {
+        const { data, error } = await supabaseClient.from('compta_bank_transactions').select('*').eq('id', txId).single();
+        if (error) return alert(error.message);
+        actualTx = data;
+      }
+      const amount = Math.abs(Number(actualTx.amount || 0));
+      let payload = { transaction_id:txId, amount, created_by: currentUser.id };
+      if (Number(actualTx.amount) < 0) {
+        const inv = state.invoices.find((i)=>i.id===docId);
+        payload.invoice_id = docId;
+        const already = paidAmountForInvoice(docId);
+        const newPaid = already + amount;
+        const total = Number(inv?.amount_total || 0);
+        const nextStatus = total > 0 && newPaid >= total ? 'paid' : 'partial';
+        await supabaseClient.from('compta_invoices').update({ payment_status: nextStatus, amount_paid:newPaid, status: nextStatus==='paid'?'paid':'validated', paid_at: nextStatus==='paid'?new Date().toISOString():null }).eq('id', docId);
+      } else {
+        payload.owner_call_id = docId;
+        const call = state.ownerCalls.find((c)=>c.id===docId);
+        const newPaid = Number(call?.amount_paid || 0) + amount;
+        const total = Number(call?.amount_due || 0);
+        const nextStatus = total > 0 && newPaid >= total ? 'paid' : 'partial';
+        await supabaseClient.from('compta_owner_calls').update({ status: nextStatus, amount_paid:newPaid, paid_at: nextStatus==='paid'?new Date().toISOString():null }).eq('id', docId);
+      }
+      await supabaseClient.from('compta_payment_matches').insert(payload);
+      await supabaseClient.from('compta_bank_transactions').update({ reconciled:true, reconciliation_status:'lettered', reconciled_at:new Date().toISOString() }).eq('id', txId);
+    }
+
+    async function applyLettering(docId) {
+      const tx = state.bankTransactions.find((t)=>t.id===state.selectedFinancialTxId);
+      if(!tx) return;
+      await applyLetteringToTransaction(tx.id, docId);
+      await loadAll();
+      state.selectedFinancialTxId = tx.id;
+      renderFinancialLedgerDetail();
+      renderFinancialLedger();
+    }
+
+    function fiscalYearOptions(selected='') { return '<option value="">Choisir...</option>' + state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId).map((y)=>`<option value="${y.id}" ${selected===y.id?'selected':''}>${escapeHtml(y.label)} (${y.starts_on||''} → ${y.ends_on||''})</option>`).join(''); }
+    function distributionKeyOptions(coproId, selected='') { return '<option value="">Choisir...</option>' + state.distributionKeys.filter((k)=>!coproId||k.copro_id===coproId).map((k)=>`<option value="${k.id}" ${selected===k.id?'selected':''}>${escapeHtml(k.name)}${k.is_default?' (défaut)':''}</option>`).join(''); }
+    function class6AccountOptions(selected='') { return '<option value="">Choisir...</option>' + state.accounts.filter((a)=>String(a.code||'').startsWith('6')).map((a)=>`<option value="${a.id}" ${selected===a.id?'selected':''}>${escapeHtml(a.code+' - '+a.label)}</option>`).join(''); }
+
+    function renderExercises() {
+      if (!$('fiscalYearsTable')) return;
+      const rows = state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId);
+      $('fiscalYearsTable').innerHTML = table(['Copropriété','Nom','Début','Fin','Statut','Actions'], rows.map((y)=>[y.compta_copros?.name||'', y.label||'', y.starts_on||'', y.ends_on||'', statusBadge(y.status), `<button class="btn secondary small" data-edit-year="${y.id}" type="button">Ouvrir</button>`]));
+    }
+
+    function openFiscalYearModal(id=null) {
+      const y = id ? state.fiscalYears.find((x)=>x.id===id) : null;
+      const body = `<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="modalYearCopro">${coproOptions(y?.copro_id || state.activeCoproId || '')}</select></label><label>Nom <input id="modalYearLabel" value="${escapeHtml(y?.label||'Exercice 2026')}"></label><label>Début <input id="modalYearStart" type="date" value="${escapeHtml(y?.starts_on||'')}"></label><label>Fin <input id="modalYearEnd" type="date" value="${escapeHtml(y?.ends_on||'')}"></label><label>Statut <select id="modalYearStatus"><option value="open" ${(y?.status||'open')==='open'?'selected':''}>Ouvert</option><option value="closed" ${y?.status==='closed'?'selected':''}>Clôturé</option></select></label></div></div>`;
+      openAppModal(id?'Exercice comptable':'Nouvel exercice', body, modalFormFooter('modalSaveYearBtn'), {size:'narrow'});
+      $('modalSaveYearBtn').onclick = async()=>{ const payload={copro_id:$('modalYearCopro').value,label:$('modalYearLabel').value.trim(),starts_on:$('modalYearStart').value,ends_on:$('modalYearEnd').value,status:$('modalYearStatus').value,created_by:currentUser.id}; if(!payload.copro_id||!payload.label||!payload.starts_on||!payload.ends_on)return alert('Complète les champs obligatoires.'); const req=id?supabaseClient.from('compta_fiscal_years').update(payload).eq('id',id):supabaseClient.from('compta_fiscal_years').insert(payload); const {error}=await req; if(error)return alert(error.message); closeAppModal(); await loadAll(); };
+    }
+
+    function renderBudgets() {
+      if (!$('budgetsTable')) return;
+      $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
+      $('budgetFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      const coproId = state.activeCoproId || $('budgetCoproFilter').value || '';
+      const yearId = $('budgetFiscalYearFilter').value || '';
+      const lines = state.budgetLines.filter((l)=>(!coproId||l.copro_id===coproId)&&(!yearId||l.fiscal_year_id===yearId));
+      const groups = {};
+      lines.forEach((l)=>{ const key=l.distribution_key_id||'none'; groups[key]=groups[key]||[]; groups[key].push(l); });
+      const total = lines.reduce((s,l)=>s+Number(l.amount||0),0);
+      $('budgetSummary').innerHTML = `<span class="badge">Total budget : ${money(total)}</span><span class="badge">Lignes : ${lines.length}</span>`;
+      $('budgetsTable').innerHTML = Object.entries(groups).map(([keyId, arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="budget-key-card"><h3>${escapeHtml(k?.name || 'Sans clé')} <span class="badge ok">${money(subtotal)}</span></h3>${table(['Compte classe 6','Libellé','Montant','Actions'], arr.map((l)=>[`${l.compta_accounts?.code||''} - ${l.compta_accounts?.label||''}`, l.label||'', money(l.amount), `<button class="btn secondary small" data-edit-budget="${l.id}" type="button">Modifier</button><button class="btn danger small" data-delete-budget="${l.id}" type="button">Supprimer</button>`]))}</div>`; }).join('') || '<div class="notice">Aucun budget pour le filtre actuel.</div>';
+    }
+
+    function openBudgetLineModal(id=null) {
+      const b = id ? state.budgetLines.find((x)=>x.id===id) : null;
+      const coproId = b?.copro_id || state.activeCoproId || $('budgetCoproFilter')?.value || '';
+      const body = `<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="modalBudgetCopro">${coproOptions(coproId)}</select></label><label>Exercice <select id="modalBudgetYear">${fiscalYearOptions(b?.fiscal_year_id||'')}</select></label><label>Clé de répartition <select id="modalBudgetKey">${distributionKeyOptions(coproId,b?.distribution_key_id||'')}</select></label><label>Compte classe 6 <select id="modalBudgetAccount">${class6AccountOptions(b?.account_id||'')}</select></label><label>Libellé <input id="modalBudgetLabel" value="${escapeHtml(b?.label||'')}"></label><label>Montant budget <input id="modalBudgetAmount" type="number" step="0.01" value="${escapeHtml(b?.amount||'')}"></label></div></div>`;
+      openAppModal(id?'Modifier ligne budget':'Ajouter ligne budget', body, modalFormFooter('modalSaveBudgetBtn', id?`<button class="btn danger" type="button" id="modalDeleteBudgetBtn">Supprimer</button>`:''), {size:'wide'});
+      $('modalBudgetCopro').onchange=()=>{ $('modalBudgetKey').innerHTML=distributionKeyOptions($('modalBudgetCopro').value,''); };
+      $('modalSaveBudgetBtn').onclick=async()=>{ const payload={copro_id:$('modalBudgetCopro').value,fiscal_year_id:$('modalBudgetYear').value||null,distribution_key_id:$('modalBudgetKey').value||null,account_id:$('modalBudgetAccount').value,label:$('modalBudgetLabel').value.trim()||null,amount:Number($('modalBudgetAmount').value||0),created_by:currentUser.id}; if(!payload.copro_id||!payload.account_id||!payload.distribution_key_id)return alert('Choisis copropriété, clé et compte.'); const req=id?supabaseClient.from('compta_budget_lines').update(payload).eq('id',id):supabaseClient.from('compta_budget_lines').insert(payload); const {error}=await req; if(error)return alert(error.message); closeAppModal(); await loadAll(); };
+      if ($('modalDeleteBudgetBtn')) $('modalDeleteBudgetBtn').onclick=async()=>{ if(!confirm('Supprimer cette ligne budget ?'))return; const {error}=await supabaseClient.from('compta_budget_lines').delete().eq('id',id); if(error)return alert(error.message); closeAppModal(); await loadAll(); };
+    }
+
+    function renderCalls() {
+      if (!$('callsTable')) return;
+      $('callsCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('callsCoproFilter').value = state.activeCoproId;
+      $('callsFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      const coproId=state.activeCoproId||$('callsCoproFilter').value||''; const yearId=$('callsFiscalYearFilter').value||''; const status=$('callsStatusFilter').value||'';
+      const rows=state.ownerCalls.filter((c)=>(!coproId||c.copro_id===coproId)&&(!yearId||c.fiscal_year_id===yearId)&&(!status||c.status===status));
+      const totals={amount:rows.reduce((s,c)=>s+Number(c.amount_due||0),0),paid:rows.reduce((s,c)=>s+Number(c.amount_paid||0),0),count:rows.length,unpaid:rows.filter(c=>c.status!=='paid').length};
+      $('callsSummary').innerHTML=`<div class="call-card">Appels<strong>${totals.count}</strong></div><div class="call-card">Total appelé<strong>${money(totals.amount)}</strong></div><div class="call-card">Total payé<strong>${money(totals.paid)}</strong></div><div class="call-card">Reste ouvert<strong>${money(totals.amount-totals.paid)}</strong></div>`;
+      $('callsTable').innerHTML=table(['Échéance','Copropriétaire','Lot','Libellé','Montant','Payé','Statut','PDF'], rows.map((c)=>[c.due_date||'',c.compta_owners?.display_name||'',c.compta_lots?.lot_number||'',c.label||'',money(c.amount_due),money(c.amount_paid),paymentStatusBadge(c.status==='partial'?'partial':c.status==='paid'?'paid':'unpaid'),`<button class="btn secondary small" data-print-call="${c.id}" type="button">PDF</button>`]));
+    }
+
+    function openCallProjectModal() {
+      const coproId = state.activeCoproId || $('callsCoproFilter')?.value || '';
+      const body=`<div class="popup-form"><div class="modal-help">Pour les provisions sur charges, le montant est pris depuis le budget filtré par exercice et réparti selon les clés. Les autres types peuvent utiliser un montant manuel.</div><div class="form-grid"><label>Copropriété <select id="modalCallCopro">${coproOptions(coproId)}</select></label><label>Exercice <select id="modalCallYear">${fiscalYearOptions('')}</select></label><label>Type d'appel <select id="modalCallType"><option value="provisions">Provisions sur charges</option><option value="reserve">Fonds de réserve</option><option value="working_fund">Fonds de roulement</option><option value="extraordinary">Appel extraordinaire</option></select></label><label>Périodicité <select id="modalCallPeriodicity"><option value="quarterly">Trimestrielle</option><option value="monthly">Mensuelle</option><option value="semiannual">Semestrielle</option><option value="annual">Annuelle</option></select></label><label>Date premier appel <input id="modalCallStart" type="date" value="${new Date().toISOString().slice(0,10)}"></label><label>Montant manuel si hors budget <input id="modalCallManualAmount" type="number" step="0.01" value="0"></label><label>Libellé <input id="modalCallLabel" value="Appel de fonds"></label></div></div>`;
+      openAppModal('Nouvel appel de fonds', body, modalFormFooter('modalGenerateCallsBtn'), {size:'wide'});
+      $('modalGenerateCallsBtn').onclick=generateCallsFromModal;
+    }
+
+    function periodicityCount(value){ return value==='monthly'?12:value==='semiannual'?2:value==='annual'?1:4; }
+    function addMonths(dateStr, months){ const d=new Date(dateStr); d.setMonth(d.getMonth()+months); return d.toISOString().slice(0,10); }
+    function monthLabel(dateStr){ return new Date(dateStr).toLocaleDateString('fr-BE',{month:'long', year:'numeric'}); }
+
+    async function generateCallsFromModal(){
+      const coproId=$('modalCallCopro').value; const yearId=$('modalCallYear').value||null; const type=$('modalCallType').value; const periodicity=$('modalCallPeriodicity').value; const firstDate=$('modalCallStart').value; const baseLabel=$('modalCallLabel').value.trim()||'Appel de fonds'; if(!coproId||!firstDate)return alert('Choisis copropriété et date.');
+      const count=periodicityCount(periodicity); const step=periodicity==='monthly'?1:periodicity==='semiannual'?6:periodicity==='annual'?12:3;
+      const budgetLines=state.budgetLines.filter((b)=>b.copro_id===coproId&&(!yearId||b.fiscal_year_id===yearId));
+      const manual=Number($('modalCallManualAmount').value||0);
+      const totalBudget=budgetLines.reduce((s,b)=>s+Number(b.amount||0),0);
+      const totalAmount=type==='provisions'?totalBudget:manual;
+      if(!totalAmount)return alert('Aucun montant à appeler. Encode un budget ou un montant manuel.');
+      const lots=state.lots.filter((l)=>l.copro_id===coproId&&l.active!==false&&l.owner_id);
+      if(!lots.length)return alert('Aucun lot/propriétaire disponible pour répartir.');
+      const totalQ=lots.reduce((s,l)=>s+Number(l.quotities||0),0)||1;
+      for(let i=0;i<count;i++){
+        const due=addMonths(firstDate,i*step); const periodAmount=totalAmount/count; const label=`${baseLabel} - ${monthLabel(due)}`;
+        const {data:call,error}=await supabaseClient.from('compta_calls').insert({copro_id:coproId,fiscal_year_id:yearId,label,call_date:due,due_date:due,amount_total:periodAmount,status:'sent',created_by:currentUser.id}).select('id').single(); if(error)return alert(error.message);
+        for(const lot of lots){ const amount=periodAmount*(Number(lot.quotities||0)/totalQ); await supabaseClient.from('compta_owner_calls').insert({call_id:call.id,copro_id:coproId,fiscal_year_id:yearId,owner_id:lot.owner_id,lot_id:lot.id,label,due_date:due,amount_due:Number(amount.toFixed(2)),amount_paid:0,status:'unpaid',call_type:type,period_label:monthLabel(due),created_by:currentUser.id}); }
+      }
+      closeAppModal(); await loadAll();
+    }
+
+    function printOwnerCall(id){ const c=state.ownerCalls.find((x)=>x.id===id); if(!c)return; const copro=state.copros.find((x)=>x.id===c.copro_id); const owner=c.compta_owners?.display_name||''; const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Appel ${c.label}</title><style>body{font-family:Century Gothic,Arial;margin:40px;color:#172033}.head{display:flex;justify-content:space-between;border-bottom:4px solid #1f7a8c;padding-bottom:18px}.logo{font-weight:900;color:#1f7a8c;font-size:26px}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}.amount{font-size:30px;color:#1f7a8c;font-weight:900}</style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div><script>print();</script></body></html>`); win.document.close(); }
+    function printAllCalls(){ state.ownerCalls.filter((c)=>!state.activeCoproId||c.copro_id===state.activeCoproId).slice(0,50).forEach((c)=>printOwnerCall(c.id)); }
+
+    function openDistributionKeyModal(id=null){ const key=id?state.distributionKeys.find(k=>k.id===id):null; const coproId=key?.copro_id||state.activeCoproId||$('distributionCopro')?.value||''; const body=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="modalDistCopro">${coproOptions(coproId)}</select></label><label>Nom de la clé <input id="modalDistName" value="${escapeHtml(key?.name||'')}"></label><label>Clé par défaut <select id="modalDistDefault"><option value="false">Non</option><option value="true" ${key?.is_default?'selected':''}>Oui</option></select></label></div></div>`; openAppModal(id?'Modifier clé de répartition':'Nouvelle clé de répartition', body, modalFormFooter('modalSaveDistBtn', id&&!key?.is_default?`<button class="btn danger" type="button" id="modalDeleteDistBtn">Supprimer</button>`:''), {size:'narrow'}); $('modalSaveDistBtn').onclick=async()=>{ const payload={copro_id:$('modalDistCopro').value,name:$('modalDistName').value.trim(),is_default:$('modalDistDefault').value==='true',created_by:currentUser.id}; if(!payload.copro_id||!payload.name)return alert('Complète les champs.'); const req=id?supabaseClient.from('compta_distribution_keys').update(payload).eq('id',id):supabaseClient.from('compta_distribution_keys').insert(payload); const {error}=await req; if(error)return alert(error.message); closeAppModal(); await loadAll(); }; if($('modalDeleteDistBtn'))$('modalDeleteDistBtn').onclick=async()=>{ if(!confirm('Supprimer cette clé ?'))return; await supabaseClient.from('compta_distribution_items').delete().eq('distribution_key_id',id); const {error}=await supabaseClient.from('compta_distribution_keys').delete().eq('id',id); if(error)return alert(error.message); closeAppModal(); await loadAll(); }; }
+    async function createDistributionKey(){ openDistributionKeyModal(null); }
+    async function renameDistributionKey(){ const id=$('distributionKeySelect')?.value; if(!id)return alert('Choisis une clé.'); openDistributionKeyModal(id); }
+
+    const originalRenderAllV9 = renderAll;
+    renderAll = function(){ originalRenderAllV9(); renderManualStatements(); renderExercises(); renderBudgets(); renderCalls(); };
+
+    document.addEventListener('click', (e)=>{
+      const t=e.target;
+      if(t?.id==='newManualStatementBtn') openManualStatementModal(null);
+      if(t?.dataset?.openManualStatement) openManualStatementModal(t.dataset.openManualStatement);
+      if(t?.dataset?.bankTab) setBankTab(t.dataset.bankTab);
+      if(t?.id==='newFiscalYearBtn') openFiscalYearModal(null);
+      if(t?.dataset?.editYear) openFiscalYearModal(t.dataset.editYear);
+      if(t?.id==='newBudgetLineBtn') openBudgetLineModal(null);
+      if(t?.dataset?.editBudget) openBudgetLineModal(t.dataset.editBudget);
+      if(t?.dataset?.deleteBudget) { if(confirm('Supprimer cette ligne budget ?')) supabaseClient.from('compta_budget_lines').delete().eq('id',t.dataset.deleteBudget).then(()=>loadAll()); }
+      if(t?.id==='newCallProjectBtn'||t?.id==='prepareCallsFromBudgetBtn') openCallProjectModal();
+      if(t?.dataset?.printCall) printOwnerCall(t.dataset.printCall);
+      if(t?.id==='printAllCallsBtn') printAllCalls();
+      if(t?.id==='newBankAccountBtn') { setBankTab('accounts'); }
+    });
+    ['budgetCoproFilter','budgetFiscalYearFilter'].forEach(id=>{ setTimeout(()=>{ if($(id)) $(id).addEventListener('change', renderBudgets); },0); });
+    ['callsCoproFilter','callsFiscalYearFilter','callsStatusFilter'].forEach(id=>{ setTimeout(()=>{ if($(id)) $(id).addEventListener('change', renderCalls); },0); });
+
 
         boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
