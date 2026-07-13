@@ -561,6 +561,118 @@
       gap: 16px;
     }
 
+    .active-copro-box {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 0 0 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .active-copro-box label {
+      color: #b9c6d3;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .active-copro-box select {
+      background: #0f2338;
+      color: #fff;
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .active-copro-name {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .mini-btn {
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      border-radius: 7px;
+      padding: 7px 9px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    #appScreen.sidebar-collapsed .active-copro-box label,
+    #appScreen.sidebar-collapsed .active-copro-box select,
+    #appScreen.sidebar-collapsed .active-copro-name,
+    #appScreen.sidebar-collapsed .active-copro-box .mini-btn {
+      display: none;
+    }
+
+    #appScreen.sidebar-collapsed .active-copro-box::before {
+      content: "🏢";
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 22px;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .module-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 10px;
+      min-height: 130px;
+    }
+
+    .module-card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .module-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .context-banner {
+      border: 1px solid #cfe3ef;
+      background: #eef8fc;
+      color: #14586a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    @media (max-width: 1100px) {
+      .module-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .module-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 980px) {
       .app-shell {
         grid-template-columns: 1fr;
@@ -643,6 +755,16 @@
           <div class="brand-subtitle">Comptabilite copropriete</div>
         </div>
       </div>
+
+      <div class="active-copro-box">
+        <label>Copropriete active</label>
+        <div id="activeCoproName" class="active-copro-name">Mode global</div>
+        <select id="activeCoproSelect"></select>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="mini-btn" id="enterSelectedCoproBtn" type="button">Entrer</button>
+          <button class="mini-btn" id="clearActiveCoproBtn" type="button">Global</button>
+        </div>
+      </div>
       <nav class="nav">
         <div class="menu-group" data-group>
           <button class="menu-group__header" type="button" data-group-toggle>
@@ -652,20 +774,23 @@
           <div class="menu-group__body">
             <button data-view="dashboard" data-title="Tableau de bord" class="active" title="Tableau de bord"><span class="nav__item"><span class="nav-icon">🏠</span><span class="nav-label">Tableau de bord</span></span></button>
             <button data-view="processing" data-title="Centre de traitement" title="Centre de traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Centre de traitement</span></span></button>
-            <button data-view="bank" data-title="Banque" title="Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Banque</span></span></button>
+            <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
           </div>
         </div>
 
         <div class="menu-group" data-group>
           <button class="menu-group__header" type="button" data-group-toggle>
-            <span class="menu-group__label"><span class="menu-group__icon">🗂️</span><span class="menu-group__text">Referentiels</span></span>
+            <span class="menu-group__label"><span class="menu-group__icon">🏗️</span><span class="menu-group__text">Infrastructures</span></span>
             <span class="menu-group__caret">▾</span>
           </button>
           <div class="menu-group__body">
             <button data-view="copros" data-title="Coproprietes" title="Coproprietes"><span class="nav__item"><span class="nav-icon">🏢</span><span class="nav-label">Coproprietes</span></span></button>
+            <button data-view="buildings" data-title="Batiments" title="Batiments"><span class="nav__item"><span class="nav-icon">🏬</span><span class="nav-label">Batiments</span></span></button>
             <button data-view="lots" data-title="Lots" title="Lots"><span class="nav__item"><span class="nav-icon">🔢</span><span class="nav-label">Lots</span></span></button>
-            <button data-view="owners" data-title="Proprietaires" title="Proprietaires"><span class="nav__item"><span class="nav-icon">👤</span><span class="nav-label">Proprietaires</span></span></button>
-            <button data-view="suppliers" data-title="Fournisseurs" title="Fournisseurs"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Fournisseurs</span></span></button>
+            <button data-view="owners" data-title="Identites / Proprietaires" title="Identites / Proprietaires"><span class="nav__item"><span class="nav-icon">👤</span><span class="nav-label">Identites</span></span></button>
+            <button data-view="distribution" data-title="Repartition" title="Repartition"><span class="nav__item"><span class="nav-icon">🧩</span><span class="nav-label">Repartition</span></span></button>
+            <button data-view="works" data-title="Dossiers travaux" title="Dossiers travaux"><span class="nav__item"><span class="nav-icon">🛠️</span><span class="nav-label">Dossiers travaux</span></span></button>
+            <button data-view="articles" data-title="Base articles" title="Base articles"><span class="nav__item"><span class="nav-icon">📦</span><span class="nav-label">Base articles</span></span></button>
           </div>
         </div>
 
@@ -675,10 +800,17 @@
             <span class="menu-group__caret">▾</span>
           </button>
           <div class="menu-group__body">
-            <button data-view="invoices" data-title="Factures" title="Factures"><span class="nav__item"><span class="nav-icon">📄</span><span class="nav-label">Factures</span></span></button>
-            <button data-view="accounts" data-title="Plan comptable" title="Plan comptable"><span class="nav__item"><span class="nav-icon">📚</span><span class="nav-label">Plan comptable</span></span></button>
-            <button data-view="entries" data-title="Ecritures" title="Ecritures"><span class="nav__item"><span class="nav-icon">✍️</span><span class="nav-label">Ecritures</span></span></button>
+            <button data-view="exercises" data-title="Exercices comptables" title="Exercices comptables"><span class="nav__item"><span class="nav-icon">📅</span><span class="nav-label">Exercices comptables</span></span></button>
+            <button data-view="budgets" data-title="Budgets" title="Budgets"><span class="nav__item"><span class="nav-icon">💶</span><span class="nav-label">Budgets</span></span></button>
+            <button data-view="calls" data-title="Appels de fonds" title="Appels de fonds"><span class="nav__item"><span class="nav-icon">📣</span><span class="nav-label">Appels</span></span></button>
+            <button data-view="invoices" data-title="Factures fournisseurs" title="Factures fournisseurs"><span class="nav__item"><span class="nav-icon">📄</span><span class="nav-label">Factures fournisseurs</span></span></button>
+            <button data-view="syndicBilling" data-title="Facturation syndic" title="Facturation syndic"><span class="nav__item"><span class="nav-icon">🏷️</span><span class="nav-label">Facturation syndic</span></span></button>
+            <button data-view="electronicBilling" data-title="Facturation electronique" title="Facturation electronique"><span class="nav__item"><span class="nav-icon">🔌</span><span class="nav-label">Facturation electronique</span></span></button>
+            <button data-view="bank" data-title="Financier" title="Financier"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier</span></span></button>
             <button data-view="od" data-title="Operations diverses" title="Operations diverses"><span class="nav__item"><span class="nav-icon">⚙️</span><span class="nav-label">Operations diverses</span></span></button>
+            <button data-view="planner" data-title="Planificateur" title="Planificateur"><span class="nav__item"><span class="nav-icon">🗓️</span><span class="nav-label">Planificateur</span></span></button>
+            <button data-view="simulation" data-title="Simulation repartition" title="Simulation repartition"><span class="nav__item"><span class="nav-icon">🧪</span><span class="nav-label">Simulation repartition</span></span></button>
+            <button data-view="statements" data-title="Decomptes" title="Decomptes"><span class="nav__item"><span class="nav-icon">📑</span><span class="nav-label">Decomptes</span></span></button>
           </div>
         </div>
 
@@ -688,9 +820,49 @@
             <span class="menu-group__caret">▾</span>
           </button>
           <div class="menu-group__body">
-            <button data-view="balance" data-title="Balance" title="Balance"><span class="nav__item"><span class="nav-icon">📈</span><span class="nav-label">Balance</span></span></button>
-            <button data-view="bilan" data-title="Bilan" title="Bilan"><span class="nav__item"><span class="nav-icon">🧮</span><span class="nav-label">Bilan</span></span></button>
-            <button data-view="journals" data-title="Journaux" title="Journaux"><span class="nav__item"><span class="nav-icon">🗃️</span><span class="nav-label">Journaux</span></span></button>
+            <button data-view="accounts" data-title="Comptes comptables" title="Comptes comptables"><span class="nav__item"><span class="nav-icon">📚</span><span class="nav-label">Comptes comptables</span></span></button>
+            <button data-view="ledger" data-title="Grand livre" title="Grand livre"><span class="nav__item"><span class="nav-icon">📖</span><span class="nav-label">Grand livre</span></span></button>
+            <button data-view="financialLedger" data-title="Grand livre financier" title="Grand livre financier"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Grand livre financier</span></span></button>
+            <button data-view="balance" data-title="Balance generale" title="Balance generale"><span class="nav__item"><span class="nav-icon">📈</span><span class="nav-label">Balance generale</span></span></button>
+            <button data-view="thirdBalance" data-title="Balance des tiers" title="Balance des tiers"><span class="nav__item"><span class="nav-icon">👥</span><span class="nav-label">Balance des tiers</span></span></button>
+            <button data-view="journals" data-title="Journaux comptables" title="Journaux comptables"><span class="nav__item"><span class="nav-icon">🗃️</span><span class="nav-label">Journaux comptables</span></span></button>
+            <button data-view="bilan" data-title="Bilan comptable" title="Bilan comptable"><span class="nav__item"><span class="nav-icon">🧮</span><span class="nav-label">Bilan comptable</span></span></button>
+            <button data-view="heldFunds" data-title="Fonds detenus" title="Fonds detenus"><span class="nav__item"><span class="nav-icon">💰</span><span class="nav-label">Fonds detenus</span></span></button>
+            <button data-view="expensesList" data-title="Liste des depenses" title="Liste des depenses"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Liste des depenses</span></span></button>
+            <button data-view="multicoproConsultation" data-title="Consultation multicopropriete" title="Consultation multicopropriete"><span class="nav__item"><span class="nav-icon">🔎</span><span class="nav-label">Consultation multicopropriete</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🗳️</span><span class="menu-group__text">Assemblees generales</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="meetings" data-title="Assemblees generales" title="Assemblees generales"><span class="nav__item"><span class="nav-icon">🗳️</span><span class="nav-label">Assemblees generales</span></span></button>
+            <button data-view="resolutions" data-title="Catalogue des resolutions" title="Catalogue des resolutions"><span class="nav__item"><span class="nav-icon">📋</span><span class="nav-label">Catalogue resolutions</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">⚙️</span><span class="menu-group__text">Configuration</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="agency" data-title="Agence" title="Agence"><span class="nav__item"><span class="nav-icon">🏢</span><span class="nav-label">Agence</span></span></button>
+            <button data-view="users" data-title="Utilisateurs" title="Utilisateurs"><span class="nav__item"><span class="nav-icon">👥</span><span class="nav-label">Utilisateurs</span></span></button>
+            <button data-view="accessControl" data-title="Controle d'acces" title="Controle d'acces"><span class="nav__item"><span class="nav-icon">🔐</span><span class="nav-label">Controle d'acces</span></span></button>
+            <button data-view="bankInstitutions" data-title="Etablissements bancaires" title="Etablissements bancaires"><span class="nav__item"><span class="nav-icon">🏛️</span><span class="nav-label">Etablissements bancaires</span></span></button>
+            <button data-view="propertyTypes" data-title="Natures de biens" title="Natures de biens"><span class="nav__item"><span class="nav-icon">🏘️</span><span class="nav-label">Natures de biens</span></span></button>
+            <button data-view="vatCodes" data-title="Codes TVA" title="Codes TVA"><span class="nav__item"><span class="nav-icon">%</span><span class="nav-label">Codes TVA</span></span></button>
+            <button data-view="journalCodes" data-title="Codes journaux" title="Codes journaux"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Codes journaux</span></span></button>
+            <button data-view="defaultExpenseTypes" data-title="Natures de depense par defaut" title="Natures de depense par defaut"><span class="nav__item"><span class="nav-icon">📌</span><span class="nav-label">Natures depense defaut</span></span></button>
+            <button data-view="gdpr" data-title="GDPR" title="GDPR"><span class="nav__item"><span class="nav-icon">🛡️</span><span class="nav-label">GDPR</span></span></button>
+            <button data-view="importsConfig" data-title="Import" title="Import"><span class="nav__item"><span class="nav-icon">⬇️</span><span class="nav-label">Import</span></span></button>
+            <button data-view="templates" data-title="Modeles" title="Modeles"><span class="nav__item"><span class="nav-icon">🧱</span><span class="nav-label">Modeles</span></span></button>
+            <button data-view="auditTrail" data-title="Piste d'audit" title="Piste d'audit"><span class="nav__item"><span class="nav-icon">🧭</span><span class="nav-label">Piste d'audit</span></span></button>
+            <button data-view="isabel" data-title="Isabel Connect" title="Isabel Connect"><span class="nav__item"><span class="nav-icon">🔴</span><span class="nav-label">Isabel Connect</span></span></button>
           </div>
         </div>
       </nav>
@@ -1088,6 +1260,501 @@
             </div>
           </div>
         </section>
+
+        <section id="buildingsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Batiments</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Gerer les immeubles/blocs d'une copropriete : batiment A/B, entrees, adresses, compteurs et regroupements de lots.</p>
+            <div class="module-grid"><div class="module-card"><h3>Créer les bâtiments</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Lier lots et bâtiments</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Préparer les répartitions par bloc</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="distributionView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Repartition</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Preparation des cles de repartition : quotites generales, ascenseur, parkings, chauffage, caves, charges privatives.</p>
+            <div class="module-grid"><div class="module-card"><h3>Clés de répartition</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Contrôle total quotités</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Simulation avant appels/décomptes</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="worksView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Dossiers travaux</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Suivi comptable des travaux : budget, devis retenu, appels extraordinaires, factures et solde.</p>
+            <div class="module-grid"><div class="module-card"><h3>Travaux votés</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Appels spécifiques</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Lien factures/fournisseurs</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="articlesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Base articles</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Catalogue interne de lignes types pour factures, appels, budgets et ventilations comptables.</p>
+            <div class="module-grid"><div class="module-card"><h3>Articles de charges</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Comptes par défaut</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Automatisation factures</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="exercisesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Exercices comptables</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Gestion des exercices : dates, statut ouvert/clôturé, période de décompte et verrouillage progressif.</p>
+            <div class="module-grid"><div class="module-card"><h3>Créer exercice</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Verrouiller période</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Préparer clôture</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="budgetsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Budgets</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Préparer les budgets annuels par compte, par clé de répartition et par copropriété active.</p>
+            <div class="module-grid"><div class="module-card"><h3>Budget N+1</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Comparatif N/N-1</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Préparer appels</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="callsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Appels de fonds</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Générer des appels de fonds depuis budget, quotités, provisions fixes ou appels extraordinaires.</p>
+            <div class="module-grid"><div class="module-card"><h3>Préparation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Validation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Export PDF / situation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="syndicBillingView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Facturation syndic</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Suivi des honoraires, frais de mutation, prestations complémentaires et frais administratifs.</p>
+            <div class="module-grid"><div class="module-card"><h3>Frais mutation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Prestations complémentaires</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Factures syndic</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="electronicBillingView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Facturation electronique</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Préparation Peppol / e-facturation : factures reçues, fournisseurs reconnus, anomalies à traiter.</p>
+            <div class="module-grid"><div class="module-card"><h3>Peppol</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Factures e-mail</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Validation comptable</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="plannerView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Planificateur</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Planifier les opérations comptables récurrentes : appels, relances, clôtures, contrôles soldes.</p>
+            <div class="module-grid"><div class="module-card"><h3>Récurrences</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Alertes</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Tâches comptables</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="simulationView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Simulation repartition</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Simuler une répartition de charges avant validation : par quotités, par lots, par clés spécifiques.</p>
+            <div class="module-grid"><div class="module-card"><h3>Simulation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Contrôle</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Export</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="statementsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Decomptes</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Préparer les décomptes copropriétaires : charges, paiements, régularisation et solde.</p>
+            <div class="module-grid"><div class="module-card"><h3>Décompte annuel</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Situation individuelle</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Contrôle avant envoi</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="ledgerView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Grand livre</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Consultation des écritures par compte, copropriété, période, journal et référence.</p>
+            <div class="module-grid"><div class="module-card"><h3>Filtres avancés</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Détail compte</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Export</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="financialLedgerView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Grand livre financier</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Vue bancaire détaillée : mouvements, lettrage, comptes financiers et solde par extrait.</p>
+            <div class="module-grid"><div class="module-card"><h3>Mouvements</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Lettrage</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Contrôle soldes</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="thirdBalanceView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Balance des tiers</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Solde par propriétaire, fournisseur ou tiers : à recevoir, à payer, à relancer.</p>
+            <div class="module-grid"><div class="module-card"><h3>Propriétaires</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fournisseurs</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Arriérés</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="heldFundsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Fonds detenus</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Suivi des fonds détenus par copropriété : banque, fonds réserve, fonds roulement, comptes séparés.</p>
+            <div class="module-grid"><div class="module-card"><h3>Banque</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fonds réserve</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fonds roulement</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="expensesListView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Liste des depenses</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Liste filtrable des dépenses par fournisseur, compte, période, copropriété et type de charge.</p>
+            <div class="module-grid"><div class="module-card"><h3>Dépenses</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fournisseurs</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Export</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="multicoproConsultationView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Consultation multicopropriete</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Vue globale multi-copropriétés pour traiter factures, banque et anomalies sans changer de copro active.</p>
+            <div class="module-grid"><div class="module-card"><h3>Multi-copro</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Filtres</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Anomalies</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="meetingsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Assemblees generales</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Préparation AG liée à la comptabilité : budgets, comptes, décomptes, décisions et appels votés.</p>
+            <div class="module-grid"><div class="module-card"><h3>Comptes AG</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Budgets</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Décisions</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="resolutionsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Catalogue des resolutions</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Modèles de résolutions pour budgets, travaux, appels extraordinaires et approbation des comptes.</p>
+            <div class="module-grid"><div class="module-card"><h3>Résolutions types</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Majorités</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Modèles</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="agencyView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Agence</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Paramètres de l'agence : identité, coordonnées, logos, préférences PDF et informations de facturation.</p>
+            <div class="module-grid"><div class="module-card"><h3>Identité</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Coordonnées</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Documents</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="usersView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Utilisateurs</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Gestion des utilisateurs WAPI Compta, rôles, accès et attribution des copropriétés.</p>
+            <div class="module-grid"><div class="module-card"><h3>Profils</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Rôles</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Droits</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="accessControlView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Controle d'acces</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Gestion des droits d'accès par utilisateur, rôle, copropriété et module.</p>
+            <div class="module-grid"><div class="module-card"><h3>Profils</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Permissions</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Audit</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="bankInstitutionsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Etablissements bancaires</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Référentiel des banques, IBAN, BIC et comptes liés aux copropriétés.</p>
+            <div class="module-grid"><div class="module-card"><h3>Banques</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>IBAN</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>CODA</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="propertyTypesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Natures de biens</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Référentiel des types de lots : appartements, parkings, caves, garages, commerces.</p>
+            <div class="module-grid"><div class="module-card"><h3>Types lots</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Paramètres</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Valeurs par défaut</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="vatCodesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Codes TVA</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Gestion des codes TVA utiles pour les factures fournisseurs et ventilations.</p>
+            <div class="module-grid"><div class="module-card"><h3>Codes</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Taux</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Déduction</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="journalCodesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Codes journaux</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Configuration des journaux : achats, financiers, OD, appels, clôtures.</p>
+            <div class="module-grid"><div class="module-card"><h3>ACH</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>FIN</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>OD</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="defaultExpenseTypesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Natures de depense par defaut</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Paramètres de reconnaissance automatique des dépenses et comptes proposés.</p>
+            <div class="module-grid"><div class="module-card"><h3>Règles</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Comptes</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fournisseurs</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="gdprView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>GDPR</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Suivi des données personnelles, confidentialité, archivage et export des informations.</p>
+            <div class="module-grid"><div class="module-card"><h3>Conservation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Droits</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Audit</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="importsConfigView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Import</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Paramètres d'import : OCR, CODA, factures mail, règles de détection et centre de traitement.</p>
+            <div class="module-grid"><div class="module-card"><h3>Imports masse</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Règles</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Validation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="templatesView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Modeles</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Modèles de documents, mails, PDF, appels, décomptes et exports.</p>
+            <div class="module-grid"><div class="module-card"><h3>PDF</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Mails</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Exports</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="auditTrailView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Piste d'audit</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Historique des actions : créations, validations, corrections, imports et modifications sensibles.</p>
+            <div class="module-grid"><div class="module-card"><h3>Audit</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Utilisateur</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Horodatage</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+        <section id="isabelView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Isabel Connect</h2>
+              <span class="badge warn">Module a structurer</span>
+            </div>
+            <div class="context-banner">
+              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
+              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            </div>
+            <p style="color:var(--muted); line-height:1.5;">Préparation future pour l'intégration bancaire Isabel / Coda sécurisé.</p>
+            <div class="module-grid"><div class="module-card"><h3>Connexion</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Banque</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Sécurité</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
       </div>
     </main>
   </section>
@@ -1126,9 +1793,11 @@
 
   <script>
     const CONFIG_KEY = "wapi_compta_supabase_config";
+    const ACTIVE_COPRO_KEY = "wapi_compta_active_copro_id";
     let supabaseClient = null;
     let currentUser = null;
     let state = {
+      activeCoproId: localStorage.getItem(ACTIVE_COPRO_KEY) || "",
       copros: [],
       owners: [],
       lots: [],
@@ -1147,6 +1816,40 @@
     };
 
     const $ = (id) => document.getElementById(id);
+
+    function activeCopro() {
+      return state.copros.find((c) => c.id === state.activeCoproId) || null;
+    }
+
+    function setActiveCopro(coproId) {
+      state.activeCoproId = coproId || "";
+      if (state.activeCoproId) localStorage.setItem(ACTIVE_COPRO_KEY, state.activeCoproId);
+      else localStorage.removeItem(ACTIVE_COPRO_KEY);
+      renderAll();
+    }
+
+    function coproContextLabel() {
+      const c = activeCopro();
+      return c ? c.name : "Mode global";
+    }
+
+    function coproScopedValue(selectId) {
+      const select = $(selectId);
+      if (state.activeCoproId) return state.activeCoproId;
+      return select ? select.value : "";
+    }
+
+    function renderActiveCoproContext() {
+      if (!$("activeCoproSelect")) return;
+      const previous = $("activeCoproSelect").value;
+      $("activeCoproSelect").innerHTML = '<option value="">Mode global / toutes les copros</option>' +
+        state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      $("activeCoproSelect").value = state.activeCoproId || previous || "";
+      $("activeCoproName").textContent = coproContextLabel();
+      document.querySelectorAll("[data-active-copro-label]").forEach((node) => {
+        node.textContent = coproContextLabel();
+      });
+    }
 
     function money(value) {
       return Number(value || 0).toLocaleString("fr-BE", {
@@ -1347,6 +2050,7 @@
     }
 
     function renderAll() {
+      renderActiveCoproContext();
       renderDashboard();
       renderProcessing();
       renderCopros();
@@ -1525,12 +2229,13 @@
 
     function renderCopros() {
       $("coprosTable").innerHTML = table([
-        "Nom", "Adresse", "Ref Optipro", "Statut"
+        "Nom", "Adresse", "Ref Optipro", "Statut", "Contexte"
       ], state.copros.map((c) => [
         c.name,
         c.address || "",
         c.optipro_ref || "",
-        c.active ? '<span class="badge ok">Active</span>' : '<span class="badge">Inactive</span>'
+        c.active ? '<span class="badge ok">Active</span>' : '<span class="badge">Inactive</span>',
+        `<button class="btn secondary" type="button" data-enter-copro="${c.id}">Entrer</button>`
       ]));
     }
 
@@ -1541,9 +2246,15 @@
       $("lotsFilterCopro").innerHTML = options;
       $("ownersFilterCopro").innerHTML = options;
 
-      if (!$("lotGenCopro").value && state.copros[0]) $("lotGenCopro").value = state.copros[0].id;
-      if (!$("lotsFilterCopro").value && state.copros[0]) $("lotsFilterCopro").value = state.copros[0].id;
-      if (!$("ownersFilterCopro").value && state.copros[0]) $("ownersFilterCopro").value = state.copros[0].id;
+      if (state.activeCoproId) {
+        $("lotGenCopro").value = state.activeCoproId;
+        $("lotsFilterCopro").value = state.activeCoproId;
+        $("ownersFilterCopro").value = state.activeCoproId;
+      } else {
+        if (!$("lotGenCopro").value && state.copros[0]) $("lotGenCopro").value = state.copros[0].id;
+        if (!$("lotsFilterCopro").value && state.copros[0]) $("lotsFilterCopro").value = state.copros[0].id;
+        if (!$("ownersFilterCopro").value && state.copros[0]) $("ownersFilterCopro").value = state.copros[0].id;
+      }
     }
 
     function renderLotDraftTable() {
@@ -1592,7 +2303,7 @@
     }
 
     function renderLots() {
-      const selectedCopro = $("lotsFilterCopro").value;
+      const selectedCopro = state.activeCoproId || $("lotsFilterCopro").value;
       const lots = state.lots.filter((lot) => !selectedCopro || lot.copro_id === selectedCopro);
       const totalQuotities = lots.reduce((sum, lot) => sum + Number(lot.quotities || 0), 0);
       $("lotsSummary").textContent = `${lots.length} lot${lots.length > 1 ? "s" : ""}`;
@@ -1624,6 +2335,7 @@
     function renderInvoiceSelects() {
       $("invoiceCopro").innerHTML = '<option value="">Choisir...</option>' +
         state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      if (state.activeCoproId) $("invoiceCopro").value = state.activeCoproId;
 
       $("invoiceSupplier").innerHTML = '<option value="">Choisir...</option>' +
         state.suppliers.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
@@ -1656,7 +2368,8 @@
       $("codaBankAccount").innerHTML = accountOptions;
       $("bankTxFilterAccount").innerHTML = '<option value="">Tous les comptes</option>' + accountOptions.replace('<option value="">Choisir...</option>', "");
 
-      if (!$("bankAccountCopro").value && state.copros[0]) $("bankAccountCopro").value = state.copros[0].id;
+      if (state.activeCoproId) $("bankAccountCopro").value = state.activeCoproId;
+      else if (!$("bankAccountCopro").value && state.copros[0]) $("bankAccountCopro").value = state.copros[0].id;
 
       $("bankAccountsTable").innerHTML = table([
         "Copropriete", "Libelle", "IBAN", "BIC", "Statut"
@@ -1740,7 +2453,7 @@
       $('odCopro').innerHTML = coproOptions;
       $('odDebitAccount').innerHTML = accountOptions;
       $('odCreditAccount').innerHTML = accountOptions;
-      $('odCopro').value = coproCurrent || (state.copros[0]?.id || '');
+      $('odCopro').value = state.activeCoproId || coproCurrent || (state.copros[0]?.id || '');
       $('odDebitAccount').value = accountDebitCurrent;
       $('odCreditAccount').value = accountCreditCurrent;
 
@@ -2305,7 +3018,7 @@
     }
 
     function renderOwners() {
-      const selectedCopro = $("ownersFilterCopro").value;
+      const selectedCopro = state.activeCoproId || $("ownersFilterCopro").value;
       const owners = state.owners.filter((owner) => !selectedCopro || owner.copro_id === selectedCopro);
 
       if (!owners.length) {
@@ -2384,7 +3097,7 @@
 
 
     async function saveOD() {
-      const coproId = $('odCopro').value;
+      const coproId = state.activeCoproId || $('odCopro').value;
       const entryDate = $('odDate').value;
       const debitId = $('odDebitAccount').value;
       const creditId = $('odCreditAccount').value;
@@ -2422,7 +3135,7 @@
 
     async function saveInvoice() {
       const payload = {
-        copro_id: $("invoiceCopro").value,
+        copro_id: state.activeCoproId || $("invoiceCopro").value,
         supplier_id: $("invoiceSupplier").value || null,
         invoice_number: $("invoiceNumber").value.trim() || null,
         invoice_date: $("invoiceDate").value || null,
@@ -2448,7 +3161,7 @@
 
     async function saveBankAccount() {
       const payload = {
-        copro_id: $("bankAccountCopro").value,
+        copro_id: state.activeCoproId || $("bankAccountCopro").value,
         label: $("bankAccountLabel").value.trim(),
         iban: $("bankAccountIban").value.trim() || null,
         bic: $("bankAccountBic").value.trim() || null,
@@ -2559,6 +3272,18 @@
       $('appScreen').classList.toggle('sidebar-collapsed');
     });
 
+    document.querySelectorAll('[data-group-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const group = button.closest('[data-group]');
+        if (!group || $("appScreen").classList.contains("sidebar-collapsed")) return;
+        group.classList.toggle('collapsed');
+      });
+    });
+
+    $("toggleSidebarBtn").addEventListener("click", () => {
+      $("appScreen").classList.toggle("sidebar-collapsed");
+    });
+
     $("lotDraftTable").addEventListener("input", (event) => {
       const rowIndex = event.target.dataset.lotRow;
       const field = event.target.dataset.lotField;
@@ -2632,6 +3357,15 @@
       location.reload();
     });
 
+    $("enterSelectedCoproBtn").addEventListener("click", () => setActiveCopro($("activeCoproSelect").value));
+    $("activeCoproSelect").addEventListener("change", () => setActiveCopro($("activeCoproSelect").value));
+    $("clearActiveCoproBtn").addEventListener("click", () => setActiveCopro(""));
+    $("coprosTable").addEventListener("click", (event) => {
+      const coproId = event.target.dataset.enterCopro;
+      if (!coproId) return;
+      setActiveCopro(coproId);
+      switchToView("dashboard");
+    });
     $("refreshBtn").addEventListener("click", loadAll);
     if ($("importBatchBtn")) $("importBatchBtn").addEventListener("click", importFilesToQueue);
     if ($("refreshProcessingBtn")) $("refreshProcessingBtn").addEventListener("click", loadAll);
