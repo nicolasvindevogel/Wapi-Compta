@@ -5667,6 +5667,225 @@
       else renderBudgetListV11();
     }
 
+
+
+    // ---- V11.2 correctif affichage liste Budgets ----
+    // Le problème venait du chargement des enveloppes budget avec des jointures Supabase
+    // qui peuvent échouer silencieusement selon le cache schéma / relations. On recharge donc
+    // les budgets en lecture simple, puis on reconstitue les libellés depuis les états déjà chargés.
+    async function loadBudgetHeaders() {
+      const { data, error } = await supabaseClient
+        .from('compta_budgets')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('loadBudgetHeaders', error.message);
+        state.budgetHeaders = [];
+        return;
+      }
+      state.budgetHeaders = data || [];
+    }
+
+    async function loadBudgetLines() {
+      const { data, error } = await supabaseClient
+        .from('compta_budget_lines')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('loadBudgetLines', error.message);
+        state.budgetLines = [];
+        return;
+      }
+      state.budgetLines = data || [];
+    }
+
+    function coproNameFromId(coproId) {
+      return state.copros.find((c) => c.id === coproId)?.name || '';
+    }
+
+    function fiscalYearLabelFromId(yearId) {
+      return state.fiscalYears.find((y) => y.id === yearId)?.label || '';
+    }
+
+    function budgetCoproLabel(budget) {
+      return budget?.compta_copros?.name || coproNameFromId(budget?.copro_id) || '';
+    }
+
+    function budgetYearLabel(budget) {
+      return budget?.compta_fiscal_years?.label || fiscalYearLabelFromId(budget?.fiscal_year_id) || '';
+    }
+
+    function budgetCurrentCoproFilter() {
+      return state.activeCoproId || $('budgetCoproFilter')?.value || '';
+    }
+
+    function budgetCurrentYearFilter() {
+      return $('budgetFiscalYearFilter')?.value || '';
+    }
+
+    function renderBudgetListV11() {
+      const coproId = budgetCurrentCoproFilter();
+      const yearId = budgetCurrentYearFilter();
+      const budgets = (state.budgetHeaders || []).filter((b) =>
+        (!coproId || b.copro_id === coproId) &&
+        (!yearId || b.fiscal_year_id === yearId)
+      );
+      const rows = budgets.map((b) => {
+        const total = budgetTotalForHeader(b.id);
+        const realized = budgetRealizedForHeader(b.id);
+        const margin = total - realized;
+        return `<div class="budget-list-row">
+          <div><strong>${escapeHtml(b.label || 'Budget')}</strong><div class="muted-note">${escapeHtml(budgetCoproLabel(b))}</div></div>
+          <div>${escapeHtml(budgetYearLabel(b) || '-')}</div>
+          <div>${statusBadge(b.status || 'draft')}</div>
+          <div><strong>${money(total)}</strong></div>
+          <div>${money(realized)}<div class="muted-note">Marge ${money(margin)}</div></div>
+          <div class="actions-inline"><button class="btn secondary small" data-open-budget="${b.id}" type="button">Ouvrir</button><button class="btn secondary small" data-budget-pdf="${b.id}" type="button">PDF</button></div>
+        </div>`;
+      }).join('');
+      $('budgetSummary').innerHTML = `<span class="badge">${budgets.length} budget(s)</span><span class="badge">Clique sur Ouvrir pour modifier le détail</span>`;
+      $('budgetsTable').innerHTML = `<div class="table-wrap"><div class="budget-list-row budget-list-head"><div>Libellé</div><div>Exercice</div><div>Statut</div><div>Budget</div><div>Réalisé</div><div>Actions</div></div>${rows || '<div class="notice">Aucun budget dans ce contexte. Clique sur Créer budget.</div>'}</div>`;
+    }
+
+    function renderBudgetDetailV11(headerId) {
+      const header = (state.budgetHeaders || []).find((b) => b.id === headerId);
+      if (!header) {
+        state.selectedBudgetHeaderId = '';
+        return renderBudgetListV11();
+      }
+      const lines = (state.budgetLines || []).filter((l) => l.budget_id === headerId);
+      const keys = (state.distributionKeys || []).filter((k) => k.copro_id === header.copro_id);
+      const total = lines.reduce((s, l) => s + Number(l.amount || 0), 0);
+      $('budgetSummary').innerHTML = `<span class="badge ok">${escapeHtml(header.label || 'Budget')}</span><span class="badge">${lines.length} ligne(s)</span><span class="badge warn">Total : ${money(total)}</span>`;
+      let tab = 1;
+      const blocks = keys.map((key) => {
+        const arr = lines.filter((l) => l.distribution_key_id === key.id);
+        const subtotal = arr.reduce((s, l) => s + Number(l.amount || 0), 0);
+        const body = arr.map((l) => {
+          const acc = state.accounts.find((a) => a.id === l.account_id) || l.compta_accounts || {};
+          const tabIndex = tab++;
+          return `<div class="budget-line v11" data-budget-line="${l.id}">
+            <input class="budget-amount-input" type="number" step="0.01" value="${Number(l.amount || 0)}" data-budget-amount-v11="${l.id}" tabindex="${tabIndex}">
+            <div><div class="account-pill">${escapeHtml((acc.code || '') + ' - ' + (acc.label || ''))}</div><div class="muted-note">${escapeHtml(l.label || acc.label || '')}</div></div>
+            <input value="${escapeHtml(l.label || '')}" data-budget-label-v11="${l.id}" placeholder="Libellé interne" tabindex="-1">
+            <button class="btn danger small" data-delete-budget="${l.id}" type="button" tabindex="-1">Suppr.</button>
+          </div>`;
+        }).join('') || '<div class="budget-empty">Aucune classe 6 dans cette clé.</div>';
+        return `<div class="budget-key-card v10" data-budget-key-card="${key.id}">
+          <div class="budget-key-head"><h3>${escapeHtml(key.name || 'Clé')} <span class="budget-key-total" data-budget-key-total="${key.id}">${money(subtotal)}</span></h3><button class="btn secondary small" type="button" data-show-budget-add="${key.id}">+ Ajouter classe 6</button></div>
+          <div class="budget-lines">${body}</div>
+          <div id="budgetAdd_${key.id}" class="budget-add-line hidden"><label>Compte classe 6<input list="class6List" placeholder="Tape 610, eau, ascenseur..." data-new-budget-account-text="${key.id}"></label><label>Montant<input type="number" step="0.01" data-new-budget-amount="${key.id}" value="0"></label><button class="btn" type="button" data-add-budget-line="${key.id}">Ajouter</button></div>
+        </div>`;
+      }).join('');
+      $('budgetsTable').innerHTML = `<datalist id="class6List">${class6Accounts().map((a) => `<option value="${escapeHtml(a.code + ' - ' + a.label)}"></option>`).join('')}</datalist><div class="budget-detail-title"><div><h2>${escapeHtml(header.label || 'Budget')}</h2><div class="muted-note">${escapeHtml(budgetCoproLabel(header))} · ${escapeHtml(budgetYearLabel(header) || '-')}</div></div><div class="actions-inline"><button class="btn secondary" data-back-budget-list type="button">← Liste</button><button class="btn secondary" data-budget-pdf="${header.id}" type="button">Exporter PDF</button></div></div>${blocks || '<div class="notice">Aucune clé de répartition disponible.</div>'}<div class="budget-total-bar"><span>Total général du budget</span><strong id="budgetGrandTotalV11">${money(total)}</strong></div>`;
+    }
+
+    function renderBudgets() {
+      if (!$('budgetsTable')) return;
+      const previousCopro = state.activeCoproId || $('budgetCoproFilter')?.value || '';
+      const previousYear = $('budgetFiscalYearFilter')?.value || '';
+      const previousHeader = state.selectedBudgetHeaderId || $('budgetHeaderFilter')?.value || '';
+
+      $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
+      else $('budgetCoproFilter').value = previousCopro;
+
+      const coproId = budgetCurrentCoproFilter();
+      const years = (state.fiscalYears || []).filter((y) => !coproId || y.copro_id === coproId);
+      $('budgetFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + years.map((y) => `<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      if (previousYear && years.some((y) => y.id === previousYear)) $('budgetFiscalYearFilter').value = previousYear;
+      else $('budgetFiscalYearFilter').value = '';
+
+      const yearId = budgetCurrentYearFilter();
+      const headers = (state.budgetHeaders || []).filter((b) => (!coproId || b.copro_id === coproId) && (!yearId || b.fiscal_year_id === yearId));
+      $('budgetHeaderFilter').innerHTML = '<option value="">Liste des budgets</option>' + headers.map((b) => `<option value="${b.id}" ${previousHeader === b.id ? 'selected' : ''}>${escapeHtml(b.label || 'Budget')}</option>`).join('');
+      if (previousHeader && headers.some((b) => b.id === previousHeader)) {
+        state.selectedBudgetHeaderId = previousHeader;
+        $('budgetHeaderFilter').value = previousHeader;
+      } else {
+        state.selectedBudgetHeaderId = '';
+      }
+
+      applyActiveCoproLocksV11();
+      if (state.selectedBudgetHeaderId) renderBudgetDetailV11(state.selectedBudgetHeaderId);
+      else renderBudgetListV11();
+    }
+
+    async function createBudgetFromModal() {
+      const coproId = state.activeCoproId || $('modalBudgetHeaderCopro')?.value || $('budgetCoproFilter')?.value || '';
+      const yearId = $('modalBudgetHeaderYear')?.value || null;
+      const label = ($('modalBudgetHeaderLabel')?.value || '').trim();
+      const copyFrom = $('modalBudgetCopyFrom')?.value || '';
+      if (!coproId) return alert('Choisis une copropriété pour créer le budget.');
+      if (!label) return alert('Indique un libellé pour le budget.');
+
+      const budgetPayload = {
+        copro_id: coproId,
+        fiscal_year_id: yearId,
+        label,
+        status: 'draft',
+        copied_from_budget_id: copyFrom || null,
+        created_by: currentUser.id
+      };
+
+      const { data: budget, error } = await supabaseClient
+        .from('compta_budgets')
+        .insert(budgetPayload)
+        .select('*')
+        .single();
+
+      if (error) {
+        const msg = String(error.message || error.details || error.hint || error);
+        return alert('Impossible de créer le budget : ' + msg);
+      }
+
+      const rows = [];
+      if (copyFrom) {
+        (state.budgetLines || []).filter((l) => l.budget_id === copyFrom).forEach((l) => rows.push({
+          budget_id: budget.id,
+          copro_id: coproId,
+          fiscal_year_id: yearId,
+          distribution_key_id: l.distribution_key_id,
+          account_id: l.account_id,
+          label: l.label,
+          amount: l.amount,
+          created_by: currentUser.id
+        }));
+      } else {
+        document.querySelectorAll('[data-budget-key-check]').forEach((cb) => {
+          if (!cb.checked) return;
+          const keyId = cb.dataset.budgetKeyCheck;
+          Array.from(document.querySelector(`[data-budget-accounts-for-key="${keyId}"]`)?.selectedOptions || []).forEach((opt) => {
+            rows.push({
+              budget_id: budget.id,
+              copro_id: coproId,
+              fiscal_year_id: yearId,
+              distribution_key_id: keyId,
+              account_id: opt.value,
+              label: null,
+              amount: 0,
+              created_by: currentUser.id
+            });
+          });
+        });
+      }
+
+      if (rows.length) {
+        const { error: lineErr } = await supabaseClient.from('compta_budget_lines').insert(rows);
+        if (lineErr) alert('Le budget a été créé, mais certaines lignes n’ont pas été ajoutées : ' + lineErr.message);
+      }
+
+      closeAppModal();
+      await loadBudgetHeaders();
+      await loadBudgetLines();
+      state.selectedBudgetHeaderId = '';
+      if ($('budgetCoproFilter') && !state.activeCoproId) $('budgetCoproFilter').value = coproId;
+      if ($('budgetFiscalYearFilter')) $('budgetFiscalYearFilter').value = yearId || '';
+      if ($('budgetHeaderFilter')) $('budgetHeaderFilter').value = '';
+      renderBudgets();
+      alert('Budget créé. Il est maintenant dans la liste des budgets.');
+    }
+
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
 </body>
