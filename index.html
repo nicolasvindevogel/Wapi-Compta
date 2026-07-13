@@ -1257,6 +1257,30 @@
     .status-pill-strong.green { background:#eaf8f0; color:#12805c; border:1px solid #b9e7cc; }
     .pdf-preview-note { color:var(--muted); font-size:12px; }
 
+  
+
+    /* ---- V11 ergonomie métier ---- */
+    .budget-list-row { display:grid; grid-template-columns: 1.6fr 1fr .8fr 1fr 1fr auto; gap:12px; align-items:center; padding:14px 10px; border-bottom:1px solid #eef2f6; }
+    .budget-list-row:hover { background:#f6fbff; }
+    .budget-list-head { font-weight:800; color:#425466; background:#f8fafc; border-radius:10px 10px 0 0; }
+    .budget-detail-title { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:14px 16px; border:1px solid #dce8f1; border-radius:16px; background:linear-gradient(135deg,#eef9fc,#fff); margin-bottom:14px; }
+    .budget-line.v11 { grid-template-columns: 160px 1.9fr 1.2fr 70px; }
+    .budget-line.v11 .account-pill { font-weight:800; color:#172033; }
+    .budget-line.v11 input[data-budget-label-v11] { background:#fbfdff; }
+    .budget-key-total { font-size:20px; font-weight:900; color:var(--brand-dark); }
+    .period-action-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+    .call-group-head.v11 { grid-template-columns: auto 1.6fr .8fr .8fr .8fr auto; cursor:pointer; }
+    .call-owner-select { transform: scale(1.05); }
+    .third-balance-row.v11 { display:grid; grid-template-columns:auto 1.6fr .75fr .9fr auto; gap:12px; align-items:center; padding:13px 12px; border-bottom:1px solid #eef2f6; }
+    .third-balance-row.v11:hover { background:#f6fbff; }
+    .third-detail { padding:12px 18px; background:#fbfdff; border-bottom:1px solid #e7edf4; }
+    .amount-green { color:#087443; font-weight:900; }
+    .amount-red { color:#b42318; font-weight:900; }
+    .distribution-list-row { display:grid; grid-template-columns:1.6fr 1fr 1fr auto; gap:12px; align-items:center; padding:14px 12px; border-bottom:1px solid #eef2f6; }
+    .distribution-list-row:hover { background:#f6fbff; }
+    .distribution-modal-table input[type="number"] { max-width:160px; }
+    .safety-note { border-left:4px solid #f2a541; background:#fff8eb; border-radius:12px; padding:12px 14px; color:#6b4700; margin:10px 0 14px; }
+
   </style>
 </head>
 <body>
@@ -5164,6 +5188,372 @@
     ['callsCoproFilter','callsFiscalYearFilter','callsAccountingFilter'].forEach((id)=>setTimeout(()=>{ if($(id)) $(id).addEventListener('change', renderCalls); },0));
     ['thirdBalanceCoproFilter','thirdBalanceYearFilter','thirdBalanceTypeFilter','thirdBalanceSearch'].forEach((id)=>setTimeout(()=>{ if($(id)) $(id).addEventListener('input', renderThirdBalance); if($(id)) $(id).addEventListener('change', renderThirdBalance); },0));
 
+
+
+
+    // ---- V11 : budget liste/detail, appels sécurisés, repartition popup, balance tiers exportable ----
+    function scopedCoproId(selectId = null) {
+      return state.activeCoproId || (selectId && $(selectId) ? $(selectId).value : '') || '';
+    }
+
+    function activeCoproRequiredMessage(action = 'continuer') {
+      return `Sélectionne une copropriété active en haut à gauche pour ${action}.`;
+    }
+
+    function applyActiveCoproLocksV11() {
+      const ids = ['budgetCoproFilter','callsCoproFilter','thirdBalanceCoproFilter','distributionCopro','invoiceCopro','bankAccountCopro','codaFilterCopro','manualModalAccount'];
+      ids.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        if (state.activeCoproId && id !== 'manualModalAccount') {
+          el.value = state.activeCoproId;
+          el.disabled = true;
+          el.title = 'La copropriété se change en haut à gauche.';
+        } else if (id !== 'manualModalAccount') {
+          el.disabled = false;
+          el.title = '';
+        }
+      });
+    }
+
+    function requireActiveOrSelectedCopro(selectId, action) {
+      const coproId = scopedCoproId(selectId);
+      if (!coproId) {
+        alert(activeCoproRequiredMessage(action));
+        return '';
+      }
+      return coproId;
+    }
+
+    function currentBudgetLines() {
+      const headerId = state.selectedBudgetHeaderId || '';
+      if (!headerId) return [];
+      return state.budgetLines.filter((l) => l.budget_id === headerId);
+    }
+
+    function budgetTotalForHeader(headerId) {
+      return state.budgetLines.filter((l)=>l.budget_id===headerId).reduce((s,l)=>s+Number(l.amount||0),0);
+    }
+
+    function budgetRealizedForHeader(headerId) {
+      const header = state.budgetHeaders.find((b)=>b.id===headerId);
+      if (!header) return 0;
+      return state.invoices
+        .filter((i)=>i.copro_id===header.copro_id && (!header.fiscal_year_id || true) && i.account_id)
+        .reduce((s,i)=>s+Number(i.amount_total||0),0);
+    }
+
+    function renderBudgets() {
+      if (!$('budgetsTable')) return;
+      const coproId = scopedCoproId('budgetCoproFilter');
+      const yearId = $('budgetFiscalYearFilter')?.value || '';
+      $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
+      $('budgetFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>!coproId||y.copro_id===coproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      $('budgetHeaderFilter').innerHTML = '<option value="">Liste des budgets</option>' + state.budgetHeaders.filter((b)=>(!coproId||b.copro_id===coproId)&&(!yearId||b.fiscal_year_id===yearId)).map((b)=>`<option value="${b.id}" ${state.selectedBudgetHeaderId===b.id?'selected':''}>${escapeHtml(b.label)}</option>`).join('');
+      applyActiveCoproLocksV11();
+      if (state.selectedBudgetHeaderId) renderBudgetDetailV11(state.selectedBudgetHeaderId);
+      else renderBudgetListV11();
+    }
+
+    function renderBudgetListV11() {
+      const coproId = scopedCoproId('budgetCoproFilter');
+      const yearId = $('budgetFiscalYearFilter')?.value || '';
+      const budgets = state.budgetHeaders.filter((b)=>(!coproId||b.copro_id===coproId)&&(!yearId||b.fiscal_year_id===yearId));
+      const rows = budgets.map((b)=>{
+        const total = budgetTotalForHeader(b.id);
+        const realized = budgetRealizedForHeader(b.id);
+        const margin = total - realized;
+        return `<div class="budget-list-row"><div><strong>${escapeHtml(b.label)}</strong><div class="muted-note">${escapeHtml(b.compta_copros?.name || '')}</div></div><div>${escapeHtml(b.compta_fiscal_years?.label || '')}</div><div>${statusBadge(b.status || 'draft')}</div><div><strong>${money(total)}</strong></div><div>${money(realized)}<div class="muted-note">Marge ${money(margin)}</div></div><div class="actions-inline"><button class="btn secondary small" data-open-budget="${b.id}" type="button">Ouvrir</button><button class="btn secondary small" data-budget-pdf="${b.id}" type="button">PDF</button></div></div>`;
+      }).join('');
+      $('budgetSummary').innerHTML = `<span class="badge">${budgets.length} budget(s)</span><span class="badge">Clique sur Ouvrir pour modifier le détail</span>`;
+      $('budgetsTable').innerHTML = `<div class="table-wrap"><div class="budget-list-row budget-list-head"><div>Libellé</div><div>Exercice</div><div>Statut</div><div>Budget</div><div>Réalisé</div><div>Actions</div></div>${rows || '<div class="notice">Aucun budget. Clique sur Créer budget.</div>'}</div>`;
+    }
+
+    function renderBudgetDetailV11(headerId) {
+      const header = state.budgetHeaders.find((b)=>b.id===headerId);
+      if (!header) { state.selectedBudgetHeaderId=''; return renderBudgetListV11(); }
+      const lines = state.budgetLines.filter((l)=>l.budget_id===headerId);
+      const keys = state.distributionKeys.filter((k)=>k.copro_id===header.copro_id);
+      const total = lines.reduce((s,l)=>s+Number(l.amount||0),0);
+      $('budgetSummary').innerHTML = `<span class="badge ok">${escapeHtml(header.label)}</span><span class="badge">${lines.length} ligne(s)</span><span class="badge warn">Total : ${money(total)}</span>`;
+      let tab = 1;
+      const blocks = keys.map((key)=>{
+        const arr = lines.filter((l)=>l.distribution_key_id===key.id);
+        const subtotal = arr.reduce((s,l)=>s+Number(l.amount||0),0);
+        const body = arr.map((l)=>{
+          const acc = l.compta_accounts || state.accounts.find((a)=>a.id===l.account_id) || {};
+          const tabIndex = tab++;
+          return `<div class="budget-line v11" data-budget-line="${l.id}"><input class="budget-amount-input" type="number" step="0.01" value="${Number(l.amount||0)}" data-budget-amount-v11="${l.id}" tabindex="${tabIndex}"><div><div class="account-pill">${escapeHtml((acc.code||'')+' - '+(acc.label||''))}</div><div class="muted-note">${escapeHtml(l.label || acc.label || '')}</div></div><input value="${escapeHtml(l.label||'')}" data-budget-label-v11="${l.id}" placeholder="Libellé interne" tabindex="-1"><button class="btn danger small" data-delete-budget="${l.id}" type="button" tabindex="-1">Suppr.</button></div>`;
+        }).join('') || '<div class="budget-empty">Aucune classe 6 dans cette clé.</div>';
+        return `<div class="budget-key-card v10" data-budget-key-card="${key.id}"><div class="budget-key-head"><h3>${escapeHtml(key.name || 'Clé')} <span class="budget-key-total" data-budget-key-total="${key.id}">${money(subtotal)}</span></h3><button class="btn secondary small" type="button" data-show-budget-add="${key.id}">+ Ajouter classe 6</button></div><div class="budget-lines">${body}</div><div id="budgetAdd_${key.id}" class="budget-add-line hidden"><label>Compte classe 6<input list="class6List" placeholder="Tape 610, eau, ascenseur..." data-new-budget-account-text="${key.id}"></label><label>Montant<input type="number" step="0.01" data-new-budget-amount="${key.id}" value="0"></label><button class="btn" type="button" data-add-budget-line="${key.id}">Ajouter</button></div></div>`;
+      }).join('');
+      $('budgetsTable').innerHTML = `<datalist id="class6List">${class6Accounts().map((a)=>`<option value="${escapeHtml(a.code+' - '+a.label)}"></option>`).join('')}</datalist><div class="budget-detail-title"><div><h2>${escapeHtml(header.label)}</h2><div class="muted-note">${escapeHtml(header.compta_copros?.name || '')} · ${escapeHtml(header.compta_fiscal_years?.label || '')}</div></div><div class="actions-inline"><button class="btn secondary" data-back-budget-list type="button">← Liste</button><button class="btn secondary" data-budget-pdf="${header.id}" type="button">Exporter PDF</button></div></div>${blocks || '<div class="notice">Aucune clé de répartition disponible.</div>'}<div class="budget-total-bar"><span>Total général du budget</span><strong id="budgetGrandTotalV11">${money(total)}</strong></div>`;
+    }
+
+    function recalcBudgetTotalsV11() {
+      const amounts = Array.from(document.querySelectorAll('[data-budget-amount-v11]'));
+      const lineAmount = {};
+      amounts.forEach((el)=>{ lineAmount[el.dataset.budgetAmountV11] = Number(el.value||0); });
+      const lines = currentBudgetLines();
+      let grand = 0;
+      state.distributionKeys.forEach((key)=>{
+        const subtotal = lines.filter((l)=>l.distribution_key_id===key.id).reduce((s,l)=>s+(lineAmount[l.id] ?? Number(l.amount||0)),0);
+        grand += subtotal;
+        const holder = document.querySelector(`[data-budget-key-total="${key.id}"]`);
+        if (holder) holder.textContent = money(subtotal);
+      });
+      if ($('budgetGrandTotalV11')) $('budgetGrandTotalV11').textContent = money(grand);
+      if ($('budgetSummary')) $('budgetSummary').innerHTML = `<span class="badge ok">Budget en cours</span><span class="badge warn">Total : ${money(grand)}</span>`;
+    }
+
+    function hasCallsForBudgetContext(headerId) {
+      const header = state.budgetHeaders.find((b)=>b.id===headerId);
+      if (!header) return false;
+      return state.ownerCalls.some((c)=>c.copro_id===header.copro_id && (!header.fiscal_year_id || c.fiscal_year_id===header.fiscal_year_id));
+    }
+
+    async function saveBudgetLineQuick(id) {
+      const amount = Number(document.querySelector(`[data-budget-amount-v11="${id}"]`)?.value || document.querySelector(`[data-budget-amount="${id}"]`)?.value || 0);
+      const label = document.querySelector(`[data-budget-label-v11="${id}"]`)?.value?.trim() || document.querySelector(`[data-budget-label="${id}"]`)?.value?.trim() || null;
+      const line = state.budgetLines.find((l)=>l.id===id);
+      if (line && Number(line.amount||0)!==amount && hasCallsForBudgetContext(line.budget_id) && !confirm('Tu modifies un montant de budget alors que des appels existent déjà pour cet exercice/cette copropriété. Les appels déjà créés ne seront pas recalculés automatiquement. Continuer ?')) return;
+      const { error } = await supabaseClient.from('compta_budget_lines').update({amount,label}).eq('id',id);
+      if (error) return alert(error.message);
+      const local = state.budgetLines.find((l)=>l.id===id); if (local) { local.amount=amount; local.label=label; }
+      recalcBudgetTotalsV11();
+    }
+
+    function renderDistribution() {
+      if (!$('distributionTable')) return;
+      const coproId = scopedCoproId('distributionCopro');
+      $('distributionCopro').innerHTML = '<option value="">Choisir...</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('distributionCopro').value = state.activeCoproId;
+      applyActiveCoproLocksV11();
+      const keys = state.distributionKeys.filter((k)=>(!coproId||k.copro_id===coproId));
+      const rows = keys.map((k)=>{
+        const items = state.distributionItems.filter((i)=>i.distribution_key_id===k.id && i.included!==false);
+        const total = items.reduce((s,i)=>s+Number(i.quotities||0),0);
+        return `<div class="distribution-list-row"><div><strong>${escapeHtml(k.name || 'Clé')}</strong><div class="muted-note">${k.is_default?'Clé par défaut · ':''}${escapeHtml(k.compta_copros?.name || '')}</div></div><div>${items.length} lot(s)</div><div><strong>${Number(total).toLocaleString('fr-BE')}</strong> quotités</div><div class="actions-inline"><button class="btn secondary small" data-open-distribution-key="${k.id}" type="button">Ouvrir</button><button class="btn danger small" data-delete-distribution-key-v11="${k.id}" type="button" ${k.is_default?'disabled':''}>Supprimer</button></div></div>`;
+      }).join('');
+      $('distributionSummaryLots').textContent = `${keys.length} clé(s)`;
+      $('distributionSummaryQuotities').textContent = 'Liste des clés';
+      $('distributionTable').innerHTML = `<div class="context-banner"><span>Contexte : ${escapeHtml(state.activeCoproId ? (state.copros.find(c=>c.id===state.activeCoproId)?.name || '') : 'Mode global')}</span><button class="btn" data-new-distribution-key-v11 type="button">Nouvelle clé</button></div><div class="table-wrap">${rows || '<div class="notice">Aucune clé de répartition.</div>'}</div>`;
+    }
+
+    function openDistributionKeyModalV11(keyId=null) {
+      const key = keyId ? state.distributionKeys.find((k)=>k.id===keyId) : null;
+      const coproId = key?.copro_id || requireActiveOrSelectedCopro('distributionCopro','créer une clé de répartition');
+      if (!coproId) return;
+      const lots = state.lots.filter((l)=>l.copro_id===coproId && l.active!==false);
+      const items = key ? state.distributionItems.filter((i)=>i.distribution_key_id===key.id) : [];
+      const itemMap = new Map(items.map((i)=>[i.lot_id, i]));
+      const rows = lots.map((lot)=>{ const item=itemMap.get(lot.id); return `<tr><td><input type="checkbox" data-modal-dist-lot="${lot.id}" data-modal-dist-field="included" ${item?'checked':''}></td><td>${escapeHtml(lot.lot_number||'')}</td><td>${escapeHtml(ownerDisplayNameById(lot.owner_id) || lot.compta_owners?.display_name || '')}</td><td>${Number(lot.quotities||0).toLocaleString('fr-BE')}</td><td><input type="number" step="0.0001" data-modal-dist-lot="${lot.id}" data-modal-dist-field="quotities" value="${item?escapeHtml(item.quotities):''}"></td></tr>`; }).join('');
+      const body = `<div class="popup-form"><div class="safety-note">Modifier une clé de répartition peut impacter les budgets et les appels futurs. Les appels déjà comptabilisés ne seront jamais recalculés automatiquement sans confirmation explicite.</div><div class="form-grid"><label>Nom de la clé<input id="modalDistName" value="${escapeHtml(key?.name || '')}" placeholder="Ex: Ascenseur, Parking..."></label><label>Clé par défaut<select id="modalDistDefault"><option value="false">Non</option><option value="true" ${key?.is_default?'selected':''}>Oui</option></select></label></div><div class="table-wrap distribution-modal-table"><table><thead><tr><th>Inclure</th><th>Lot</th><th>Propriétaire</th><th>Quotités générales</th><th>Quotités clé</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Aucun lot.</td></tr>'}</tbody></table></div></div>`;
+      openAppModal(key ? 'Modifier clé de répartition' : 'Nouvelle clé de répartition', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" id="modalSaveDistributionKeyV11" type="button">Enregistrer</button>`, {size:'wide'});
+      $('modalSaveDistributionKeyV11').onclick = () => saveDistributionKeyModalV11(key?.id || null, coproId);
+    }
+
+    async function saveDistributionKeyModalV11(keyId, coproId) {
+      const name = $('modalDistName').value.trim();
+      const isDefault = $('modalDistDefault').value === 'true';
+      if (!name) return alert('Indique le nom de la clé.');
+      const existingKey = keyId ? state.distributionKeys.find((k)=>k.id===keyId) : null;
+      if (existingKey && !confirm('Confirme la modification de cette clé de répartition. Les budgets/appels existants ne seront pas recalculés automatiquement.')) return;
+      if (isDefault) await supabaseClient.from('compta_distribution_keys').update({is_default:false}).eq('copro_id', coproId);
+      let actualKeyId = keyId;
+      if (!actualKeyId) {
+        const { data, error } = await supabaseClient.from('compta_distribution_keys').insert({copro_id:coproId,name,is_default:isDefault,created_by:currentUser.id}).select('id').single();
+        if (error) return alert(error.message);
+        actualKeyId = data.id;
+      } else {
+        const { error } = await supabaseClient.from('compta_distribution_keys').update({name,is_default:isDefault}).eq('id',actualKeyId);
+        if (error) return alert(error.message);
+      }
+      const rows = Array.from(document.querySelectorAll('[data-modal-dist-lot]')).reduce((acc, el)=>{ const lotId=el.dataset.modalDistLot; acc[lotId]=acc[lotId]||{}; acc[lotId][el.dataset.modalDistField]=el.type==='checkbox'?el.checked:el.value; return acc; }, {});
+      await supabaseClient.from('compta_distribution_items').delete().eq('distribution_key_id', actualKeyId);
+      const inserts = Object.entries(rows).filter(([lotId,data])=>data.included).map(([lotId,data])=>({distribution_key_id:actualKeyId,lot_id:lotId,included:true,quotities:Number(data.quotities||0),created_by:currentUser.id}));
+      if (inserts.length) {
+        const { error } = await supabaseClient.from('compta_distribution_items').insert(inserts);
+        if (error) return alert(error.message);
+      }
+      closeAppModal(); await loadAll();
+    }
+
+    async function deleteDistributionKeyV11(keyId) {
+      const key = state.distributionKeys.find((k)=>k.id===keyId);
+      if (!key) return;
+      if (key.is_default) return alert('La clé par défaut ne peut pas être supprimée.');
+      if (!confirm('Supprimer définitivement cette clé de répartition ?')) return;
+      await supabaseClient.from('compta_distribution_items').delete().eq('distribution_key_id', keyId);
+      const { error } = await supabaseClient.from('compta_distribution_keys').delete().eq('id', keyId);
+      if (error) return alert(error.message);
+      await loadAll();
+    }
+
+    function renderCalls() {
+      if (!$('callsTable')) return;
+      const coproId = scopedCoproId('callsCoproFilter');
+      $('callsCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('callsCoproFilter').value = state.activeCoproId;
+      $('callsFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>!coproId||y.copro_id===coproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      applyActiveCoproLocksV11();
+      const view = $('callsAccountingFilter')?.value || 'pending';
+      document.querySelectorAll('[data-call-tab]').forEach((b)=>b.classList.toggle('active', b.dataset.callTab===view));
+      const yearId=$('callsFiscalYearFilter').value||'';
+      const rows=state.ownerCalls.filter((c)=>(!coproId||c.copro_id===coproId)&&(!yearId||c.fiscal_year_id===yearId)&&(view==='all'||ownerCallAccountingStatus(c)===view));
+      const groups={}; rows.forEach((c)=>{ const key=c.call_id || `${c.period_label}|${c.due_date}|${c.label}`; groups[key]=groups[key]||[]; groups[key].push(c); });
+      const totals={amount:rows.reduce((s,c)=>s+Number(c.amount_due||0),0),paid:rows.reduce((s,c)=>s+Number(c.amount_paid||0),0),periods:Object.keys(groups).length,count:rows.length};
+      $('callsSummary').innerHTML=`<div class="call-card">Périodes<strong>${totals.periods}</strong></div><div class="call-card">Lignes copropriétaires<strong>${totals.count}</strong></div><div class="call-card">Total appelé<strong>${money(totals.amount)}</strong></div><div class="call-card">Reste ouvert<strong>${money(totals.amount-totals.paid)}</strong></div>`;
+      $('callsTable').innerHTML = Object.entries(groups).map(([key,arr])=>{ const first=arr[0]; const subtotal=arr.reduce((s,c)=>s+Number(c.amount_due||0),0); const paid=arr.reduce((s,c)=>s+Number(c.amount_paid||0),0); const accounting=ownerCallAccountingStatus(first); const action = accounting==='accounted' ? `<button class="btn secondary small" type="button" data-unaccount-call-group="${first.call_id||key}">Remettre en attente</button>` : `<button class="btn danger small" type="button" data-delete-pending-call-group="${first.call_id||key}">Supprimer</button>`; return `<div class="call-group-card" data-call-group="${key}"><div class="call-group-head v11"><input type="checkbox" data-call-select="${first.call_id||key}" ${accounting==='accounted'?'disabled':''}><div><strong>${escapeHtml(first.period_label||first.label||'Appel')}</strong><div class="muted-note">${escapeHtml(first.due_date||'')} · ${arr.length} copropriétaire(s)</div></div><div>${accounting==='accounted'?'<span class="badge ok">Comptabilisé</span>':'<span class="badge warn">En attente</span>'}</div><div><strong>${money(subtotal)}</strong><div class="muted-note">Payé ${money(paid)}</div></div><div class="period-action-row">${accounting==='accounted'?`<button class="btn secondary small" type="button" data-print-call-group-all="${first.call_id||key}">PDF tous</button><button class="btn secondary small" type="button" data-print-call-group-selected="${first.call_id||key}">PDF sélection</button>`:''}${action}</div><button class="btn secondary small" type="button" data-toggle-call-group="${key}">Détails</button></div><div class="call-group-details">${table(['Sélection','Copropriétaire','Lot','Montant','Payé','Statut','PDF'], arr.map((c)=>[`<input class="call-owner-select" type="checkbox" data-owner-call-select="${c.id}" checked>`,c.compta_owners?.display_name||'',c.compta_lots?.lot_number||'',money(c.amount_due),money(c.amount_paid),paymentStatusBadge(c.status==='partial'?'partial':c.status==='paid'?'paid':'unpaid'),`<button class="btn secondary small" data-print-call="${c.id}" type="button">PDF</button>`]))}</div></div>`; }).join('') || '<div class="notice">Aucun appel dans cette vue.</div>';
+    }
+
+    async function unaccountCallGroupV11(callKey) {
+      if (!confirm('Remettre cet appel comptabilisé en attente ? Les lignes reviendront dans l’onglet En attente.')) return;
+      await supabaseClient.from('compta_calls').update({accounting_status:'pending',status:'pending',accounting_date:null}).eq('id', callKey);
+      await supabaseClient.from('compta_owner_calls').update({accounting_status:'pending'}).eq('call_id', callKey);
+      await loadAll();
+    }
+
+    async function deletePendingCallGroupV11(callKey) {
+      if (!confirm('Supprimer définitivement cet appel en attente ?')) return;
+      await supabaseClient.from('compta_owner_calls').delete().eq('call_id', callKey);
+      const { error } = await supabaseClient.from('compta_calls').delete().eq('id', callKey);
+      if (error) return alert(error.message);
+      await loadAll();
+    }
+
+    function printOwnerCallsV11(ids, title='Appels de fonds') {
+      const calls = ids.map((id)=>state.ownerCalls.find((c)=>c.id===id)).filter(Boolean);
+      if (!calls.length) return alert('Aucun copropriétaire sélectionné.');
+      const body = calls.map((c)=>{ const copro=state.copros.find((x)=>x.id===c.copro_id); const owner=c.compta_owners?.display_name||''; return `<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div></section>`; }).join('');
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>body{font-family:Century Gothic,Arial;margin:0;color:#172033}.page{min-height:100vh;box-sizing:border-box;padding:38px;page-break-after:always}.head{display:flex;justify-content:space-between;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-weight:900;color:#1f7a8c;font-size:26px}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}.amount{font-size:30px;color:#1f7a8c;font-weight:900}@media print{.page{page-break-after:always}}</style></head><body>${body}<script>window.print();<\/script></body></html>`); win.document.close();
+    }
+
+    function printCallGroupAllV11(callKey) { printOwnerCallsV11(state.ownerCalls.filter((c)=>c.call_id===callKey).map((c)=>c.id), 'Appels de fonds'); }
+    function printCallGroupSelectedV11(callKey) { const ids = Array.from(document.querySelectorAll(`[data-owner-call-select]:checked`)).map((x)=>x.dataset.ownerCallSelect).filter((id)=>state.ownerCalls.find((c)=>c.id===id && c.call_id===callKey)); printOwnerCallsV11(ids, 'Appels de fonds sélectionnés'); }
+    function printOwnerCall(id){ printOwnerCallsV11([id], 'Appel de fonds'); }
+
+    function thirdRowsFor(type, coproId, yearId) {
+      const year = state.fiscalYears.find((y)=>y.id===yearId) || state.fiscalYears.find((y)=>!coproId||y.copro_id===coproId) || null;
+      const startLabel = year?.starts_on ? new Date(year.starts_on).toLocaleDateString('fr-BE') : '01/01';
+      const rows=[];
+      if (type==='owners' || type==='all') {
+        state.owners.filter((o)=>!coproId||o.copro_id===coproId).forEach((o)=>{
+          const opening = (state.thirdOpeningBalances||[]).find((b)=>b.tier_type==='owner'&&b.tier_id===o.id&&(!yearId||b.fiscal_year_id===yearId));
+          const details=[{date:year?.starts_on||'', label:`Solde reporté au ${startLabel}`, debit:Math.max(Number(opening?.amount||0),0), credit:Math.max(-Number(opening?.amount||0),0)}];
+          state.ownerCalls.filter((c)=>c.owner_id===o.id&&(!yearId||c.fiscal_year_id===yearId)&&ownerCallAccountingStatus(c)==='accounted').forEach((c)=>details.push({date:c.due_date||'', label:c.label||'Appel', debit:Number(c.amount_due||0), credit:0}));
+          state.bankTransactions.filter((t)=>t.tier_type==='owner'&&t.tier_id===o.id&&Number(t.amount)>0).forEach((t)=>details.push({date:t.transaction_date||'', label:t.communication||t.description||'Paiement', debit:0, credit:Number(t.amount||0)}));
+          const balance=details.reduce((s,d)=>s+Number(d.debit||0)-Number(d.credit||0),0);
+          rows.push({type:'owner', id:o.id, name:o.display_name, labelType:'Copropriétaire', balance, details});
+        });
+      }
+      if (type==='suppliers' || type==='all') {
+        state.suppliers.forEach((s)=>{
+          const opening = (state.thirdOpeningBalances||[]).find((b)=>b.tier_type==='supplier'&&b.tier_id===s.id&&(!yearId||b.fiscal_year_id===yearId));
+          const details=[{date:year?.starts_on||'', label:`Solde reporté au ${startLabel}`, debit:Math.max(-Number(opening?.amount||0),0), credit:Math.max(Number(opening?.amount||0),0)}];
+          state.invoices.filter((i)=>i.supplier_id===s.id&&(!coproId||i.copro_id===coproId)).forEach((i)=>details.push({date:i.invoice_date||'', label:`Facture ${i.invoice_number||''}`, debit:0, credit:Number(i.amount_total||0)}));
+          state.bankTransactions.filter((t)=>t.tier_type==='supplier'&&t.tier_id===s.id&&Number(t.amount)<0).forEach((t)=>details.push({date:t.transaction_date||'', label:t.communication||t.description||'Paiement', debit:Math.abs(Number(t.amount||0)), credit:0}));
+          const balance=details.reduce((s,d)=>s+Number(d.credit||0)-Number(d.debit||0),0);
+          rows.push({type:'supplier', id:s.id, name:s.name, labelType:'Fournisseur', balance, details});
+        });
+      }
+      return rows;
+    }
+
+    function renderThirdBalance() {
+      if (!$('thirdBalanceTable')) return;
+      $('thirdBalanceCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('thirdBalanceCoproFilter').value = state.activeCoproId;
+      $('thirdBalanceYearFilter').innerHTML = '<option value="">Exercice courant / tous</option>' + state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      applyActiveCoproLocksV11();
+      const type = $('thirdBalanceTypeFilter').value || 'all'; const coproId=scopedCoproId('thirdBalanceCoproFilter'); const yearId=$('thirdBalanceYearFilter').value||''; const search=($('thirdBalanceSearch').value||'').toLowerCase();
+      let rows=thirdRowsFor(type,coproId,yearId).filter((r)=>!search||String(r.name||'').toLowerCase().includes(search));
+      const debitTotal=rows.filter(r=>r.balance>0).reduce((s,r)=>s+r.balance,0); const creditTotal=rows.filter(r=>r.balance<0).reduce((s,r)=>s+Math.abs(r.balance),0);
+      $('thirdBalanceSummary').innerHTML=`<span class="badge">Tiers : ${rows.length}</span><span class="badge warn">Débiteur : ${money(debitTotal)}</span><span class="badge ok">Créditeur : ${money(creditTotal)}</span><button class="btn secondary small" data-print-third-selected type="button">PDF sélection individuel</button><button class="btn secondary small" data-print-third-all-individual type="button">PDF tous individuel</button><button class="btn secondary small" data-print-third-grouped type="button">PDF groupé</button>`;
+      $('thirdBalanceTable').innerHTML=`<div class="table-wrap">${rows.map((r)=>`<div class="third-balance-row v11" data-third-row="${r.type}|${r.id}"><input type="checkbox" data-third-select="${r.type}|${r.id}"><div><strong>${escapeHtml(r.name||'')}</strong><div class="muted-note">${r.labelType}</div></div><div>${r.balance>=0?'<span class="status-pill-strong red">Débiteur</span>':'<span class="status-pill-strong green">Créditeur</span>'}</div><div class="${r.balance>=0?'amount-red':'amount-green'}">${money(Math.abs(r.balance))}</div><div class="actions-inline"><button class="btn secondary small" type="button">Détail</button><button class="btn secondary small" data-print-third-one="${r.type}|${r.id}" type="button">PDF</button></div></div><div class="third-detail hidden" id="thirdDetail_${r.type}_${r.id}">${table(['Date','Libellé','Débit','Crédit'], r.details.map((d)=>[d.date||'',d.label||'',d.debit?money(d.debit):'',d.credit?money(d.credit):'']))}</div>`).join('')||'<div class="notice">Aucun tiers à afficher.</div>'}</div>`;
+    }
+
+    function htmlForThirdSituation(row) {
+      const status = row.balance >= 0 ? 'Solde débiteur' : 'Solde créditeur';
+      return `<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Situation de compte</h1><strong>${escapeHtml(row.name||'')}</strong><div>${escapeHtml(row.labelType||'')}</div></div></div><div class="box"><h2>${status} : ${money(Math.abs(row.balance))}</h2>${table(['Date','Libellé','Débit','Crédit'], row.details.map((d)=>[d.date||'',d.label||'',d.debit?money(d.debit):'',d.credit?money(d.credit):'']))}</div></section>`;
+    }
+
+    function printThirdRowsV11(rows, grouped=false) {
+      if (!rows.length) return alert('Aucun tiers sélectionné.');
+      const content = grouped ? `<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Balance des tiers</h1></div></div>${rows.map((r)=>`<h2>${escapeHtml(r.name)} - ${r.balance>=0?'Débiteur':'Créditeur'} ${money(Math.abs(r.balance))}</h2>${table(['Date','Libellé','Débit','Crédit'], r.details.map((d)=>[d.date||'',d.label||'',d.debit?money(d.debit):'',d.credit?money(d.credit):'']))}`).join('<hr>')}</section>` : rows.map(htmlForThirdSituation).join('');
+      const win = window.open('','_blank');
+      win.document.write(`<!doctype html><html><head><title>Situation de compte</title><style>body{font-family:Century Gothic,Arial;margin:0;color:#172033}.page{min-height:100vh;box-sizing:border-box;padding:36px;page-break-after:always}.head{display:flex;justify-content:space-between;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #e6eef5;text-align:left}h2{color:#14586a}@media print{.page{page-break-after:always}}</style></head><body>${content}<script>window.print();<\/script></body></html>`); win.document.close();
+    }
+
+    function rowsForCurrentThirdBalanceV11() {
+      const type = $('thirdBalanceTypeFilter').value || 'all'; const coproId=scopedCoproId('thirdBalanceCoproFilter'); const yearId=$('thirdBalanceYearFilter').value||''; const search=($('thirdBalanceSearch').value||'').toLowerCase();
+      return thirdRowsFor(type,coproId,yearId).filter((r)=>!search||String(r.name||'').toLowerCase().includes(search));
+    }
+
+    function exportThirdBalancePdf() { printThirdRowsV11(rowsForCurrentThirdBalanceV11(), true); }
+
+    function selectedThirdRowsV11() {
+      const selected = new Set(Array.from(document.querySelectorAll('[data-third-select]:checked')).map((x)=>x.dataset.thirdSelect));
+      return rowsForCurrentThirdBalanceV11().filter((r)=>selected.has(`${r.type}|${r.id}`));
+    }
+
+    async function saveInvoice() {
+      const accountId=$('invoiceAccount').value; if(!accountId) return alert('Le compte comptable est obligatoire.');
+      const paymentStatus=$('invoicePaymentStatus').value; const amount = Number($('invoiceAmount').value||0);
+      const payload={ copro_id: state.activeCoproId || $('invoiceCopro').value, supplier_id:$('invoiceSupplier').value||null, account_id:accountId, invoice_number:$('invoiceNumber').value.trim()||null, invoice_date:$('invoiceDate').value||null, amount_total:amount, status: paymentStatus==='paid' ? 'paid' : $('invoiceStatus').value, payment_status:paymentStatus, sent_to_payment: paymentStatus==='payment_sent', is_direct_debit: paymentStatus==='domiciliation', description:$('invoiceDescription').value.trim()||null, source:'manual', created_by:currentUser.id};
+      if(!payload.copro_id) return alert('Choisis une copropriété.'); if(!payload.supplier_id) return alert('Choisis un fournisseur.'); if(!payload.invoice_date) return alert('Indique la date de facture.'); if(!payload.invoice_number) return alert('Indique le numéro de facture.'); if(!amount) return alert('Indique un montant.');
+      if (state.selectedInvoiceId) { const old = state.invoices.find((i)=>i.id===state.selectedInvoiceId); if (old && Number(old.amount_total||0)!==amount && !confirm(`Tu modifies le montant de la facture de ${money(old.amount_total)} vers ${money(amount)}. Cela peut impacter le lettrage et la balance fournisseur. Continuer ?`)) return; }
+      const req=state.selectedInvoiceId ? supabaseClient.from('compta_invoices').update(payload).eq('id',state.selectedInvoiceId) : supabaseClient.from('compta_invoices').insert(payload); const {error}=await req; if(error) return alert(error.message); clearInvoiceForm(); await loadAll(); closeAppModal?.();
+    }
+
+    async function saveManualStatementFromModal(mode = 'close', statementId = null) {
+      const account = state.bankAccounts.find((a)=>a.id===$('manualModalAccount').value);
+      if (!account) return alert('Choisis un compte bancaire.');
+      const number = $('manualModalNumber').value.trim(); if (!number) return alert('Indique le numéro d’extrait.');
+      const statementDate = $('manualModalDate').value; if (!statementDate) return alert('Indique la date de l’extrait.');
+      const opening = Number($('manualModalOpening').value || 0);
+      const lines = state.manualStatementDraftLines.filter((l)=>Number(l.amount || 0)>0);
+      if (!lines.length) return alert('Ajoute au moins une ligne avec un montant.');
+      for (const [idx,line] of lines.entries()) {
+        if (!line.transaction_date) return alert(`Ligne ${idx+1} : indique la date.`);
+        if (!String(line.label||'').trim()) return alert(`Ligne ${idx+1} : indique le libellé.`);
+        if (!line.movement_type) return alert(`Ligne ${idx+1} : choisis paiement ou encaissement.`);
+        if (!line.tier_type || !line.tier_id) return alert(`Ligne ${idx+1} : choisis le tiers.`);
+        if (!Number(line.amount||0)) return alert(`Ligne ${idx+1} : indique le montant.`);
+      }
+      if (statementId && !confirm('Tu modifies un extrait existant. Les anciennes lignes seront remplacées et les balances/lettrages peuvent être impactés. Continuer ?')) return;
+      const movementTotal = lines.reduce((sum,l)=>sum+(l.movement_type==='debit'?-Math.abs(Number(l.amount)):Math.abs(Number(l.amount))),0);
+      const closing = opening + movementTotal;
+      let stId = statementId;
+      if (!stId) { const { data, error } = await supabaseClient.from('compta_bank_statements').insert({ copro_id:account.copro_id, bank_account_id:account.id, statement_number:number, statement_date:statementDate, opening_balance:opening, closing_balance:closing, computed_balance:closing, balance_check_status:'manual', status:'validated', file_name:'Encodage manuel', source:'manual', created_by:currentUser.id }).select('id').single(); if (error) return alert(error.message); stId = data.id; }
+      else { const { error } = await supabaseClient.from('compta_bank_statements').update({ bank_account_id:account.id, copro_id:account.copro_id, statement_number:number, statement_date:statementDate, opening_balance:opening, closing_balance:closing, computed_balance:closing, status:'validated' }).eq('id', stId); if (error) return alert(error.message); await supabaseClient.from('compta_bank_transactions').delete().eq('statement_id', stId); }
+      for (const line of lines) { const amount = line.movement_type === 'debit' ? -Math.abs(Number(line.amount)) : Math.abs(Number(line.amount)); const insertPayload = { copro_id:account.copro_id, bank_account_id:account.id, statement_id:stId, statement_number:number, transaction_date:line.transaction_date, amount, communication:line.label||line.communication||null, counterparty_name:tierName(line.tier_type,line.tier_id)||null, description:line.label||null, tier_type:line.tier_type||null, tier_id:line.tier_id||null, source:'manual', status:'imported', reconciliation_status:'unlettered', reconciled:false, created_by:currentUser.id }; const { data: tx, error } = await supabaseClient.from('compta_bank_transactions').insert(insertPayload).select('id,amount').single(); if (error) return alert(error.message); if (line.letter_target_id) await applyLetteringToTransaction(tx.id, line.letter_target_id); }
+      await loadAll(); if (mode === 'next') { state.manualStatementDraftLines = []; openManualStatementModal(null); } else closeAppModal();
+    }
+
+    const originalRenderAllV11 = renderAll;
+    renderAll = function(){ originalRenderAllV11(); applyActiveCoproLocksV11(); renderBudgets(); renderDistribution(); renderCalls(); renderThirdBalance(); };
+
+    document.addEventListener('input', (e)=>{ if(e.target?.dataset?.budgetAmountV11){ recalcBudgetTotalsV11(); } });
+    document.addEventListener('change', (e)=>{ if(e.target?.dataset?.budgetAmountV11){ saveBudgetLineQuick(e.target.dataset.budgetAmountV11); } if(e.target?.dataset?.budgetLabelV11){ saveBudgetLineQuick(e.target.dataset.budgetLabelV11); } });
+    document.addEventListener('click', (e)=>{
+      const t=e.target;
+      if(t?.dataset?.openBudget){ state.selectedBudgetHeaderId=t.dataset.openBudget; renderBudgets(); }
+      if(t?.dataset?.backBudgetList!==undefined){ state.selectedBudgetHeaderId=''; renderBudgets(); }
+      if(t?.dataset?.budgetPdf){ state.selectedBudgetHeaderId=t.dataset.budgetPdf; exportBudgetPdf(); }
+      if(t?.dataset?.newDistributionKeyV11!==undefined) openDistributionKeyModalV11(null);
+      if(t?.dataset?.openDistributionKey) openDistributionKeyModalV11(t.dataset.openDistributionKey);
+      if(t?.dataset?.deleteDistributionKeyV11) deleteDistributionKeyV11(t.dataset.deleteDistributionKeyV11);
+      if(t?.dataset?.unaccountCallGroup) unaccountCallGroupV11(t.dataset.unaccountCallGroup);
+      if(t?.dataset?.deletePendingCallGroup) deletePendingCallGroupV11(t.dataset.deletePendingCallGroup);
+      if(t?.dataset?.printCallGroupAll) printCallGroupAllV11(t.dataset.printCallGroupAll);
+      if(t?.dataset?.printCallGroupSelected) printCallGroupSelectedV11(t.dataset.printCallGroupSelected);
+      if(t?.dataset?.printThirdOne){ const [type,id]=t.dataset.printThirdOne.split('|'); printThirdRowsV11(rowsForCurrentThirdBalanceV11().filter(r=>r.type===type&&r.id===id), false); }
+      if(t?.dataset?.printThirdSelected!==undefined) printThirdRowsV11(selectedThirdRowsV11(), false);
+      if(t?.dataset?.printThirdAllIndividual!==undefined) printThirdRowsV11(rowsForCurrentThirdBalanceV11(), false);
+      if(t?.dataset?.printThirdGrouped!==undefined) printThirdRowsV11(rowsForCurrentThirdBalanceV11(), true);
+    });
 
         boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
