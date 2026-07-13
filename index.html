@@ -1222,6 +1222,41 @@
     .statement-card.coda { border-left:6px solid var(--accent); }
     @media (max-width:980px){ .call-status-grid{grid-template-columns:1fr 1fr;} .quick-actions{justify-content:flex-start;} }
 
+  
+
+    /* ---- V10 Budget/Appels/Balance tiers polish ---- */
+    .budget-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin:14px 0; }
+    .budget-total-bar { position:sticky; bottom:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:18px; padding:16px 18px; border:1px solid #cde7f1; border-radius:16px; background:linear-gradient(135deg,#eef9fc,#ffffff); box-shadow:0 -8px 24px rgba(23,32,51,.08); }
+    .budget-total-bar strong { font-size:26px; color:var(--brand-dark); }
+    .budget-key-card.v10 { border:1px solid #dbe7f1; border-radius:18px; background:#fff; padding:0; overflow:hidden; margin:16px 0; box-shadow:0 14px 34px rgba(17,24,39,.06); }
+    .budget-key-head { display:flex; justify-content:space-between; gap:14px; align-items:center; padding:16px 18px; background:linear-gradient(135deg,#f2f9fc,#ffffff); border-bottom:1px solid #e6eef5; }
+    .budget-key-head h3 { margin:0; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .budget-lines { display:grid; gap:0; }
+    .budget-line { display:grid; grid-template-columns: 180px 1.7fr 1fr auto; gap:10px; align-items:center; padding:12px 18px; border-bottom:1px solid #edf2f7; }
+    .budget-line:last-child { border-bottom:0; }
+    .budget-line:hover { background:#f8fcff; }
+    .budget-amount-input { font-weight:800; color:var(--brand-dark); }
+    .budget-add-line { margin:12px 18px 16px; padding:12px; border:1px dashed #b7d4df; border-radius:14px; background:#f9fdff; display:grid; grid-template-columns: 1.4fr 1fr auto; gap:10px; align-items:end; }
+    .budget-add-line.hidden { display:none; }
+    .budget-empty { padding:18px; color:var(--muted); }
+    .call-tabs, .bank-mode-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .call-tab, .bank-mode-tab { border:1px solid #d9e4ee; background:#fff; border-radius:999px; padding:9px 13px; cursor:pointer; font-weight:800; color:#315b68; }
+    .call-tab.active, .bank-mode-tab.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .call-group-card { border:1px solid #dfe8f1; border-radius:16px; background:#fff; margin:14px 0; overflow:hidden; box-shadow:0 12px 28px rgba(17,24,39,.05); }
+    .call-group-head { display:grid; grid-template-columns: auto 1.5fr 1fr 1fr auto; gap:12px; align-items:center; padding:14px 16px; background:#fbfdff; }
+    .call-group-details { display:none; padding:14px 16px; border-top:1px solid #e7edf4; background:#fff; }
+    .call-group-card.open .call-group-details { display:block; }
+    .third-balance-row { display:grid; grid-template-columns: 1.8fr 1fr 1fr auto; gap:12px; align-items:center; padding:14px 16px; border-bottom:1px solid #edf2f7; cursor:pointer; }
+    .third-balance-row:hover { background:#f5fbfe; }
+    .third-balance-amount { font-size:18px; font-weight:900; }
+    .third-balance-amount.debit { color:#b42318; }
+    .third-balance-amount.credit { color:#12805c; }
+    .third-detail { padding:16px; background:#fff; border-top:1px solid #e6edf4; }
+    .status-pill-strong { display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 12px; font-weight:900; }
+    .status-pill-strong.red { background:#fff0ed; color:#b42318; border:1px solid #ffc9c0; }
+    .status-pill-strong.green { background:#eaf8f0; color:#12805c; border:1px solid #b9e7cc; }
+    .pdf-preview-note { color:var(--muted); font-size:12px; }
+
   </style>
 </head>
 <body>
@@ -1773,9 +1808,19 @@
 
         <section id="budgetsView" class="view hidden">
           <div class="card">
-            <div class="toolbar"><h2>Budgets</h2><div class="quick-actions"><button class="btn secondary" id="newBudgetLineBtn" type="button">Ajouter ligne budget</button><button class="btn" id="prepareCallsFromBudgetBtn" type="button">Préparer appels</button></div></div>
-            <div class="notice">Le budget s'affiche d'abord par clé de répartition. Sous chaque clé, ajoute les comptes de classe 6 et les montants. Le total par clé et le total général sont calculés automatiquement.</div>
-            <div class="list-filters"><label>Copropriete <select id="budgetCoproFilter"></select></label><label>Exercice <select id="budgetFiscalYearFilter"></select></label></div>
+            <div class="toolbar">
+              <h2>Budgets</h2>
+              <div class="quick-actions">
+                <button class="btn" id="createBudgetBtn" type="button">Créer budget</button>
+                <button class="btn secondary" id="exportBudgetPdfBtn" type="button">Exporter PDF</button>
+              </div>
+            </div>
+            <div class="notice">Crée un budget par exercice. Il est organisé par clé de répartition, puis par comptes de classe 6. Le bouton + sous chaque clé ajoute rapidement une ligne sans casser l’affichage.</div>
+            <div class="list-filters">
+              <label>Copropriété <select id="budgetCoproFilter"></select></label>
+              <label>Exercice <select id="budgetFiscalYearFilter"></select></label>
+              <label>Budget <select id="budgetHeaderFilter"></select></label>
+            </div>
             <div id="budgetSummary" class="summary-line"></div>
             <div id="budgetsTable"></div>
           </div>
@@ -1783,11 +1828,18 @@
 
         <section id="callsView" class="view hidden">
           <div class="card">
-            <div class="toolbar"><h2>Appels de fonds</h2><div class="quick-actions"><button class="btn" id="newCallProjectBtn" type="button">Nouvel appel</button><button class="btn secondary" id="printAllCallsBtn" type="button">PDF tous</button></div></div>
-            <div class="notice">Crée un appel : fonds de réserve, fonds de roulement, provisions sur charges ou appel extraordinaire. Les provisions sur charges peuvent se baser sur le budget et la périodicité choisie.</div>
-            <div class="list-filters"><label>Copropriete <select id="callsCoproFilter"></select></label><label>Exercice <select id="callsFiscalYearFilter"></select></label><label>Statut <select id="callsStatusFilter"><option value="">Tous</option><option value="unpaid">Non payé</option><option value="partial">Partiel</option><option value="paid">Payé</option></select></label></div>
+            <div class="toolbar">
+              <h2>Appels de fonds</h2>
+              <div class="quick-actions">
+                <button class="btn" id="newCallProjectBtn" type="button">Nouvel appel</button>
+                <button class="btn secondary" id="validateSelectedPendingCallsBtn" type="button">Comptabiliser sélection</button>
+                <button class="btn secondary" id="printAllCallsBtn" type="button">PDF tous</button>
+              </div>
+            </div>
+            <div class="notice">Les appels générés arrivent d’abord en attente. Tu coches les périodes à comptabiliser; elles passent ensuite dans la liste comptabilisée et apparaissent dans la balance copropriétaire.</div>
+            <div class="list-filters"><label>Copropriété <select id="callsCoproFilter"></select></label><label>Exercice <select id="callsFiscalYearFilter"></select></label><label>Affichage <select id="callsAccountingFilter"><option value="pending">En attente</option><option value="accounted">Comptabilisé</option><option value="all">Tout</option></select></label></div>
+            <div class="call-tabs"><button class="call-tab active" data-call-tab="pending" type="button">En attente</button><button class="call-tab" data-call-tab="accounted" type="button">Comptabilisés</button></div>
             <div id="callsSummary" class="call-status-grid"></div>
-            <h3>Appels comptabilisés / en attente</h3>
             <div id="callsTable"></div>
           </div>
         </section>
@@ -1895,14 +1947,12 @@
           <div class="card">
             <div class="toolbar">
               <h2>Balance des tiers</h2>
-              <span class="badge warn">Module a structurer</span>
+              <div class="quick-actions"><button class="btn secondary" id="exportThirdBalancePdfBtn" type="button">Exporter PDF situation</button></div>
             </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Solde par propriétaire, fournisseur ou tiers : à recevoir, à payer, à relancer.</p>
-            <div class="module-grid"><div class="module-card"><h3>Propriétaires</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fournisseurs</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Arriérés</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="notice">Vue synthétique par tiers. La première ligne de détail est toujours le solde reporté au début de l’exercice sélectionné.</div>
+            <div class="list-filters"><label>Copropriété <select id="thirdBalanceCoproFilter"></select></label><label>Exercice <select id="thirdBalanceYearFilter"></select></label><label>Type de tiers <select id="thirdBalanceTypeFilter"><option value="all">Tous</option><option value="owners">Copropriétaires</option><option value="suppliers">Fournisseurs</option></select></label><label>Recherche <input id="thirdBalanceSearch" placeholder="Nom du tiers..."></label></div>
+            <div id="thirdBalanceSummary" class="summary-line"></div>
+            <div id="thirdBalanceTable"></div>
           </div>
         </section>
 
@@ -2254,7 +2304,9 @@
       fiscalYears: [],
       budgetLines: [],
       callHeaders: [],
-      manualStatementDraftLines: []
+      manualStatementDraftLines: [],
+      budgetHeaders: [],
+      thirdOpeningBalances: []
     };
 
     const $ = (id) => document.getElementById(id);
@@ -2392,6 +2444,18 @@
         .order("starts_on", { ascending: false });
       if (error) { console.warn(error.message); state.fiscalYears = []; return; }
       state.fiscalYears = data || [];
+    }
+
+    async function loadBudgetHeaders() {
+      const { data, error } = await supabaseClient.from('compta_budgets').select('*, compta_copros(name), compta_fiscal_years(label)').order('created_at', { ascending:false });
+      if (error) { console.warn(error.message); state.budgetHeaders = []; return; }
+      state.budgetHeaders = data || [];
+    }
+
+    async function loadThirdOpeningBalances() {
+      const { data, error } = await supabaseClient.from('compta_third_opening_balances').select('*');
+      if (error) { console.warn(error.message); state.thirdOpeningBalances = []; return; }
+      state.thirdOpeningBalances = data || [];
     }
 
     async function loadBudgetLines() {
@@ -4855,6 +4919,250 @@
     });
     ['budgetCoproFilter','budgetFiscalYearFilter'].forEach(id=>{ setTimeout(()=>{ if($(id)) $(id).addEventListener('change', renderBudgets); },0); });
     ['callsCoproFilter','callsFiscalYearFilter','callsStatusFilter'].forEach(id=>{ setTimeout(()=>{ if($(id)) $(id).addEventListener('change', renderCalls); },0); });
+
+
+
+
+    // ---- V10 : budget ergonomique, appels en attente/comptabilisés, balance des tiers ----
+    state.selectedBudgetHeaderId = state.selectedBudgetHeaderId || '';
+    state.selectedThirdBalanceKey = state.selectedThirdBalanceKey || null;
+
+    function callAccountingStatus(call) { return call.accounting_status || call.status_accounting || call.accounting_state || (call.is_accounted ? 'accounted' : 'pending'); }
+    function ownerCallAccountingStatus(call) { return call.accounting_status || call.accounting_state || (call.is_accounted ? 'accounted' : 'pending'); }
+    function budgetHeadersForContext(coproId, yearId) { return (state.budgetHeaders || []).filter((b)=>(!coproId||b.copro_id===coproId)&&(!yearId||b.fiscal_year_id===yearId)); }
+    function currentBudgetHeaderId() { return $('budgetHeaderFilter')?.value || state.selectedBudgetHeaderId || ''; }
+    function class6Accounts() { return state.accounts.filter((a)=>String(a.code||'').startsWith('6')).sort((a,b)=>String(a.code).localeCompare(String(b.code))); }
+
+    function renderBudgetFilters() {
+      if (!$('budgetCoproFilter')) return;
+      const prevHeader = $('budgetHeaderFilter')?.value || state.selectedBudgetHeaderId || '';
+      $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
+      const coproId = state.activeCoproId || $('budgetCoproFilter').value || '';
+      $('budgetFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>(!coproId||y.copro_id===coproId)).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      const yearId = $('budgetFiscalYearFilter').value || '';
+      const headers = budgetHeadersForContext(coproId, yearId);
+      $('budgetHeaderFilter').innerHTML = '<option value="">Tous les budgets</option>' + headers.map((b)=>`<option value="${b.id}" ${prevHeader===b.id?'selected':''}>${escapeHtml(b.label || 'Budget')}</option>`).join('');
+      if (prevHeader && headers.some((b)=>b.id===prevHeader)) $('budgetHeaderFilter').value = prevHeader;
+      state.selectedBudgetHeaderId = $('budgetHeaderFilter').value || '';
+    }
+
+    function renderBudgets() {
+      if (!$('budgetsTable')) return;
+      renderBudgetFilters();
+      const coproId = state.activeCoproId || $('budgetCoproFilter').value || '';
+      const yearId = $('budgetFiscalYearFilter').value || '';
+      const headerId = currentBudgetHeaderId();
+      let lines = state.budgetLines.filter((l)=>(!coproId||l.copro_id===coproId)&&(!yearId||l.fiscal_year_id===yearId)&&(!headerId||l.budget_id===headerId));
+      const keys = state.distributionKeys.filter((k)=>(!coproId||k.copro_id===coproId));
+      const total = lines.reduce((s,l)=>s+Number(l.amount||0),0);
+      const header = (state.budgetHeaders||[]).find((b)=>b.id===headerId);
+      $('budgetSummary').innerHTML = `<span class="badge ok">${escapeHtml(header?.label || (headerId?'Budget':'Vue globale'))}</span><span class="badge">${lines.length} ligne(s)</span><span class="badge">${keys.length} clé(s)</span>`;
+      const blocks = keys.map((key)=>{
+        const arr = lines.filter((l)=>l.distribution_key_id===key.id);
+        const subtotal = arr.reduce((s,l)=>s+Number(l.amount||0),0);
+        const body = arr.length ? arr.map((l)=>{
+          const acc = l.compta_accounts || state.accounts.find((a)=>a.id===l.account_id) || {};
+          return `<div class="budget-line" data-budget-line="${l.id}"><input class="budget-amount-input" type="number" step="0.01" value="${Number(l.amount||0)}" data-budget-amount="${l.id}"><div><strong>${escapeHtml((acc.code||'')+' - '+(acc.label||''))}</strong><div class="muted-note">${escapeHtml(l.label||'')}</div></div><input value="${escapeHtml(l.label||'')}" data-budget-label="${l.id}" placeholder="Libellé interne"><div class="actions-inline"><button class="btn secondary small" data-save-budget-line="${l.id}" type="button">OK</button><button class="btn danger small" data-delete-budget="${l.id}" type="button">Suppr.</button></div></div>`;
+        }).join('') : '<div class="budget-empty">Aucune classe 6 dans cette clé.</div>';
+        return `<div class="budget-key-card v10"><div class="budget-key-head"><h3>${escapeHtml(key.name || 'Clé')} <span class="badge ok">${money(subtotal)}</span></h3><button class="btn secondary small" type="button" data-show-budget-add="${key.id}">+ Ajouter classe 6</button></div><div class="budget-lines">${body}</div><div id="budgetAdd_${key.id}" class="budget-add-line hidden"><label>Compte classe 6<input list="class6List" placeholder="Tape 610, eau, ascenseur..." data-new-budget-account-text="${key.id}"></label><label>Montant<input type="number" step="0.01" data-new-budget-amount="${key.id}" value="0"></label><button class="btn" type="button" data-add-budget-line="${key.id}">Ajouter</button></div></div>`;
+      }).join('');
+      $('budgetsTable').innerHTML = `<datalist id="class6List">${class6Accounts().map((a)=>`<option value="${escapeHtml(a.code+' - '+a.label)}"></option>`).join('')}</datalist>${blocks || '<div class="notice">Crée d’abord des clés de répartition pour cette copropriété.</div>'}<div class="budget-total-bar"><span>Total général du budget</span><strong>${money(total)}</strong></div>`;
+    }
+
+    function accountIdFromClass6Text(text) {
+      const t = String(text||'').toLowerCase().trim();
+      if (!t) return '';
+      const code = t.split(' ')[0];
+      const found = class6Accounts().find((a)=>String(a.code||'').toLowerCase()===code || (String(a.code+' - '+a.label).toLowerCase().includes(t)));
+      return found?.id || '';
+    }
+
+    function openCreateBudgetModal() {
+      const coproId = state.activeCoproId || $('budgetCoproFilter')?.value || '';
+      const yearId = $('budgetFiscalYearFilter')?.value || '';
+      const keys = state.distributionKeys.filter((k)=>!coproId||k.copro_id===coproId);
+      const prevBudgets = (state.budgetHeaders||[]).filter((b)=>b.copro_id===coproId && b.id !== state.selectedBudgetHeaderId);
+      const keyBlocks = keys.map((k)=>`<div class="budget-key-card v10"><div class="budget-key-head"><h3>${escapeHtml(k.name)}</h3><label style="display:flex;align-items:center;gap:8px;text-transform:none;"><input type="checkbox" data-budget-key-check="${k.id}" checked> inclure</label></div><div style="padding:12px 18px;"><label>Classes 6 à reprendre<select multiple size="8" data-budget-accounts-for-key="${k.id}">${class6Accounts().map((a)=>`<option value="${a.id}">${escapeHtml(a.code+' - '+a.label)}</option>`).join('')}</select></label><div class="muted-note">Astuce : CTRL + clic pour sélectionner plusieurs comptes.</div></div></div>`).join('');
+      const body = `<div class="popup-form"><div class="modal-help">Crée l’enveloppe du budget. Tu peux reprendre le budget précédent ou sélectionner les comptes de classe 6 par clé de répartition.</div><div class="form-grid"><label>Copropriété <select id="modalBudgetHeaderCopro">${coproOptions(coproId)}</select></label><label>Exercice <select id="modalBudgetHeaderYear">${fiscalYearOptions(yearId)}</select></label><label>Libellé budget <input id="modalBudgetHeaderLabel" value="Budget ${new Date().getFullYear()}"></label><label>Reprendre une base<select id="modalBudgetCopyFrom"><option value="">Non, créer depuis sélection</option>${prevBudgets.map((b)=>`<option value="${b.id}">${escapeHtml(b.label)}</option>`).join('')}</select></label></div><h3>Clés de répartition et comptes classe 6</h3>${keyBlocks || '<div class="notice">Aucune clé de répartition disponible.</div>'}</div>`;
+      openAppModal('Créer budget', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" id="modalCreateBudgetBtn">Créer budget</button>`, {size:'wide'});
+      $('modalBudgetHeaderCopro').onchange = () => closeAppModal() || openCreateBudgetModal();
+      $('modalCreateBudgetBtn').onclick = createBudgetFromModal;
+    }
+
+    async function createBudgetFromModal() {
+      const coproId = $('modalBudgetHeaderCopro').value;
+      const yearId = $('modalBudgetHeaderYear').value || null;
+      const label = $('modalBudgetHeaderLabel').value.trim();
+      const copyFrom = $('modalBudgetCopyFrom').value || '';
+      if (!coproId || !label) return alert('Choisis une copropriété et un libellé.');
+      const { data: budget, error } = await supabaseClient.from('compta_budgets').insert({copro_id:coproId,fiscal_year_id:yearId,label,status:'draft',created_by:currentUser.id}).select('id').single();
+      if (error) return alert(error.message);
+      const rows = [];
+      if (copyFrom) {
+        state.budgetLines.filter((l)=>l.budget_id===copyFrom).forEach((l)=>rows.push({budget_id:budget.id,copro_id:coproId,fiscal_year_id:yearId,distribution_key_id:l.distribution_key_id,account_id:l.account_id,label:l.label,amount:l.amount,created_by:currentUser.id}));
+      } else {
+        document.querySelectorAll('[data-budget-key-check]').forEach((cb)=>{
+          if (!cb.checked) return;
+          const keyId = cb.dataset.budgetKeyCheck;
+          Array.from(document.querySelector(`[data-budget-accounts-for-key="${keyId}"]`)?.selectedOptions || []).forEach((opt)=>{
+            rows.push({budget_id:budget.id,copro_id:coproId,fiscal_year_id:yearId,distribution_key_id:keyId,account_id:opt.value,label:null,amount:0,created_by:currentUser.id});
+          });
+        });
+      }
+      if (rows.length) {
+        const { error: lineErr } = await supabaseClient.from('compta_budget_lines').insert(rows);
+        if (lineErr) return alert(lineErr.message);
+      }
+      state.selectedBudgetHeaderId = budget.id;
+      closeAppModal(); await loadAll();
+    }
+
+    async function addBudgetLineToKey(keyId) {
+      const headerId = currentBudgetHeaderId();
+      const coproId = state.activeCoproId || $('budgetCoproFilter').value;
+      const yearId = $('budgetFiscalYearFilter').value || null;
+      if (!headerId) return alert('Crée ou choisis d’abord un budget.');
+      const accountText = document.querySelector(`[data-new-budget-account-text="${keyId}"]`)?.value || '';
+      const amount = Number(document.querySelector(`[data-new-budget-amount="${keyId}"]`)?.value || 0);
+      const accountId = accountIdFromClass6Text(accountText);
+      if (!accountId) return alert('Compte classe 6 introuvable. Tape le code ou une partie du libellé.');
+      const acc = state.accounts.find((a)=>a.id===accountId);
+      const { error } = await supabaseClient.from('compta_budget_lines').insert({budget_id:headerId,copro_id:coproId,fiscal_year_id:yearId,distribution_key_id:keyId,account_id:accountId,label:acc?.label || null,amount,created_by:currentUser.id});
+      if (error) return alert(error.message);
+      await loadAll();
+    }
+
+    async function saveBudgetLineQuick(id) {
+      const amount = Number(document.querySelector(`[data-budget-amount="${id}"]`)?.value || 0);
+      const label = document.querySelector(`[data-budget-label="${id}"]`)?.value?.trim() || null;
+      const { error } = await supabaseClient.from('compta_budget_lines').update({amount,label}).eq('id',id);
+      if (error) return alert(error.message);
+      await loadAll();
+    }
+
+    function exportBudgetPdf() {
+      const headerId = currentBudgetHeaderId();
+      const lines = state.budgetLines.filter((l)=>!headerId||l.budget_id===headerId);
+      const total = lines.reduce((s,l)=>s+Number(l.amount||0),0);
+      const header = (state.budgetHeaders||[]).find((b)=>b.id===headerId);
+      const groups = {};
+      lines.forEach((l)=>{ const key=l.distribution_key_id||'none'; groups[key]=groups[key]||[]; groups[key].push(l); });
+      const htmlBody = `<!doctype html><html><head><title>Budget</title><style>body{font-family:Century Gothic,Arial;margin:35px;color:#172033}.head{border-bottom:5px solid #1f7a8c;padding-bottom:18px;display:flex;justify-content:space-between}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.key{margin-top:22px;border:1px solid #dde3ee;border-radius:12px;overflow:hidden}.key h2{margin:0;background:#eef8fc;padding:12px 14px;color:#14586a}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #e6eef5;text-align:left}.total{margin-top:24px;font-size:24px;font-weight:900;text-align:right;color:#1f7a8c}</style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>${escapeHtml(header?.label||'Budget')}</h1><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>${Object.entries(groups).map(([keyId,arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="key"><h2>${escapeHtml(k?.name||'Sans clé')} - ${money(subtotal)}</h2><table><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr>${arr.map((l)=>{const a=l.compta_accounts||state.accounts.find(x=>x.id===l.account_id)||{}; return `<tr><td>${escapeHtml((a.code||'')+' - '+(a.label||''))}</td><td>${escapeHtml(l.label||'')}</td><td>${money(l.amount)}</td></tr>`}).join('')}</table></div>`}).join('')}<div class="total">TOTAL BUDGET : ${money(total)}</div><script>window.print();<\/script></body></html>`;
+      const w=window.open('','_blank'); w.document.write(htmlBody); w.document.close();
+    }
+
+    function renderCalls() {
+      if (!$('callsTable')) return;
+      $('callsCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('callsCoproFilter').value = state.activeCoproId;
+      $('callsFiscalYearFilter').innerHTML = '<option value="">Tous</option>' + state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      const view = $('callsAccountingFilter')?.value || 'pending';
+      document.querySelectorAll('[data-call-tab]').forEach((b)=>b.classList.toggle('active', b.dataset.callTab===view));
+      const coproId=state.activeCoproId||$('callsCoproFilter').value||''; const yearId=$('callsFiscalYearFilter').value||'';
+      const rows=state.ownerCalls.filter((c)=>(!coproId||c.copro_id===coproId)&&(!yearId||c.fiscal_year_id===yearId)&&(view==='all'||ownerCallAccountingStatus(c)===view));
+      const groups={}; rows.forEach((c)=>{ const key=c.call_id || `${c.period_label}|${c.due_date}|${c.label}`; groups[key]=groups[key]||[]; groups[key].push(c); });
+      const totals={amount:rows.reduce((s,c)=>s+Number(c.amount_due||0),0),paid:rows.reduce((s,c)=>s+Number(c.amount_paid||0),0),periods:Object.keys(groups).length,count:rows.length};
+      $('callsSummary').innerHTML=`<div class="call-card">Périodes<strong>${totals.periods}</strong></div><div class="call-card">Lignes copropriétaires<strong>${totals.count}</strong></div><div class="call-card">Total appelé<strong>${money(totals.amount)}</strong></div><div class="call-card">Reste ouvert<strong>${money(totals.amount-totals.paid)}</strong></div>`;
+      $('callsTable').innerHTML = Object.entries(groups).map(([key,arr])=>{ const first=arr[0]; const subtotal=arr.reduce((s,c)=>s+Number(c.amount_due||0),0); const paid=arr.reduce((s,c)=>s+Number(c.amount_paid||0),0); const accounting=ownerCallAccountingStatus(first); return `<div class="call-group-card" data-call-group="${key}"><div class="call-group-head"><input type="checkbox" data-call-select="${first.call_id||key}" ${accounting==='accounted'?'disabled':''}><div><strong>${escapeHtml(first.period_label||first.label||'Appel')}</strong><div class="muted-note">${escapeHtml(first.due_date||'')} · ${arr.length} copropriétaire(s)</div></div><div>${paymentStatusBadge(accounting==='accounted'?'paid':'unpaid')}</div><div><strong>${money(subtotal)}</strong><div class="muted-note">Payé ${money(paid)}</div></div><button class="btn secondary small" type="button" data-toggle-call-group="${key}">Détails</button></div><div class="call-group-details">${table(['Copropriétaire','Lot','Montant','Payé','Statut','PDF'], arr.map((c)=>[c.compta_owners?.display_name||'',c.compta_lots?.lot_number||'',money(c.amount_due),money(c.amount_paid),paymentStatusBadge(c.status==='partial'?'partial':c.status==='paid'?'paid':'unpaid'),`<button class="btn secondary small" data-print-call="${c.id}" type="button">PDF</button>`]))}</div></div>`; }).join('') || '<div class="notice">Aucun appel dans cette vue.</div>';
+    }
+
+    async function validateSelectedPendingCalls() {
+      const ids = Array.from(document.querySelectorAll('[data-call-select]:checked')).map((i)=>i.dataset.callSelect).filter(Boolean);
+      if (!ids.length) return alert('Sélectionne au moins une période en attente.');
+      for (const id of ids) {
+        await supabaseClient.from('compta_calls').update({accounting_status:'accounted',status:'accounted'}).eq('id', id);
+        await supabaseClient.from('compta_owner_calls').update({accounting_status:'accounted'}).eq('call_id', id);
+      }
+      await loadAll();
+    }
+
+    async function generateCallsFromModal(){
+      const coproId=$('modalCallCopro').value; const yearId=$('modalCallYear').value||null; const type=$('modalCallType').value; const periodicity=$('modalCallPeriodicity').value; const firstDate=$('modalCallStart').value; const baseLabel=$('modalCallLabel').value.trim()||'Appel de fonds'; if(!coproId||!firstDate)return alert('Choisis copropriété et date.');
+      const count=periodicityCount(periodicity); const step=periodicity==='monthly'?1:periodicity==='semiannual'?6:periodicity==='annual'?12:3;
+      const headerId = currentBudgetHeaderId();
+      const budgetLines=state.budgetLines.filter((b)=>b.copro_id===coproId&&(!yearId||b.fiscal_year_id===yearId)&&(!headerId||b.budget_id===headerId));
+      const manual=Number($('modalCallManualAmount').value||0);
+      const totalBudget=budgetLines.reduce((s,b)=>s+Number(b.amount||0),0);
+      const totalAmount=type==='provisions'?totalBudget:manual;
+      if(!totalAmount)return alert('Aucun montant à appeler. Encode un budget ou un montant manuel.');
+      const lots=state.lots.filter((l)=>l.copro_id===coproId&&l.active!==false&&l.owner_id);
+      if(!lots.length)return alert('Aucun lot/propriétaire disponible pour répartir.');
+      const totalQ=lots.reduce((s,l)=>s+Number(l.quotities||0),0)||1;
+      for(let i=0;i<count;i++){
+        const due=addMonths(firstDate,i*step); const periodAmount=totalAmount/count; const label=`${baseLabel} - ${monthLabel(due)}`;
+        const {data:call,error}=await supabaseClient.from('compta_calls').insert({copro_id:coproId,fiscal_year_id:yearId,label,call_date:due,due_date:due,amount_total:periodAmount,status:'pending',accounting_status:'pending',call_type:type,periodicity,source_budget_total:totalBudget,created_by:currentUser.id}).select('id').single(); if(error)return alert(error.message);
+        for(const lot of lots){ const amount=periodAmount*(Number(lot.quotities||0)/totalQ); await supabaseClient.from('compta_owner_calls').insert({call_id:call.id,copro_id:coproId,fiscal_year_id:yearId,owner_id:lot.owner_id,lot_id:lot.id,label,due_date:due,amount_due:Number(amount.toFixed(2)),amount_paid:0,status:'unpaid',accounting_status:'pending',call_type:type,period_label:monthLabel(due),created_by:currentUser.id}); }
+      }
+      closeAppModal(); await loadAll();
+    }
+
+    function thirdRowsFor(type, coproId, yearId) {
+      const year = state.fiscalYears.find((y)=>y.id===yearId) || state.fiscalYears.find((y)=>!coproId||y.copro_id===coproId) || null;
+      const startLabel = year?.starts_on ? new Date(year.starts_on).toLocaleDateString('fr-BE') : '01/01';
+      const rows=[];
+      if (type==='owners' || type==='all') {
+        state.owners.filter((o)=>!coproId||o.copro_id===coproId).forEach((o)=>{
+          const opening = (state.thirdOpeningBalances||[]).find((b)=>b.tier_type==='owner'&&b.tier_id===o.id&&(!yearId||b.fiscal_year_id===yearId));
+          const details=[{date:year?.starts_on||'', label:`Solde reporté au ${startLabel}`, debit:Math.max(Number(opening?.amount||0),0), credit:Math.max(-Number(opening?.amount||0),0)}];
+          state.ownerCalls.filter((c)=>c.owner_id===o.id&&(!yearId||c.fiscal_year_id===yearId)&&ownerCallAccountingStatus(c)==='accounted').forEach((c)=>details.push({date:c.due_date||'', label:c.label||'Appel', debit:Number(c.amount_due||0), credit:0}));
+          state.bankTransactions.filter((t)=>t.tier_type==='owner'&&t.tier_id===o.id&&Number(t.amount)>0).forEach((t)=>details.push({date:t.transaction_date||'', label:t.communication||t.description||'Paiement', debit:0, credit:Number(t.amount||0)}));
+          const balance=details.reduce((s,d)=>s+Number(d.debit||0)-Number(d.credit||0),0);
+          rows.push({type:'owner', id:o.id, name:o.display_name, labelType:'Copropriétaire', balance, details});
+        });
+      }
+      if (type==='suppliers' || type==='all') {
+        state.suppliers.forEach((s)=>{
+          const opening = (state.thirdOpeningBalances||[]).find((b)=>b.tier_type==='supplier'&&b.tier_id===s.id&&(!yearId||b.fiscal_year_id===yearId));
+          const details=[{date:year?.starts_on||'', label:`Solde reporté au ${startLabel}`, debit:Math.max(-Number(opening?.amount||0),0), credit:Math.max(Number(opening?.amount||0),0)}];
+          state.invoices.filter((i)=>i.supplier_id===s.id&&(!coproId||i.copro_id===coproId)).forEach((i)=>details.push({date:i.invoice_date||'', label:`Facture ${i.invoice_number||''}`, debit:0, credit:Number(i.amount_total||0)}));
+          state.bankTransactions.filter((t)=>t.tier_type==='supplier'&&t.tier_id===s.id&&Number(t.amount)<0).forEach((t)=>details.push({date:t.transaction_date||'', label:t.communication||t.description||'Paiement', debit:Math.abs(Number(t.amount||0)), credit:0}));
+          const balance=details.reduce((s,d)=>s+Number(d.credit||0)-Number(d.debit||0),0);
+          rows.push({type:'supplier', id:s.id, name:s.name, labelType:'Fournisseur', balance, details});
+        });
+      }
+      return rows;
+    }
+
+    function renderThirdBalance() {
+      if (!$('thirdBalanceTable')) return;
+      $('thirdBalanceCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('thirdBalanceCoproFilter').value = state.activeCoproId;
+      $('thirdBalanceYearFilter').innerHTML = '<option value="">Exercice courant / tous</option>' + state.fiscalYears.filter((y)=>!state.activeCoproId||y.copro_id===state.activeCoproId).map((y)=>`<option value="${y.id}">${escapeHtml(y.label)}</option>`).join('');
+      const type = $('thirdBalanceTypeFilter').value || 'all'; const coproId=state.activeCoproId||$('thirdBalanceCoproFilter').value||''; const yearId=$('thirdBalanceYearFilter').value||''; const search=($('thirdBalanceSearch').value||'').toLowerCase();
+      let rows=thirdRowsFor(type,coproId,yearId).filter((r)=>!search||String(r.name||'').toLowerCase().includes(search));
+      const debitTotal=rows.filter(r=>r.balance>0).reduce((s,r)=>s+r.balance,0); const creditTotal=rows.filter(r=>r.balance<0).reduce((s,r)=>s+Math.abs(r.balance),0);
+      $('thirdBalanceSummary').innerHTML=`<span class="badge">Tiers : ${rows.length}</span><span class="badge warn">Débiteur : ${money(debitTotal)}</span><span class="badge ok">Créditeur : ${money(creditTotal)}</span>`;
+      $('thirdBalanceTable').innerHTML=`<div class="table-wrap">${rows.map((r)=>`<div class="third-balance-row" data-third-row="${r.type}|${r.id}"><div><strong>${escapeHtml(r.name||'')}</strong><div class="muted-note">${r.labelType}</div></div><div>${r.balance>=0?'<span class="status-pill-strong red">Débiteur</span>':'<span class="status-pill-strong green">Créditeur</span>'}</div><div class="third-balance-amount ${r.balance>=0?'debit':'credit'}">${money(Math.abs(r.balance))}</div><button class="btn secondary small" type="button">Détail</button></div><div class="third-detail hidden" id="thirdDetail_${r.type}_${r.id}">${table(['Date','Libellé','Débit','Crédit'], r.details.map((d)=>[d.date||'',d.label||'',d.debit?money(d.debit):'',d.credit?money(d.credit):'']))}</div>`).join('')||'<div class="notice">Aucun tiers à afficher.</div>'}</div>`;
+    }
+
+    function exportThirdBalancePdf() {
+      renderThirdBalance();
+      const content = $('thirdBalanceTable').innerHTML;
+      const w=window.open('','_blank');
+      w.document.write(`<!doctype html><html><head><title>Situation de compte</title><style>body{font-family:Century Gothic,Arial;margin:35px;color:#172033}.head{border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.third-detail{display:block!important}.hidden{display:block!important}.btn{display:none}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #e6eef5;padding:8px;text-align:left}.third-balance-row{display:flex;justify-content:space-between;border-bottom:2px solid #dde3ee;padding:12px 0}.third-balance-amount{font-weight:900}</style></head><body><div class="head"><div class="logo">WAPI-SYNDIK</div><h1>Situation de compte / Balance des tiers</h1></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
+    }
+
+    const originalRenderAllV10 = renderAll;
+    renderAll = function(){ originalRenderAllV10(); renderBudgets(); renderCalls(); renderThirdBalance(); };
+
+    document.addEventListener('click', (e)=>{
+      const t=e.target;
+      if (t?.id==='createBudgetBtn') openCreateBudgetModal();
+      if (t?.id==='exportBudgetPdfBtn') exportBudgetPdf();
+      if (t?.dataset?.showBudgetAdd) { const el=$(`budgetAdd_${t.dataset.showBudgetAdd}`); if(el) el.classList.toggle('hidden'); }
+      if (t?.dataset?.addBudgetLine) addBudgetLineToKey(t.dataset.addBudgetLine);
+      if (t?.dataset?.saveBudgetLine) saveBudgetLineQuick(t.dataset.saveBudgetLine);
+      if (t?.id==='validateSelectedPendingCallsBtn') validateSelectedPendingCalls();
+      if (t?.dataset?.callTab) { $('callsAccountingFilter').value=t.dataset.callTab; renderCalls(); }
+      if (t?.dataset?.toggleCallGroup) { const group=t.closest('.call-group-card'); if(group) group.classList.toggle('open'); }
+      if (t?.id==='exportThirdBalancePdfBtn') exportThirdBalancePdf();
+      const third = t?.closest?.('[data-third-row]');
+      if (third && !t.dataset.printCall) { const [type,id]=third.dataset.thirdRow.split('|'); const detail=$(`thirdDetail_${type}_${id}`); if(detail) detail.classList.toggle('hidden'); }
+    });
+    ['budgetCoproFilter','budgetFiscalYearFilter','budgetHeaderFilter'].forEach((id)=>setTimeout(()=>{ if($(id)) $(id).addEventListener('change', ()=>{ state.selectedBudgetHeaderId=$('budgetHeaderFilter')?.value||''; renderBudgets(); }); },0));
+    ['callsCoproFilter','callsFiscalYearFilter','callsAccountingFilter'].forEach((id)=>setTimeout(()=>{ if($(id)) $(id).addEventListener('change', renderCalls); },0));
+    ['thirdBalanceCoproFilter','thirdBalanceYearFilter','thirdBalanceTypeFilter','thirdBalanceSearch'].forEach((id)=>setTimeout(()=>{ if($(id)) $(id).addEventListener('input', renderThirdBalance); if($(id)) $(id).addEventListener('change', renderThirdBalance); },0));
 
 
         boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
