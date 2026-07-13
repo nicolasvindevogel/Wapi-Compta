@@ -676,6 +676,24 @@
     .identity-type-tabs .tab-btn { border:1px solid var(--line); background:#fff; color:var(--ink); padding:8px 11px; border-radius:999px; cursor:pointer; font-weight:700; }
     .identity-type-tabs .tab-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
     .muted-note { color:var(--muted); font-size:13px; }
+
+    .invoice-row--paid { background:#e9f8ef; }
+    .invoice-row--payment-sent { background:#fff3df; }
+    .invoice-row--unpaid { background:#fff0ee; }
+    .invoice-row--domiciliation { background:#fffbd6; }
+    .ledger-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:14px; }
+    .ledger-status { display:inline-flex; align-items:center; gap:6px; font-weight:700; }
+    .lettering-dot { width:9px; height:9px; border-radius:50%; display:inline-block; background:#d92d20; }
+    .lettering-dot.ok { background:#12b76a; }
+    .lettering-dot.warn { background:#f79009; }
+    .panel-warning { border:1px solid #fedf89; background:#fffaeb; color:#93370d; border-radius:10px; padding:10px 12px; }
+    .panel-danger { border:1px solid #fecdca; background:#fff1f0; color:#b42318; border-radius:10px; padding:10px 12px; }
+    .statement-card { border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:16px; margin:14px 0; }
+    .statement-head { display:grid; grid-template-columns:2fr 1.2fr 1.2fr 1.2fr auto; gap:12px; align-items:start; }
+    .statement-lines { margin-top:14px; border:1px solid #dce8f0; border-radius:10px; padding:12px; background:#f9fcff; }
+    .account-group { border:1px solid var(--line); border-radius:12px; background:#fff; padding:14px; margin:12px 0; }
+    .pdf-pill { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); padding:5px 8px; border-radius:999px; background:#fff; cursor:pointer; font-size:12px; }
+    @media (max-width:1100px){ .statement-head { grid-template-columns:1fr; } }
     @media (max-width: 1100px) { .list-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } .coda-card__head { grid-template-columns:1fr; } .coda-mini-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 720px) { .list-filters, .coda-mini-grid { grid-template-columns:1fr; } }
     @media (max-width: 1100px) {
@@ -945,62 +963,18 @@
               <h2>Centre de traitement multi-coproprietes</h2>
               <span class="badge warn">Import massif -> validation -> comptabilisation</span>
             </div>
-
-            <div class="notice">
-              Depose ici des factures PDF, CODA ou documents en masse. Le logiciel tente de reconnaitre la copropriete,
-              le fournisseur ou le compte bancaire. Tout reste modifiable avant validation.
-            </div>
-
+            <div class="notice">Depose ici des factures PDF, CODA ou documents en masse. L'import reste separe de l'encodage financier : les CODA importes seront ensuite valides dans <strong>Comptabilite &gt; Financier</strong>. Pour les factures, tu peux corriger la copro, le fournisseur, le montant et le compte comptable avant validation.</div>
             <div class="form-grid">
               <label>Type d'import
-                <select id="importType">
-                  <option value="invoice">Factures fournisseurs PDF</option>
-                  <option value="coda">CODA / extraits bancaires</option>
-                  <option value="document">Documents divers a classer</option>
-                </select>
+                <select id="importType"><option value="invoice">Factures fournisseurs PDF</option><option value="coda">CODA / extraits bancaires</option><option value="document">Documents divers a classer</option></select>
               </label>
               <label>Libelle du lot <input id="importBatchLabel" placeholder="Ex: Factures du jour, CODA juillet..." /></label>
               <label>Fichiers <input id="importFiles" type="file" multiple /></label>
             </div>
-            <div class="top-actions" style="justify-content:flex-start; margin-bottom:14px;">
-              <button class="btn" id="importBatchBtn" type="button">Importer dans la file d'attente</button>
-              <button class="btn secondary" id="refreshProcessingBtn" type="button">Rafraichir</button>
-            </div>
-
-            <div class="status-strip">
-              <span id="queueTotalBadge" class="badge">0 element</span>
-              <span id="queueToCheckBadge" class="badge warn">0 a verifier</span>
-              <span id="queueReadyBadge" class="badge ok">0 prets</span>
-              <span id="queueValidatedBadge" class="badge ok">0 valides</span>
-            </div>
-
-            <div class="form-grid">
-              <label>Filtre statut
-                <select id="queueFilterStatus">
-                  <option value="active">A traiter</option>
-                  <option value="all">Tous</option>
-                  <option value="to_validate">Prets a valider</option>
-                  <option value="to_verify">A verifier</option>
-                  <option value="validated">Valides</option>
-                  <option value="rejected">Rejetes</option>
-                </select>
-              </label>
-              <label>Filtre type
-                <select id="queueFilterType">
-                  <option value="all">Tous</option>
-                  <option value="invoice">Factures</option>
-                  <option value="coda">CODA</option>
-                  <option value="document">Documents</option>
-                </select>
-              </label>
-              <label>Filtre copropriete <select id="queueFilterCopro"></select></label>
-            </div>
-
-            <h3>File de validation</h3>
-            <div id="validationQueueTable"></div>
-
-            <h3>Lots d'import recents</h3>
-            <div id="importBatchesTable"></div>
+            <div class="top-actions" style="justify-content:flex-start; margin-bottom:14px;"><button class="btn" id="importBatchBtn" type="button">Importer dans la file d'attente</button><button class="btn secondary" id="refreshProcessingBtn" type="button">Rafraichir</button></div>
+            <div class="status-strip"><span id="queueTotalBadge" class="badge">0 element</span><span id="queueToCheckBadge" class="badge warn">0 a verifier</span><span id="queueReadyBadge" class="badge ok">0 prets</span><span id="queueValidatedBadge" class="badge ok">0 valides</span></div>
+            <div class="form-grid"><label>Filtre statut<select id="queueFilterStatus"><option value="active">A traiter</option><option value="all">Tous</option><option value="to_validate">Prets a valider</option><option value="to_verify">A verifier</option><option value="validated">Valides</option><option value="rejected">Rejetes</option></select></label><label>Filtre type<select id="queueFilterType"><option value="all">Tous</option><option value="invoice">Factures</option><option value="coda">CODA</option><option value="document">Documents</option></select></label><label>Filtre copropriete <select id="queueFilterCopro"></select></label></div>
+            <h3>File de validation</h3><div id="validationQueueTable"></div><h3>Lots d'import recents</h3><div id="importBatchesTable"></div>
           </div>
         </section>
 
@@ -1083,75 +1057,39 @@
         <section id="invoicesView" class="view hidden">
           <div class="card">
             <div class="toolbar">
-              <h2>Factures</h2>
-              <div class="top-actions">
-                <button class="btn secondary" id="goInvoiceImportBtn" type="button">Importer plusieurs factures</button>
-                <button class="btn" id="saveInvoiceBtn">Ajouter facture manuelle</button>
-              </div>
+              <h2>Factures fournisseurs</h2>
+              <div class="top-actions"><button class="btn secondary" id="toggleInvoiceColorsBtn" type="button">Couleurs paiement</button><button class="btn secondary" id="goInvoiceImportBtn" type="button">Importer plusieurs factures</button><button class="btn" id="newInvoiceBtn" type="button">Nouvelle facture</button><button class="btn" id="saveInvoiceBtn" type="button">Enregistrer facture</button></div>
             </div>
-            <div class="notice">
-              Pour les encodages de masse, utilise le Centre de traitement : les factures arrivent d'abord dans une file,
-              sont corrigees si besoin, puis validees en factures comptables.
-            </div>
+            <div class="notice">Chaque facture doit etre classee dans un compte comptable. Les couleurs sont activables : vert = payee/lettree, orange = envoyee en paiement, rouge = non payee, jaune = domiciliation.</div>
             <div class="form-grid">
               <label>Copropriete <select id="invoiceCopro"></select></label>
               <label>Fournisseur <select id="invoiceSupplier"></select></label>
+              <label>Compte comptable <select id="invoiceAccount"></select></label>
               <label>Numero facture <input id="invoiceNumber" /></label>
               <label>Date facture <input id="invoiceDate" type="date" /></label>
               <label>Montant total <input id="invoiceAmount" type="number" step="0.01" /></label>
-              <label>Statut
-                <select id="invoiceStatus">
-                  <option value="draft">Brouillon</option>
-                  <option value="to_validate">A valider</option>
-                  <option value="validated">Validee</option>
-                  <option value="paid">Payee</option>
-                  <option value="rejected">Rejetee</option>
-                </select>
-              </label>
+              <label>Etat paiement<select id="invoicePaymentStatus"><option value="unpaid">Non payee</option><option value="payment_sent">Envoyee en paiement</option><option value="paid">Payee / lettree</option><option value="domiciliation">Domiciliation</option></select></label>
+              <label>Statut dossier<select id="invoiceStatus"><option value="draft">Brouillon</option><option value="to_validate">A valider</option><option value="validated">Validee</option><option value="paid">Payee</option><option value="rejected">Rejetee</option></select></label>
             </div>
-            <label>Description <textarea id="invoiceDescription"></textarea></label>
-            <br />
+            <label>Description <textarea id="invoiceDescription"></textarea></label><br />
             <div id="invoicesTable"></div>
           </div>
         </section>
 
         <section id="bankView" class="view hidden">
           <div class="card">
-            <div class="toolbar"><h2>Financier / Banque</h2><span class="badge">Consultation, encodage et CODA</span></div>
-            <div class="notice">Lecture type Optipro mais adaptee au design WAPI. Validation des CODA, consultation des extraits et mouvements, avec base pour un controle de soldes plus pousse.</div>
+            <div class="toolbar"><h2>Financier / Encodage extraits</h2><span class="badge">Manuel + CODA a valider</span></div>
+            <div class="notice">L'import des fichiers reste dans le Centre de traitement. Ici, on confirme les CODA importes et on encode manuellement les extraits. Chaque extrait valide alimente ensuite le Grand livre financier.</div>
             <h3>Comptes bancaires</h3>
-            <div class="form-grid">
-              <label>Copropriete <select id="bankAccountCopro"></select></label>
-              <label>Libelle <input id="bankAccountLabel" placeholder="Compte courant" /></label>
-              <label>IBAN <input id="bankAccountIban" placeholder="BE..." /></label>
-              <label>BIC <input id="bankAccountBic" placeholder="Optionnel" /></label>
-              <label>&nbsp;<button class="btn" id="saveBankAccountBtn" type="button">Ajouter compte</button></label>
-            </div>
-            <div id="bankAccountsTable"></div>
-            <h3>Liste des fichiers CODA</h3>
-            <div class="list-filters">
-              <label>Copropriete <select id="codaFilterCopro"></select></label>
-              <label>Etat <select id="codaFilterStatus"><option value="">Tous</option><option value="imported">Importe</option><option value="to_parse">A confirmer</option><option value="validated">Traite</option><option value="rejected">Rejete</option></select></label>
-              <label>Extrait / fichier <input id="codaFilterText" placeholder="Extrait, nom fichier, IBAN..." /></label>
-              <label>&nbsp;<button class="btn secondary" id="refreshCodaBtn" type="button">Actualiser</button></label>
-            </div>
-            <div class="form-grid">
-              <label>Compte pour import isole <select id="codaBankAccount"></select></label>
-              <label>Fichier CODA <input id="codaFile" type="file" accept=".cod,.coda,.txt" /></label>
-              <label>&nbsp;<button class="btn" id="importCodaBtn" type="button">Import CODA</button></label>
-            </div>
+            <div class="form-grid"><label>Copropriete <select id="bankAccountCopro"></select></label><label>Libelle <input id="bankAccountLabel" placeholder="Compte courant" /></label><label>IBAN <input id="bankAccountIban" placeholder="BE..." /></label><label>BIC <input id="bankAccountBic" placeholder="Optionnel" /></label><label>&nbsp;<button class="btn" id="saveBankAccountBtn" type="button">Ajouter compte</button></label></div><div id="bankAccountsTable"></div>
+            <h3>CODA importes a confirmer</h3>
+            <div class="list-filters"><label>Copropriete <select id="codaFilterCopro"></select></label><label>Etat <select id="codaFilterStatus"><option value="">Tous</option><option value="imported">Importe</option><option value="to_parse">A confirmer</option><option value="validated">Traite</option><option value="rejected">Rejete</option></select></label><label>Extrait / fichier <input id="codaFilterText" placeholder="Extrait, nom fichier, IBAN..." /></label><label>&nbsp;<button class="btn secondary" id="refreshCodaBtn" type="button">Actualiser</button></label></div>
             <div id="bankStatementsTable"></div>
-            <h3>Encodage manuel d'un mouvement</h3>
-            <div class="form-grid">
-              <label>Compte <select id="bankTxAccount"></select></label>
-              <label>Date <input id="bankTxDate" type="date" /></label>
-              <label>Montant <input id="bankTxAmount" type="number" step="0.01" placeholder="-125.50 ou 250.00" /></label>
-              <label>Communication <input id="bankTxCommunication" placeholder="Communication bancaire" /></label>
-              <label>Contrepartie <input id="bankTxCounterparty" placeholder="Nom payeur/fournisseur" /></label>
-              <label>&nbsp;<button class="btn" id="saveBankTxBtn" type="button">Encoder mouvement</button></label>
-            </div>
-            <label>Description <textarea id="bankTxDescription"></textarea></label>
-            <h3>Mouvements bancaires</h3><div class="form-grid"><label>Filtrer par compte <select id="bankTxFilterAccount"></select></label></div><div id="bankTransactionsTable"></div>
+            <h3>Encodage manuel d'un extrait</h3>
+            <div class="form-grid"><label>Compte <select id="manualStatementAccount"></select></label><label>N° extrait <input id="manualStatementNumber" placeholder="Ex: 037" /></label><label>Date extrait <input id="manualStatementDate" type="date" /></label><label>Solde initial <input id="manualStatementOpening" type="number" step="0.01" /></label><label>Solde final <input id="manualStatementClosing" type="number" step="0.01" /></label><label>&nbsp;<button class="btn" id="saveManualStatementBtn" type="button">Creer extrait</button></label></div>
+            <h3>Ajouter une ligne d'extrait</h3>
+            <div class="form-grid"><label>Extrait <select id="bankTxStatement"></select></label><label>Date valeur <input id="bankTxDate" type="date" /></label><label>Montant <input id="bankTxAmount" type="number" step="0.01" placeholder="-125.50 ou 250.00" /></label><label>Type tiers <select id="bankTxTierType"><option value="">Aucun</option><option value="owner">Coproprietaire</option><option value="supplier">Fournisseur</option><option value="occupant">Occupant</option></select></label><label>Tiers <select id="bankTxTier"></select></label><label>&nbsp;<button class="btn" id="saveBankTxBtn" type="button">Ajouter ligne</button></label></div>
+            <div class="form-grid"><label>Communication <input id="bankTxCommunication" placeholder="Communication bancaire" /></label><label>Contrepartie <input id="bankTxCounterparty" placeholder="Nom payeur/fournisseur" /></label></div><label>Description <textarea id="bankTxDescription"></textarea></label>
           </div>
         </section>
 
@@ -1451,16 +1389,10 @@
 
         <section id="financialLedgerView" class="view hidden">
           <div class="card">
-            <div class="toolbar">
-              <h2>Grand livre financier</h2>
-              <span class="badge warn">Module a structurer</span>
-            </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Vue bancaire détaillée : mouvements, lettrage, comptes financiers et solde par extrait.</p>
-            <div class="module-grid"><div class="module-card"><h3>Mouvements</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Lettrage</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Contrôle soldes</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="toolbar"><h2>Grand livre financier</h2><span class="badge">Extraits, lignes et lettrage</span></div>
+            <div id="financialLedgerBankSummary" class="summary-line"></div>
+            <div class="ledger-toolbar"><label>Copropriete <select id="financialLedgerCopro"></select></label><label>Compte <select id="financialLedgerAccount"></select></label><label>Lettrage <select id="financialLedgerLettering"><option value="">Tous</option><option value="unlettered">Non lettres</option><option value="lettered">Lettres</option></select></label><label>Recherche <input id="financialLedgerSearch" placeholder="Tiers, communication, extrait..." /></label></div>
+            <div id="financialLedgerTable"></div><div id="financialLedgerDetailPanel" class="detail-panel hidden"></div>
           </div>
         </section>
 
@@ -1496,16 +1428,9 @@
 
         <section id="expensesListView" class="view hidden">
           <div class="card">
-            <div class="toolbar">
-              <h2>Liste des depenses</h2>
-              <span class="badge warn">Module a structurer</span>
-            </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Liste filtrable des dépenses par fournisseur, compte, période, copropriété et type de charge.</p>
-            <div class="module-grid"><div class="module-card"><h3>Dépenses</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Fournisseurs</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Export</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="toolbar"><h2>Liste des depenses</h2><span class="badge">Classement par compte comptable</span></div>
+            <div class="notice">Toutes les factures doivent avoir un compte comptable. Cette liste regroupe automatiquement les depenses par compte.</div>
+            <div class="ledger-toolbar"><label>Copropriete <select id="expensesCoproFilter"></select></label><label>Compte <select id="expensesAccountFilter"></select></label></div><div id="expensesListTable"></div>
           </div>
         </section>
 
@@ -1811,7 +1736,12 @@
       distributionItems: [],
       selectedLotId: null,
       selectedIdentityType: "owner",
-      selectedIdentityId: null
+      selectedIdentityId: null,
+      ownerCalls: [],
+      paymentMatches: [],
+      selectedFinancialTxId: null,
+      selectedInvoiceId: null,
+      invoiceColorMode: localStorage.getItem("wapi_invoice_color_mode") === "1"
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1913,9 +1843,29 @@
         loadEntries(),
         loadOccupants(),
         loadDistributionKeys(),
-        loadDistributionItems()
+        loadDistributionItems(),
+        loadOwnerCalls(),
+        loadPaymentMatches()
       ]);
       renderAll();
+    }
+
+    async function loadOwnerCalls() {
+      const { data, error } = await supabaseClient
+        .from("compta_owner_calls")
+        .select("*, compta_owners(display_name), compta_lots(lot_number), compta_copros(name)")
+        .order("due_date", { ascending: false });
+      if (error) { console.warn(error.message); state.ownerCalls = []; return; }
+      state.ownerCalls = data || [];
+    }
+
+    async function loadPaymentMatches() {
+      const { data, error } = await supabaseClient
+        .from("compta_payment_matches")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) { console.warn(error.message); state.paymentMatches = []; return; }
+      state.paymentMatches = data || [];
     }
 
     async function loadOccupants() {
@@ -3518,6 +3468,102 @@
     $("lotsTable").addEventListener("click", (event) => { const lotId = event.target?.dataset?.openLot; if (lotId) openLotDetail(lotId); });
     $("bankStatementsTable").addEventListener("click", (event) => { const confirmId = event.target?.dataset?.confirmStatement; if (confirmId) return confirmBankStatement(confirmId); const rejectId = event.target?.dataset?.rejectStatement; if (rejectId) return rejectBankStatementById(rejectId); });
     $("saveOwnerBtn").onclick = saveIdentity;
+
+
+    // ---- V6 finance / lettrage / factures ----
+    function accountOptions(selected) {
+      return '<option value="">Choisir...</option>' + state.accounts.map((a) => `<option value="${a.id}" ${selected === a.id ? 'selected' : ''}>${escapeHtml((a.code || '') + ' - ' + (a.label || ''))}</option>`).join('');
+    }
+    function bankAccountOptions(selected, includeAll = false) {
+      return (includeAll ? '<option value="">Tous les comptes</option>' : '<option value="">Choisir...</option>') + state.bankAccounts.map((b) => `<option value="${b.id}" ${selected === b.id ? 'selected' : ''}>${escapeHtml((b.compta_copros?.name || '') + ' - ' + (b.label || '') + (b.iban ? ' (' + b.iban + ')' : ''))}</option>`).join('');
+    }
+    function tierName(type, id) {
+      if (type === 'owner') return state.owners.find((o) => o.id === id)?.display_name || '';
+      if (type === 'supplier') return state.suppliers.find((s) => s.id === id)?.name || '';
+      if (type === 'occupant') return state.occupants.find((o) => o.id === id)?.display_name || '';
+      return '';
+    }
+    function invoicePaymentStatus(invoice) {
+      if (invoice.payment_status) return invoice.payment_status;
+      if (invoice.is_direct_debit) return 'domiciliation';
+      if (invoice.sent_to_payment) return 'payment_sent';
+      if (invoice.status === 'paid') return 'paid';
+      return 'unpaid';
+    }
+    function invoiceRowClass(invoice) {
+      if (!state.invoiceColorMode) return '';
+      const s = invoicePaymentStatus(invoice);
+      if (s === 'paid') return 'invoice-row--paid';
+      if (s === 'payment_sent') return 'invoice-row--payment-sent';
+      if (s === 'domiciliation') return 'invoice-row--domiciliation';
+      return 'invoice-row--unpaid';
+    }
+    function paymentStatusBadge(s) {
+      return { paid:'<span class="badge ok">Payee</span>', payment_sent:'<span class="badge warn">Envoyee paiement</span>', domiciliation:'<span class="badge warn">Domiciliation</span>', unpaid:'<span class="badge">Non payee</span>' }[s || 'unpaid'] || statusBadge(s);
+    }
+
+    function renderInvoiceSelects() {
+      $('invoiceCopro').innerHTML = '<option value="">Choisir...</option>' + state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      if (state.activeCoproId) $('invoiceCopro').value = state.activeCoproId;
+      $('invoiceSupplier').innerHTML = '<option value="">Choisir...</option>' + state.suppliers.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+      $('invoiceAccount').innerHTML = accountOptions();
+      $('toggleInvoiceColorsBtn').textContent = state.invoiceColorMode ? 'Couleurs paiement : ON' : 'Couleurs paiement : OFF';
+    }
+    function renderInvoices() {
+      const rows = state.invoices.filter((i) => !state.activeCoproId || i.copro_id === state.activeCoproId);
+      $('invoicesTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriete</th><th>Fournisseur</th><th>Compte</th><th>Numero</th><th>Montant</th><th>Paiement</th><th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map((i)=>{ const acc = state.accounts.find((a)=>a.id===i.account_id); return `<tr class="${invoiceRowClass(i)}"><td>${i.invoice_date || ''}</td><td>${i.compta_copros?.name || ''}</td><td>${i.compta_suppliers?.name || ''}</td><td>${escapeHtml(acc ? (acc.code + ' - ' + acc.label) : 'A classer')}</td><td>${escapeHtml(i.invoice_number || '')}</td><td>${money(i.amount_total)}</td><td>${paymentStatusBadge(invoicePaymentStatus(i))}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="9">Aucune facture.</td></tr>'}</tbody></table></div>`;
+    }
+    function clearInvoiceForm() { state.selectedInvoiceId = null; ['invoiceNumber','invoiceDate','invoiceAmount','invoiceDescription'].forEach((id)=>$(id).value=''); $('invoiceAccount').value=''; $('invoiceSupplier').value=''; $('invoicePaymentStatus').value='unpaid'; $('invoiceStatus').value='draft'; if (state.activeCoproId) $('invoiceCopro').value=state.activeCoproId; }
+    function editInvoice(id) { const i=state.invoices.find((x)=>x.id===id); if(!i) return; state.selectedInvoiceId=id; $('invoiceCopro').value=i.copro_id||''; $('invoiceSupplier').value=i.supplier_id||''; $('invoiceAccount').value=i.account_id||''; $('invoiceNumber').value=i.invoice_number||''; $('invoiceDate').value=i.invoice_date||''; $('invoiceAmount').value=i.amount_total||''; $('invoicePaymentStatus').value=invoicePaymentStatus(i); $('invoiceStatus').value=i.status||'draft'; $('invoiceDescription').value=i.description||''; }
+    async function saveInvoice() { const accountId=$('invoiceAccount').value; if(!accountId) return alert('Le compte comptable est obligatoire.'); const paymentStatus=$('invoicePaymentStatus').value; const payload={ copro_id: state.activeCoproId || $('invoiceCopro').value, supplier_id:$('invoiceSupplier').value||null, account_id:accountId, invoice_number:$('invoiceNumber').value.trim()||null, invoice_date:$('invoiceDate').value||null, amount_total:Number($('invoiceAmount').value||0), status: paymentStatus==='paid' ? 'paid' : $('invoiceStatus').value, payment_status:paymentStatus, sent_to_payment: paymentStatus==='payment_sent', is_direct_debit: paymentStatus==='domiciliation', description:$('invoiceDescription').value.trim()||null, source:'manual', created_by:currentUser.id}; if(!payload.copro_id) return alert('Choisis une copropriete.'); if(!payload.supplier_id) return alert('Choisis un fournisseur.'); if(!payload.amount_total) return alert('Indique un montant.'); const req=state.selectedInvoiceId ? supabaseClient.from('compta_invoices').update(payload).eq('id',state.selectedInvoiceId) : supabaseClient.from('compta_invoices').insert(payload); const {error}=await req; if(error) return alert(error.message); clearInvoiceForm(); await loadAll(); }
+    async function deleteInvoice(id) { const inv=state.invoices.find((i)=>i.id===id); if(!inv) return; if(invoicePaymentStatus(inv)==='paid') return alert('Facture payee/lettree : suppression refusee. Passe par une annulation/contre-ecriture plus tard.'); if(!confirm('Supprimer cette facture ?')) return; const {error}=await supabaseClient.from('compta_invoices').delete().eq('id',id); if(error) return alert(error.message); await loadAll(); }
+    function showInvoicePdf(id) { const inv=state.invoices.find((i)=>i.id===id); if(!inv?.file_data_url) return alert('Aucun PDF lie.'); const w=window.open(); w.document.write(`<iframe src="${inv.file_data_url}" style="width:100%;height:100vh;border:0;"></iframe>`); }
+
+    function renderValidationQueue() {
+      if (!$('validationQueueTable')) return; const rows=getQueueRowsFiltered(); if(!rows.length){ $('validationQueueTable').innerHTML='<div class="notice">Aucun element dans la file pour ce filtre.</div>'; return; }
+      const coproOptions=(s)=>'<option value="">Non detectee</option>'+state.copros.map((c)=>`<option value="${c.id}" ${s===c.id?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+      const supplierOptions=(s)=>'<option value="">Non defini</option>'+state.suppliers.map((x)=>`<option value="${x.id}" ${s===x.id?'selected':''}>${escapeHtml(x.name)}</option>`).join('');
+      const bankOptions=(s)=>'<option value="">Non defini</option>'+state.bankAccounts.map((b)=>`<option value="${b.id}" ${s===b.id?'selected':''}>${escapeHtml(b.label)} - ${escapeHtml(b.iban||'')}</option>`).join('');
+      $('validationQueueTable').innerHTML=`<div class="table-wrap"><table class="editable-table"><thead><tr><th>Statut</th><th>Fichier</th><th>Type</th><th>Copro</th><th>Fournisseur / Banque</th><th>Compte</th><th>Date</th><th>Montant</th><th>Reference</th><th>Actions</th></tr></thead><tbody>${rows.map((q)=>{ const item=state.importItems.find((i)=>i.id===q.item_id)||{}; const extracted=q.extracted_data||{}; const corrected=q.corrected_data||{}; const typeValue=q.target_type||item.import_type||'document'; return `<tr data-queue-id="${q.id}"><td>${statusBadge(q.status)}<br><small>${Math.round(Number(item.confidence||0))}%</small></td><td><strong>${escapeHtml(item.file_name||'')}</strong></td><td><select data-q-field="target_type"><option value="invoice" ${typeValue==='invoice'?'selected':''}>Facture</option><option value="coda" ${typeValue==='coda'?'selected':''}>CODA</option><option value="document" ${typeValue==='document'?'selected':''}>Document</option></select></td><td><select data-q-field="copro_id">${coproOptions(q.copro_id||corrected.copro_id||item.detected_copro_id||'')}</select></td><td><select data-q-field="supplier_id">${supplierOptions(corrected.supplier_id||item.detected_supplier_id||'')}</select><select data-q-field="bank_account_id" style="margin-top:6px;">${bankOptions(corrected.bank_account_id||item.detected_bank_account_id||'')}</select></td><td><select data-q-field="account_id">${accountOptions(corrected.account_id||'')}</select></td><td><input data-q-field="date" type="date" value="${escapeHtml(corrected.date||extracted.date||'')}"></td><td><input data-q-field="amount" type="number" step="0.01" value="${escapeHtml(corrected.amount||extracted.amount||'')}"></td><td><input data-q-field="reference" value="${escapeHtml(corrected.reference||extracted.reference||'')}"></td><td><div class="actions-inline"><button class="btn secondary small" data-save-queue="${q.id}" type="button">Enregistrer</button><button class="btn small" data-validate-queue="${q.id}" type="button">Valider</button><button class="btn danger small" data-reject-queue="${q.id}" type="button">Rejeter</button></div></td></tr>`; }).join('')}</tbody></table></div>`;
+    }
+    function getQueuePayloadFromRow(queueId){ const row=document.querySelector(`tr[data-queue-id="${queueId}"]`); if(!row) return null; const data={}; row.querySelectorAll('[data-q-field]').forEach((input)=>{data[input.dataset.qField]=input.value||null;}); return {target_type:data.target_type||'document', copro_id:data.copro_id||null, supplier_id:data.supplier_id||null, bank_account_id:data.bank_account_id||null, account_id:data.account_id||null, date:data.date||null, amount:data.amount?Number(data.amount):null, reference:data.reference||null, notes:data.notes||null}; }
+    async function createInvoiceFromQueue(q,item,corrected){ if(!corrected.account_id) throw new Error('Compte comptable obligatoire.'); const raw=item.raw_data||{}; const {error}=await supabaseClient.from('compta_invoices').insert({ copro_id:corrected.copro_id, supplier_id:corrected.supplier_id, account_id:corrected.account_id, invoice_number:corrected.reference||item.file_name||null, invoice_date:corrected.date||null, amount_total:Number(corrected.amount||0), status:'validated', payment_status:'unpaid', description:`Importe depuis ${item.file_name||'import'}. ${corrected.notes||''}`, source:'processing_center', file_name:item.file_name||null, file_data_url:raw.file_data_url||null, pdf_mime_type:item.mime_type||null, created_by:currentUser.id }); if(error) throw error; }
+
+    async function importFilesToQueue(){ const files=Array.from($('importFiles').files||[]); const importType=$('importType').value; const label=$('importBatchLabel').value.trim()||`${importTypeLabel(importType)} - ${new Date().toLocaleDateString('fr-BE')}`; if(!files.length) return alert('Choisis au moins un fichier.'); try{ const {data:batch,error:batchError}=await supabaseClient.from('compta_import_batches').insert({import_type:importType,label,total_items:files.length,status:'imported',created_by:currentUser.id}).select('id').single(); if(batchError) throw batchError; for(const file of files){ const isText=/\.(cod|coda|txt|csv)$/i.test(file.name)||file.type.startsWith('text/'); const rawText=isText?await readFileAsText(file):''; const fileDataUrl=!isText?await readFileAsDataURL(file):null; const detectionText=`${file.name}\n${rawText}`; const bankDetection=detectBankAccountFromText(detectionText); const coproFromBank=bankDetection.account?state.copros.find((c)=>c.id===bankDetection.account.copro_id):null; const coproDetection=coproFromBank?{copro:coproFromBank,confidence:bankDetection.confidence}:detectCoproFromText(detectionText); const supplierDetection=detectSupplierFromText(detectionText); const confidence=Math.max(coproDetection.confidence||0,supplierDetection.confidence||0,bankDetection.confidence||0,isText?35:15); const extracted=extractSimpleFieldsFromText(rawText,file.name,importType); const itemStatus=confidence>=75?'to_validate':'to_verify'; const {data:item,error:itemError}=await supabaseClient.from('compta_import_items').insert({batch_id:batch.id,import_type:importType,file_name:file.name,file_size:file.size,mime_type:file.type||null,raw_text:rawText||null,raw_data:{file_name:file.name,file_size:file.size,mime_type:file.type||null,file_data_url:fileDataUrl,extracted},detected_copro_id:coproDetection.copro?.id||null,detected_supplier_id:supplierDetection.supplier?.id||null,detected_bank_account_id:bankDetection.account?.id||null,confidence,status:itemStatus,created_by:currentUser.id}).select('id').single(); if(itemError) throw itemError; await supabaseClient.from('compta_validation_queue').insert({item_id:item.id,target_type:importType,status:itemStatus,copro_id:coproDetection.copro?.id||null,extracted_data:extracted,corrected_data:{copro_id:coproDetection.copro?.id||null,supplier_id:supplierDetection.supplier?.id||null,bank_account_id:bankDetection.account?.id||null,...extracted},notes:confidence>=75?'Detection automatique a confirmer.':'Detection incomplete : correction manuelle requise.',created_by:currentUser.id}); } $('importFiles').value=''; $('importBatchLabel').value=''; await loadAll(); alert(`${files.length} element(s) importes.`); }catch(error){alert(error.message||'Erreur import.');}}
+    function readFileAsDataURL(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result||'')); r.onerror=()=>reject(r.error); r.readAsDataURL(file); }); }
+
+    function renderBank(){ const coproOptions='<option value="">Choisir...</option>'+state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); $('bankAccountCopro').innerHTML=coproOptions; $('codaFilterCopro').innerHTML='<option value="">Toutes</option>'+state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); const accountOpts=bankAccountOptions(); $('manualStatementAccount').innerHTML=accountOpts; $('bankTxStatement').innerHTML='<option value="">Choisir...</option>'+state.bankStatements.map((s)=>`<option value="${s.id}">${escapeHtml((s.statement_number||s.file_name||'Extrait')+' - '+(s.compta_copros?.name||''))}</option>`).join(''); $('bankTxTier').innerHTML='<option value="">Choisir type tiers</option>'; if(state.activeCoproId){ $('bankAccountCopro').value=state.activeCoproId; $('codaFilterCopro').value=state.activeCoproId; } $('bankAccountsTable').innerHTML=table(['Copropriete','Libelle','IBAN','BIC','Statut'],state.bankAccounts.map((a)=>[a.compta_copros?.name||'',a.label||'',a.iban||'',a.bic||'',a.active?'<span class="badge ok">Actif</span>':'<span class="badge">Inactif</span>'])); renderBankStatementsForValidation(); }
+    function renderBankStatementsForValidation(){ const coproFilter=state.activeCoproId||$('codaFilterCopro').value||''; const statusFilter=$('codaFilterStatus').value||''; const text=($('codaFilterText').value||'').toLowerCase(); const list=state.bankStatements.filter((s)=>{ if(coproFilter&&s.copro_id!==coproFilter)return false; if(statusFilter&&s.status!==statusFilter)return false; if(text&&![s.file_name,s.statement_number,s.compta_bank_accounts?.iban,s.compta_copros?.name].join(' ').toLowerCase().includes(text)) return false; return true; }); $('bankStatementsTable').innerHTML=list.length?list.map((s)=>{ const tx=state.bankTransactions.filter((t)=>t.statement_id===s.id||(!t.statement_id&&t.bank_account_id===s.bank_account_id)).slice(0,8); const debit=tx.filter((t)=>Number(t.amount)<0).reduce((sum,t)=>sum+Math.abs(Number(t.amount)),0); const credit=tx.filter((t)=>Number(t.amount)>0).reduce((sum,t)=>sum+Number(t.amount),0); return `<div class="statement-card"><div class="statement-head"><div><h3 style="margin:0;">${escapeHtml(s.compta_copros?.name||'')}</h3><div class="muted-note">${escapeHtml(s.file_name||'Encodage manuel')}</div></div><div><strong>Extrait</strong><div>${escapeHtml(s.statement_number||'-')}</div><div class="muted-note">${escapeHtml(s.statement_date||'')}</div></div><div><strong>Debit</strong><div>${money(debit)}</div></div><div><strong>Credit</strong><div>${money(credit)}</div></div><div class="actions-inline"><button class="btn secondary small" data-confirm-statement="${s.id}" type="button">Confirmer</button><button class="btn danger small" data-reject-statement="${s.id}" type="button">Rejeter</button></div></div><div class="coda-mini-grid"><div>Solde initial<br><strong>${money(s.opening_balance||0)}</strong></div><div>Solde final CODA<br><strong>${money(s.closing_balance||0)}</strong></div><div>Solde calcule<br><strong>${money((Number(s.opening_balance||0)+credit-debit))}</strong></div><div>Controle<br>${Math.abs((Number(s.opening_balance||0)+credit-debit)-Number(s.closing_balance||0))<0.01?'<span class="badge ok">OK</span>':'<span class="badge warn">Ecart</span>'}</div></div><div class="statement-lines">${tx.length?table(['Date','Tiers','Libelle','Debit','Credit','Lettrage'],tx.map((t)=>[t.transaction_date||'',tierName(t.tier_type,t.tier_id)||t.counterparty_name||'',t.communication||t.description||'',Number(t.amount)<0?money(Math.abs(t.amount)):'',Number(t.amount)>0?money(t.amount):'',t.reconciled?'<span class="badge ok">Lettre</span>':'<span class="badge warn">A lettrer</span>'])):'<div class="notice">Aucune ligne parsee ou encodee.</div>'}</div></div>`}).join(''):'<div class="notice">Aucun extrait pour ces filtres.</div>'; }
+    async function saveManualStatement(){ const acc=state.bankAccounts.find((a)=>a.id===$('manualStatementAccount').value); if(!acc)return alert('Choisis un compte.'); if(!$('manualStatementNumber').value.trim()) return alert('Indique le numero extrait.'); const {error}=await supabaseClient.from('compta_bank_statements').insert({copro_id:acc.copro_id,bank_account_id:acc.id,statement_number:$('manualStatementNumber').value.trim(),statement_date:$('manualStatementDate').value||null,opening_balance:Number($('manualStatementOpening').value||0),closing_balance:Number($('manualStatementClosing').value||0),status:'to_parse',file_name:'Encodage manuel',created_by:currentUser.id}); if(error)return alert(error.message); ['manualStatementNumber','manualStatementDate','manualStatementOpening','manualStatementClosing'].forEach((id)=>$(id).value=''); await loadAll(); }
+    function updateBankTxTierSelect(){ const type=$('bankTxTierType').value; let opts='<option value="">Choisir...</option>'; if(type==='owner') opts+=state.owners.map((o)=>`<option value="${o.id}">${escapeHtml(o.display_name)}</option>`).join(''); if(type==='supplier') opts+=state.suppliers.map((s)=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join(''); if(type==='occupant') opts+=state.occupants.map((o)=>`<option value="${o.id}">${escapeHtml(o.display_name)}</option>`).join(''); $('bankTxTier').innerHTML=opts; }
+    async function saveBankTransaction(){ const st=state.bankStatements.find((s)=>s.id===$('bankTxStatement').value); if(!st) return alert('Choisis un extrait.'); const amount=Number($('bankTxAmount').value||0); if(!amount) return alert('Indique un montant.'); const {error}=await supabaseClient.from('compta_bank_transactions').insert({copro_id:st.copro_id,bank_account_id:st.bank_account_id,statement_id:st.id,statement_number:st.statement_number||null,transaction_date:$('bankTxDate').value||st.statement_date||null,amount,communication:$('bankTxCommunication').value.trim()||null,counterparty_name:$('bankTxCounterparty').value.trim()||null,description:$('bankTxDescription').value.trim()||null,tier_type:$('bankTxTierType').value||null,tier_id:$('bankTxTier').value||null,source:'manual',status:'imported',reconciliation_status:'unlettered',reconciled:false,created_by:currentUser.id}); if(error)return alert(error.message); ['bankTxDate','bankTxAmount','bankTxCommunication','bankTxCounterparty','bankTxDescription'].forEach((id)=>$(id).value=''); await loadAll(); }
+    async function confirmBankStatement(id){ const {error}=await supabaseClient.from('compta_bank_statements').update({status:'validated'}).eq('id',id); if(error)return alert(error.message); await loadAll(); }
+    async function rejectBankStatementById(id){ const {error}=await supabaseClient.from('compta_bank_statements').update({status:'rejected'}).eq('id',id); if(error)return alert(error.message); await loadAll(); }
+
+    function latestValidatedClosingByAccount(accountId){ const statements=state.bankStatements.filter((s)=>s.bank_account_id===accountId&&s.status==='validated').sort((a,b)=>String(b.statement_date||b.created_at).localeCompare(String(a.statement_date||a.created_at))); return statements[0]?.closing_balance ?? null; }
+    function renderFinancialLedger(){ if(!$('financialLedgerTable')) return; const coproOptions='<option value="">Toutes</option>'+state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); $('financialLedgerCopro').innerHTML=coproOptions; if(state.activeCoproId)$('financialLedgerCopro').value=state.activeCoproId; $('financialLedgerAccount').innerHTML=bankAccountOptions(null,true); const accountId=$('financialLedgerAccount').value||''; const coproId=state.activeCoproId||$('financialLedgerCopro').value||''; const lettering=$('financialLedgerLettering').value||''; const search=($('financialLedgerSearch').value||'').toLowerCase(); let rows=state.bankTransactions.filter((t)=>{ if(accountId&&t.bank_account_id!==accountId)return false; if(coproId&&t.copro_id!==coproId)return false; if(lettering==='lettered'&&!t.reconciled)return false; if(lettering==='unlettered'&&t.reconciled)return false; if(search&&![t.statement_number,t.communication,t.description,t.counterparty_name,tierName(t.tier_type,t.tier_id)].join(' ').toLowerCase().includes(search))return false; return true; }); const total=rows.reduce((s,t)=>s+Number(t.amount||0),0); let deltaText=''; if(accountId){ const coda=latestValidatedClosingByAccount(accountId); if(coda!==null){ const diff=total-Number(coda||0); deltaText=Math.abs(diff)<0.01?`<span class="badge ok">Solde banque = dernier CODA valide</span>`:`<span class="badge warn">Ecart avec dernier CODA valide : ${money(diff)}</span>`; } } $('financialLedgerBankSummary').innerHTML=`<span class="badge">Solde total banque : ${money(total)}</span>${deltaText}`; $('financialLedgerTable').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Extrait</th><th>Date</th><th>Tiers</th><th>Libelle</th><th>Debit</th><th>Credit</th><th>Lettrage</th><th>Actions</th></tr></thead><tbody>${rows.map((t)=>`<tr><td>${escapeHtml(t.statement_number||'')}</td><td>${t.transaction_date||''}</td><td>${escapeHtml(tierName(t.tier_type,t.tier_id)||t.counterparty_name||'')}</td><td>${escapeHtml(t.communication||t.description||'')}</td><td>${Number(t.amount)<0?money(Math.abs(t.amount)):''}</td><td>${Number(t.amount)>0?money(t.amount):''}</td><td><span class="ledger-status"><span class="lettering-dot ${t.reconciled?'ok':'warn'}"></span>${t.reconciled?'Lettre':'A lettrer'}</span></td><td><div class="actions-inline"><button class="btn secondary small" data-edit-financial-tx="${t.id}" type="button">Modifier</button><button class="btn ${t.reconciled?'secondary':'danger'} small" data-letter-tx="${t.id}" type="button">Lettrer</button></div></td></tr>`).join('')||'<tr><td colspan="8">Aucune ligne.</td></tr>'}</tbody></table></div>`; renderFinancialLedgerDetail(); }
+    function renderFinancialLedgerDetail(){ const panel=$('financialLedgerDetailPanel'); if(!panel)return; const tx=state.bankTransactions.find((t)=>t.id===state.selectedFinancialTxId); if(!tx){panel.classList.add('hidden'); panel.innerHTML=''; return;} const tierType=tx.tier_type||''; let docs=[]; if(Number(tx.amount)<0 && tierType==='supplier' && tx.tier_id){ docs=state.invoices.filter((i)=>i.supplier_id===tx.tier_id && invoicePaymentStatus(i)!=='paid'); } if(Number(tx.amount)>0 && tierType==='owner' && tx.tier_id){ docs=state.ownerCalls.filter((c)=>c.owner_id===tx.tier_id && c.status!=='paid'); } panel.classList.remove('hidden'); panel.innerHTML=`<div class="toolbar"><h3>Ligne extrait ${escapeHtml(tx.statement_number||'')}</h3>${tx.reconciled?'<span class="badge ok">Lettre</span>':'<span class="badge warn">A lettrer</span>'}</div><div class="form-grid"><label>Type tiers<select id="txDetailTierType"><option value="">Aucun</option><option value="owner" ${tierType==='owner'?'selected':''}>Coproprietaire</option><option value="supplier" ${tierType==='supplier'?'selected':''}>Fournisseur</option><option value="occupant" ${tierType==='occupant'?'selected':''}>Occupant</option></select></label><label>Tiers<select id="txDetailTier"></select></label><label>Montant<input id="txDetailAmount" type="number" step="0.01" value="${tx.amount||0}"></label><label>Communication<input id="txDetailCommunication" value="${escapeHtml(tx.communication||'')}"></label></div><div class="top-actions" style="justify-content:flex-start;"><button class="btn" id="saveTxDetailBtn" type="button">Enregistrer ligne</button></div><h4>Elements lettrables du tiers</h4><div id="txLetteringDocs">${docs.length?table(['Document','Date','Montant','Action'],docs.map((d)=>[d.invoice_number||d.label||d.id,d.invoice_date||d.due_date||'',money(d.amount_total||d.amount_due||0),`<button class="btn small" data-apply-lettering="${d.id}" type="button">Lettrer</button>`])):'<div class="notice">Aucun element lettrable pour ce tiers. Choisis/corrige le tiers si necessaire.</div>'}</div>`; updateTxDetailTierSelect(); $('txDetailTierType').onchange=updateTxDetailTierSelect; $('saveTxDetailBtn').onclick=saveTxDetail; $('txLetteringDocs').onclick=(e)=>{ const id=e.target?.dataset?.applyLettering; if(id) applyLettering(id); }; }
+    function updateTxDetailTierSelect(){ const type=$('txDetailTierType')?.value; const tx=state.bankTransactions.find((t)=>t.id===state.selectedFinancialTxId); if(!$('txDetailTier'))return; let opts='<option value="">Choisir...</option>'; if(type==='owner') opts+=state.owners.map((o)=>`<option value="${o.id}" ${tx?.tier_id===o.id?'selected':''}>${escapeHtml(o.display_name)}</option>`).join(''); if(type==='supplier') opts+=state.suppliers.map((s)=>`<option value="${s.id}" ${tx?.tier_id===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join(''); if(type==='occupant') opts+=state.occupants.map((o)=>`<option value="${o.id}" ${tx?.tier_id===o.id?'selected':''}>${escapeHtml(o.display_name)}</option>`).join(''); $('txDetailTier').innerHTML=opts; }
+    async function saveTxDetail(){ const tx=state.bankTransactions.find((t)=>t.id===state.selectedFinancialTxId); if(!tx)return; const payload={tier_type:$('txDetailTierType').value||null,tier_id:$('txDetailTier').value||null,amount:Number($('txDetailAmount').value||0),communication:$('txDetailCommunication').value.trim()||null}; const {error}=await supabaseClient.from('compta_bank_transactions').update(payload).eq('id',tx.id); if(error)return alert(error.message); await loadAll(); state.selectedFinancialTxId=tx.id; renderFinancialLedger(); }
+    async function applyLettering(docId){ const tx=state.bankTransactions.find((t)=>t.id===state.selectedFinancialTxId); if(!tx)return; const amount=Math.abs(Number(tx.amount||0)); const payload={transaction_id:tx.id,amount,created_by:currentUser.id}; if(Number(tx.amount)<0){ payload.invoice_id=docId; await supabaseClient.from('compta_invoices').update({payment_status:'paid',status:'paid',paid_at:new Date().toISOString()}).eq('id',docId); } else { payload.owner_call_id=docId; await supabaseClient.from('compta_owner_calls').update({status:'paid',amount_paid:amount,paid_at:new Date().toISOString()}).eq('id',docId); } const {error}=await supabaseClient.from('compta_payment_matches').insert(payload); if(error)return alert(error.message); await supabaseClient.from('compta_bank_transactions').update({reconciled:true,reconciliation_status:'lettered',reconciled_at:new Date().toISOString()}).eq('id',tx.id); await loadAll(); state.selectedFinancialTxId=tx.id; renderFinancialLedger(); }
+    function renderExpensesList(){ if(!$('expensesListTable'))return; $('expensesCoproFilter').innerHTML='<option value="">Toutes</option>'+state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); $('expensesAccountFilter').innerHTML='<option value="">Tous</option>'+state.accounts.map((a)=>`<option value="${a.id}">${escapeHtml(a.code+' - '+a.label)}</option>`).join(''); const coproId=state.activeCoproId||$('expensesCoproFilter').value||''; const accountId=$('expensesAccountFilter').value||''; const invoices=state.invoices.filter((i)=>i.account_id && (!coproId||i.copro_id===coproId) && (!accountId||i.account_id===accountId)); const groups={}; invoices.forEach((i)=>{groups[i.account_id]=groups[i.account_id]||[]; groups[i.account_id].push(i);}); $('expensesListTable').innerHTML=Object.entries(groups).map(([accId,arr])=>{ const acc=state.accounts.find((a)=>a.id===accId); const total=arr.reduce((s,i)=>s+Number(i.amount_total||0),0); return `<div class="account-group"><h3>${escapeHtml(acc?(acc.code+' - '+acc.label):'Compte inconnu')} <span class="badge">${money(total)}</span></h3>${table(['Date','Fournisseur','Facture','Montant','Paiement'],arr.map((i)=>[i.invoice_date||'',i.compta_suppliers?.name||'',i.invoice_number||'',money(i.amount_total),paymentStatusBadge(invoicePaymentStatus(i))]))}</div>`; }).join('')||'<div class="notice">Aucune depense classee. Les factures sans compte comptable ne sont pas reprises.</div>'; }
+
+    // listeners V6
+    $("toggleInvoiceColorsBtn").addEventListener("click", () => { state.invoiceColorMode=!state.invoiceColorMode; localStorage.setItem("wapi_invoice_color_mode", state.invoiceColorMode ? "1" : "0"); renderInvoices(); renderInvoiceSelects(); });
+    $("newInvoiceBtn").addEventListener("click", clearInvoiceForm);
+    $("invoicesTable").addEventListener("click", (e)=>{ const edit=e.target?.dataset?.editInvoice; const del=e.target?.dataset?.deleteInvoice; const pdf=e.target?.dataset?.showPdf; if(edit) editInvoice(edit); if(del) deleteInvoice(del); if(pdf) showInvoicePdf(pdf); });
+    $("saveManualStatementBtn").addEventListener("click", saveManualStatement);
+    $("bankTxTierType").addEventListener("change", updateBankTxTierSelect);
+    $("refreshCodaBtn").addEventListener("click", renderBank);
+    $("codaFilterCopro").addEventListener("change", renderBank);
+    $("codaFilterStatus").addEventListener("change", renderBank);
+    $("codaFilterText").addEventListener("input", renderBank);
+    $("bankStatementsTable").addEventListener("click", (e)=>{ const ok=e.target?.dataset?.confirmStatement; const rej=e.target?.dataset?.rejectStatement; if(ok) confirmBankStatement(ok); if(rej) rejectBankStatementById(rej); });
+    if ($("financialLedgerCopro")) { ["financialLedgerCopro","financialLedgerAccount","financialLedgerLettering"].forEach((id)=>$(id).addEventListener("change", renderFinancialLedger)); $("financialLedgerSearch").addEventListener("input", renderFinancialLedger); $("financialLedgerTable").addEventListener("click", (e)=>{ const edit=e.target?.dataset?.editFinancialTx; const letter=e.target?.dataset?.letterTx; if(edit||letter){ state.selectedFinancialTxId=edit||letter; renderFinancialLedgerDetail(); } }); }
+    if ($("expensesCoproFilter")) { $("expensesCoproFilter").addEventListener("change", renderExpensesList); $("expensesAccountFilter").addEventListener("change", renderExpensesList); }
+
+    const originalRenderAllV6 = renderAll;
+    renderAll = function() { originalRenderAllV6(); renderFinancialLedger(); renderExpensesList(); };
 
     boot();
   </script>
