@@ -1296,6 +1296,22 @@
     .payment-warning { display:inline-flex; align-items:center; gap:6px; border-radius:999px; background:#fff4e5; color:#92400e; padding:6px 10px; font-weight:700; font-size:12px; }
     .btn.blocked { background:#64748b; color:#fff; box-shadow:none; }
 
+  
+
+    /* Correctif V12.1 Paiement factures */
+    .payment-balance-pill { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:#f8fafc; color:#334155; border:1px solid #dbe5ee; font-weight:800; }
+    .payment-balance-pill.after-ok { background:#e8f7ef; color:#166534; border-color:#bfe8ce; }
+    .payment-balance-pill.after-warn { background:#fff3e5; color:#9a3412; border-color:#ffd9a8; }
+    .payment-balance-pill.after-danger { background:#feeaea; color:#991b1b; border-color:#fecaca; }
+    .payment-checkbox:disabled { opacity:.55; cursor:not-allowed; }
+    .payment-copro-head .actions-inline { justify-content:flex-end; }
+    .active-copro-box select,
+    #activeCoproSelect { background:#0f2338 !important; color:#ffffff !important; border-color:rgba(255,255,255,.22) !important; }
+    .active-copro-box select option,
+    #activeCoproSelect option { background:#102a43 !important; color:#ffffff !important; }
+    .active-copro-box select:focus,
+    #activeCoproSelect:focus { box-shadow:0 0 0 3px rgba(242,165,65,.22) !important; }
+
   </style>
 </head>
 <body>
@@ -6365,16 +6381,153 @@
       if (t?.dataset?.paymentTab) { state.paymentTab = t.dataset.paymentTab; renderPayments(); }
       if (t?.id === 'generatePaymentZipBtn') generatePaymentZipV12();
       if (t?.id === 'refreshPaymentsBtn') renderPayments();
-      if (t?.id === 'selectAllVisiblePaymentsBtn') { document.querySelectorAll('.payment-checkbox:not(:disabled)').forEach((cb)=>cb.checked=true); renderPayments(); }
+      if (t?.id === 'selectAllVisiblePaymentsBtn') { state.selectedPaymentIds = state.selectedPaymentIds || new Set(); document.querySelectorAll('.payment-checkbox:not(:disabled)').forEach((cb)=>{ cb.checked=true; state.selectedPaymentIds.add(cb.dataset.payInvoice); }); renderPayments(); }
       if (t?.dataset?.reintegrateInvoice) reintegrateInvoicePaymentV12(t.dataset.reintegrateInvoice);
       if (t?.dataset?.blockPayment) blockInvoicePaymentV12(t.dataset.blockPayment);
       if (t?.dataset?.unblockPayment) unblockInvoicePaymentV12(t.dataset.unblockPayment);
     });
     document.addEventListener('change', (e) => {
-      if (['paymentCoproFilter','paymentBankFilter'].includes(e.target?.id)) renderPayments();
-      if (e.target?.classList?.contains('payment-checkbox')) renderPayments();
+      if (['paymentCoproFilter','paymentBankFilter'].includes(e.target?.id)) { if (e.target.id === 'paymentCoproFilter') state.paymentCoproFilter = e.target.value; if (e.target.id === 'paymentBankFilter') state.paymentBankFilter = e.target.value; renderPayments(); }
+      if (e.target?.classList?.contains('payment-checkbox')) { state.selectedPaymentIds = state.selectedPaymentIds || new Set(); if (e.target.checked) state.selectedPaymentIds.add(e.target.dataset.payInvoice); else state.selectedPaymentIds.delete(e.target.dataset.payInvoice); renderPayments(); }
     });
     document.addEventListener('input', (e) => { if (e.target?.id === 'paymentSearch') renderPayments(); });
+
+
+    // ---- Correctif V12.1: paiements multi-copro, soldes, filtres persistants ----
+    function ensurePaymentSelectionV121() {
+      if (!state.selectedPaymentIds || !(state.selectedPaymentIds instanceof Set)) state.selectedPaymentIds = new Set(Array.from(state.selectedPaymentIds || []));
+      if (typeof state.paymentCoproFilter === 'undefined') state.paymentCoproFilter = '';
+      if (typeof state.paymentBankFilter === 'undefined') state.paymentBankFilter = '';
+    }
+
+    function bankForCoproV121(coproId, preferredId = '') {
+      if (preferredId) {
+        const preferred = state.bankAccounts.find((b) => b.id === preferredId);
+        if (preferred && preferred.copro_id === coproId) return preferred;
+      }
+      return state.bankAccounts.find((b) => b.copro_id === coproId && b.active !== false) || state.bankAccounts.find((b) => b.copro_id === coproId) || null;
+    }
+
+    function latestValidatedStatementForAccountV121(accountId) {
+      return state.bankStatements
+        .filter((s) => s.bank_account_id === accountId && ['validated','confirmed','posted'].includes(String(s.status || '').toLowerCase()))
+        .sort((a,b) => String(b.statement_date || b.created_at || '').localeCompare(String(a.statement_date || a.created_at || '')))[0] || null;
+    }
+
+    function bankBalanceForCoproV121(coproId, preferredId = '') {
+      const bank = bankForCoproV121(coproId, preferredId);
+      if (!bank) return { bank:null, balance:null, source:'Aucun compte bancaire' };
+      const last = latestValidatedStatementForAccountV121(bank.id);
+      if (last && last.closing_balance !== null && last.closing_balance !== undefined) {
+        return { bank, balance:Number(last.closing_balance || 0), source:`Dernier extrait ${last.statement_number || ''}`.trim() };
+      }
+      const txBalance = state.bankTransactions.filter((tx)=>tx.bank_account_id === bank.id).reduce((s,tx)=>s+Number(tx.amount||0),0);
+      return { bank, balance:txBalance, source:'Mouvements encodés' };
+    }
+
+    function paymentInvoiceFilterV12(inv) {
+      ensurePaymentSelectionV121();
+      const coproFilter = state.paymentCoproFilter || '';
+      const search = ($('paymentSearch')?.value || '').toLowerCase().trim();
+      if (coproFilter && inv.copro_id !== coproFilter) return false;
+      if (search) {
+        const s = supplierById(inv.supplier_id);
+        const corpus = [inv.invoice_number, inv.description, inv.amount_total, inv.compta_copros?.name, inv.compta_suppliers?.name, s.name, s.iban].join(' ').toLowerCase();
+        if (!corpus.includes(search)) return false;
+      }
+      if (state.paymentTab === 'todo') return invoiceIsPayableV12(inv);
+      if (state.paymentTab === 'sent') return invoiceIsSentV12(inv) && !invoiceIsPaidV12(inv);
+      if (state.paymentTab === 'blocked') return invoiceIsBlockedV12(inv) && !invoiceIsPaidV12(inv);
+      return false;
+    }
+
+    function renderPayments() {
+      if (!$('paymentsTable')) return;
+      ensurePaymentSelectionV121();
+      const currentCopro = state.paymentCoproFilter || '';
+      const currentBank = state.paymentBankFilter || '';
+      const coproOptionsHtml = '<option value="">Toutes les copropriétés</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('paymentCoproFilter').innerHTML = coproOptionsHtml;
+      $('paymentCoproFilter').value = currentCopro;
+      $('paymentBankFilter').innerHTML = '<option value="">Compte bancaire de chaque copropriété</option>' + state.bankAccounts.map((b)=>`<option value="${b.id}">${escapeHtml((b.compta_copros?.name || '') + ' - ' + (b.label || '') + ' ' + (b.iban || ''))}</option>`).join('');
+      $('paymentBankFilter').value = currentBank;
+      document.querySelectorAll('[data-payment-tab]').forEach((btn)=>btn.classList.toggle('active', btn.dataset.paymentTab === state.paymentTab));
+
+      const rows = state.invoices.filter(paymentInvoiceFilterV12);
+      const visibleIds = new Set(rows.map((i)=>i.id));
+      Array.from(state.selectedPaymentIds).forEach((id)=>{ if (!visibleIds.has(id)) state.selectedPaymentIds.delete(id); });
+      const selectedInvoices = rows.filter((i)=>state.selectedPaymentIds.has(i.id));
+      const total = rows.reduce((s,i)=>s+Number(i.amount_total||0),0);
+      const selectedTotal = selectedInvoices.reduce((s,i)=>s+Number(i.amount_total||0),0);
+      $('paymentSummary').innerHTML = `<span class="payment-total-pill">${rows.length} facture(s)</span><span class="payment-total-pill">Total visible : ${money(total)}</span><span class="payment-total-pill">Sélection : ${selectedInvoices.length} / ${money(selectedTotal)}</span>`;
+
+      const groups = paymentGroupedByCoproV12(rows);
+      if (!groups.length) {
+        $('paymentsTable').innerHTML = '<div class="notice">Aucune facture dans cet onglet pour les filtres actuels.</div>';
+        return;
+      }
+      $('paymentsTable').innerHTML = groups.map(([coproId, list]) => {
+        const copro = coproById(coproId);
+        const balanceInfo = bankBalanceForCoproV121(coproId, currentBank);
+        const bank = balanceInfo.bank;
+        const groupTotal = list.reduce((s,i)=>s+Number(i.amount_total||0),0);
+        const selectedGroupTotal = list.filter((i)=>state.selectedPaymentIds.has(i.id)).reduce((s,i)=>s+Number(i.amount_total||0),0);
+        const afterBalance = balanceInfo.balance === null ? null : Number(balanceInfo.balance || 0) - selectedGroupTotal;
+        const afterClass = afterBalance === null ? '' : afterBalance < 0 ? 'after-danger' : afterBalance < 1000 ? 'after-warn' : 'after-ok';
+        const warning = state.paymentTab === 'todo' && !bank ? '<span class="payment-warning">Compte bancaire copro manquant</span>' : '';
+        const balanceHtml = `<span class="payment-balance-pill">Solde : ${balanceInfo.balance === null ? '-' : money(balanceInfo.balance)}<small>${escapeHtml(balanceInfo.source)}</small></span><span class="payment-balance-pill ${afterClass}">Après sélection : ${afterBalance === null ? '-' : money(afterBalance)}</span>`;
+        return `<div class="payment-copro-card">
+          <div class="payment-copro-head"><h3>${escapeHtml(copro.name || 'Copropriété')}</h3><div class="actions-inline">${balanceHtml}<span class="payment-total-pill">Total visible ${money(groupTotal)}</span>${warning}</div></div>
+          <div class="table-wrap"><table><thead><tr><th></th><th>Date</th><th>Fournisseur</th><th>Facture</th><th>IBAN fournisseur</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
+          ${list.map((inv)=> {
+            const s = supplierById(inv.supplier_id);
+            const iban = supplierIbanV12(inv);
+            const blocked = invoiceIsBlockedV12(inv);
+            const sent = invoiceIsSentV12(inv);
+            const missingInfo = !iban || !bank;
+            const disabled = state.paymentTab !== 'todo' || blocked;
+            const checked = state.selectedPaymentIds.has(inv.id) ? 'checked' : '';
+            return `<tr class="${blocked ? 'payment-row--blocked' : sent ? 'payment-row--sent' : ''}"><td>${state.paymentTab === 'todo' ? `<input class="payment-checkbox" type="checkbox" data-pay-invoice="${inv.id}" ${checked} ${disabled ? 'disabled' : ''}>` : ''}</td><td>${inv.invoice_date || ''}</td><td>${escapeHtml(s.name || inv.compta_suppliers?.name || '')}</td><td>${escapeHtml(inv.invoice_number || '')}</td><td>${iban ? escapeHtml(iban) : '<span class="payment-warning">IBAN manquant</span>'}</td><td><strong>${money(inv.amount_total)}</strong></td><td>${paymentStatusBadge(invoicePaymentStatus(inv))}${missingInfo && state.paymentTab === 'todo' ? '<div class="muted-note">Vérification nécessaire avant ZIP</div>' : ''}${blocked ? `<div class="muted-note">${escapeHtml(inv.do_not_pay_reason || 'Ne pas payer')}</div>` : ''}</td><td><div class="actions-inline">${state.paymentTab === 'sent' ? `<button class="btn secondary small" data-reintegrate-invoice="${inv.id}" type="button">Réintégrer</button>` : ''}${blocked ? `<button class="btn secondary small" data-unblock-payment="${inv.id}" type="button">Désactiver</button>` : `<button class="btn blocked small" data-block-payment="${inv.id}" type="button">Ne pas payer</button>`}</div></td></tr>`;
+          }).join('')}
+          </tbody></table></div>
+        </div>`;
+      }).join('');
+    }
+
+    async function generatePaymentZipV12() {
+      ensurePaymentSelectionV121();
+      const selectedIds = Array.from(state.selectedPaymentIds);
+      if (!selectedIds.length) return alert('Coche au moins une facture à payer.');
+      if (!window.JSZip) return alert('JSZip n’est pas chargé. Vérifie ta connexion internet ou recharge la page.');
+      const invoices = state.invoices.filter((i)=>selectedIds.includes(i.id));
+      const missing = invoices.filter((i)=>!supplierIbanV12(i));
+      if (missing.length) return alert(`Impossible de générer le fichier : ${missing.length} facture(s) ont un IBAN fournisseur manquant.`);
+      const bankFilter = state.paymentBankFilter || $('paymentBankFilter')?.value || '';
+      const groups = paymentGroupedByCoproV12(invoices);
+      const missingBanks = groups.filter(([coproId])=>!bankForCoproV121(coproId, bankFilter));
+      if (missingBanks.length) return alert('Compte bancaire manquant pour : ' + missingBanks.map(([id])=>coproById(id).name || id).join(', '));
+      const batchRef = `WAPI-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}`;
+      const zip = new JSZip();
+      for (const [coproId, list] of groups) {
+        const bank = bankForCoproV121(coproId, bankFilter);
+        const copro = coproById(coproId);
+        zip.file(`${sanitizeFileNameV12(copro.name)}_${batchRef}.xml`, buildPaymentXmlV12(coproId, list, batchRef, bank));
+      }
+      const blob = await zip.generateAsync({type:'blob'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${batchRef}_paiements_isabel6.zip`; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      const updates = invoices.map((inv)=> supabaseClient.from('compta_invoices').update({ payment_status:'payment_sent', sent_to_payment:true, sent_to_payment_at:new Date().toISOString(), payment_batch_ref:batchRef, payment_batch_status:'sent' }).eq('id', inv.id));
+      const results = await Promise.all(updates);
+      const firstError = results.find((r)=>r.error)?.error;
+      if (firstError) return alert(firstError.message);
+      state.selectedPaymentIds.clear();
+      await loadAll();
+      state.paymentTab = 'sent';
+      renderPayments();
+      alert(`ZIP généré. ${invoices.length} facture(s) envoyée(s) en paiement.`);
+    }
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
