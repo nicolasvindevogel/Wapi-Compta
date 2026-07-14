@@ -5886,6 +5886,228 @@
       alert('Budget créé. Il est maintenant dans la liste des budgets.');
     }
 
+
+
+    // ---- V11.3 correctif Budget : refresh, suppression, validation, sécurité une seule fois ----
+    const budgetEditWarningsShownV113 = new Set();
+
+    async function loadAll() {
+      await Promise.all([
+        loadCopros(),
+        loadOwners(),
+        loadLots(),
+        loadSuppliers(),
+        loadAccounts(),
+        loadInvoices(),
+        loadBankAccounts(),
+        loadBankStatements(),
+        loadBankTransactions(),
+        loadImportBatches(),
+        loadImportItems(),
+        loadValidationQueue(),
+        loadRecognitionRules(),
+        loadEntries(),
+        loadOccupants(),
+        loadDistributionKeys(),
+        loadDistributionItems(),
+        loadOwnerCalls(),
+        loadPaymentMatches(),
+        loadFiscalYears(),
+        loadBudgetHeaders(),
+        loadBudgetLines(),
+        loadCallHeaders(),
+        loadThirdOpeningBalances()
+      ]);
+      renderAll();
+    }
+
+    function budgetStatusLabelV113(status) {
+      const value = status || 'draft';
+      if (value === 'validated') return '<span class="badge ok">Validé</span>';
+      if (value === 'draft') return '<span class="badge warn">Brouillon</span>';
+      if (value === 'archived') return '<span class="badge">Archivé</span>';
+      return statusBadge(value);
+    }
+
+    function validatedBudgetOptionsV113(selected = '') {
+      const coproId = state.activeCoproId || $('callsCoproFilter')?.value || $('modalCallCopro')?.value || '';
+      const yearId = $('modalCallYear')?.value || $('callsFiscalYearFilter')?.value || '';
+      const budgets = (state.budgetHeaders || []).filter((b) =>
+        b.status === 'validated' &&
+        (!coproId || b.copro_id === coproId) &&
+        (!yearId || b.fiscal_year_id === yearId)
+      );
+      return '<option value="">Budget validé à utiliser</option>' + budgets.map((b) => `<option value="${b.id}" ${selected === b.id ? 'selected' : ''}>${escapeHtml(b.label || 'Budget')} - ${escapeHtml(budgetYearLabel(b) || '')}</option>`).join('');
+    }
+
+    function renderBudgetListV11() {
+      const coproId = budgetCurrentCoproFilter();
+      const yearId = budgetCurrentYearFilter();
+      const budgets = (state.budgetHeaders || []).filter((b) =>
+        (!coproId || b.copro_id === coproId) &&
+        (!yearId || b.fiscal_year_id === yearId)
+      );
+      const rows = budgets.map((b) => {
+        const total = budgetTotalForHeader(b.id);
+        const realized = budgetRealizedForHeader(b.id);
+        const margin = total - realized;
+        const canDelete = !hasCallsForBudgetContext(b.id);
+        return `<div class="budget-list-row">
+          <div><strong>${escapeHtml(b.label || 'Budget')}</strong><div class="muted-note">${escapeHtml(budgetCoproLabel(b))}</div></div>
+          <div>${escapeHtml(budgetYearLabel(b) || '-')}</div>
+          <div>${budgetStatusLabelV113(b.status)}</div>
+          <div><strong>${money(total)}</strong></div>
+          <div>${money(realized)}<div class="muted-note">Marge ${money(margin)}</div></div>
+          <div class="actions-inline">
+            <button class="btn secondary small" data-open-budget="${b.id}" type="button">Ouvrir</button>
+            ${b.status === 'validated' ? '' : `<button class="btn small" data-validate-budget-header="${b.id}" type="button">Valider</button>`}
+            <button class="btn secondary small" data-budget-pdf="${b.id}" type="button">PDF</button>
+            <button class="btn danger small" data-delete-budget-header="${b.id}" type="button" ${canDelete ? '' : 'title="Budget utilisé par des appels"'}>Supprimer</button>
+          </div>
+        </div>`;
+      }).join('');
+      $('budgetSummary').innerHTML = `<span class="badge">${budgets.length} budget(s)</span><span class="badge">Les budgets doivent être validés avant d’être utilisés dans les appels</span>`;
+      $('budgetsTable').innerHTML = `<div class="table-wrap"><div class="budget-list-row budget-list-head"><div>Libellé</div><div>Exercice</div><div>Statut</div><div>Budget</div><div>Réalisé</div><div>Actions</div></div>${rows || '<div class="notice">Aucun budget dans ce contexte. Clique sur Créer budget.</div>'}</div>`;
+    }
+
+    function renderBudgetDetailV11(headerId) {
+      const header = (state.budgetHeaders || []).find((b) => b.id === headerId);
+      if (!header) {
+        state.selectedBudgetHeaderId = '';
+        return renderBudgetListV11();
+      }
+      const lines = (state.budgetLines || []).filter((l) => l.budget_id === headerId);
+      const keys = (state.distributionKeys || []).filter((k) => k.copro_id === header.copro_id);
+      const total = lines.reduce((s, l) => s + Number(l.amount || 0), 0);
+      $('budgetSummary').innerHTML = `<span class="badge ok">${escapeHtml(header.label || 'Budget')}</span><span class="badge">${lines.length} ligne(s)</span><span class="badge warn">Total : ${money(total)}</span><span>${budgetStatusLabelV113(header.status)}</span>`;
+      let tab = 1;
+      const blocks = keys.map((key) => {
+        const arr = lines.filter((l) => l.distribution_key_id === key.id);
+        const subtotal = arr.reduce((s, l) => s + Number(l.amount || 0), 0);
+        const body = arr.map((l) => {
+          const acc = state.accounts.find((a) => a.id === l.account_id) || l.compta_accounts || {};
+          const tabIndex = tab++;
+          return `<div class="budget-line v11" data-budget-line="${l.id}">
+            <input class="budget-amount-input" type="number" step="0.01" value="${Number(l.amount || 0)}" data-budget-amount-v11="${l.id}" tabindex="${tabIndex}">
+            <div><div class="account-pill">${escapeHtml((acc.code || '') + ' - ' + (acc.label || ''))}</div><div class="muted-note">${escapeHtml(l.label || acc.label || '')}</div></div>
+            <input value="${escapeHtml(l.label || '')}" data-budget-label-v11="${l.id}" placeholder="Libellé interne" tabindex="-1">
+            <button class="btn danger small" data-delete-budget="${l.id}" type="button" tabindex="-1">Suppr.</button>
+          </div>`;
+        }).join('') || '<div class="budget-empty">Aucune classe 6 dans cette clé.</div>';
+        return `<div class="budget-key-card v10" data-budget-key-card="${key.id}">
+          <div class="budget-key-head"><h3>${escapeHtml(key.name || 'Clé')} <span class="budget-key-total" data-budget-key-total="${key.id}">${money(subtotal)}</span></h3><button class="btn secondary small" type="button" data-show-budget-add="${key.id}">+ Ajouter classe 6</button></div>
+          <div class="budget-lines">${body}</div>
+          <div id="budgetAdd_${key.id}" class="budget-add-line hidden"><label>Compte classe 6<input list="class6List" placeholder="Tape 610, eau, ascenseur..." data-new-budget-account-text="${key.id}"></label><label>Montant<input type="number" step="0.01" data-new-budget-amount="${key.id}" value="0"></label><button class="btn" type="button" data-add-budget-line="${key.id}">Ajouter</button></div>
+        </div>`;
+      }).join('');
+      $('budgetsTable').innerHTML = `<datalist id="class6List">${class6Accounts().map((a) => `<option value="${escapeHtml(a.code + ' - ' + a.label)}"></option>`).join('')}</datalist><div class="budget-detail-title"><div><h2>${escapeHtml(header.label || 'Budget')}</h2><div class="muted-note">${escapeHtml(budgetCoproLabel(header))} · ${escapeHtml(budgetYearLabel(header) || '-')}</div></div><div class="actions-inline"><button class="btn secondary" data-back-budget-list type="button">← Liste</button>${header.status === 'validated' ? '<span class="badge ok">Budget validé</span>' : `<button class="btn" data-validate-budget-header="${header.id}" type="button">Valider le budget</button>`}<button class="btn secondary" data-budget-pdf="${header.id}" type="button">Exporter PDF</button><button class="btn danger" data-delete-budget-header="${header.id}" type="button">Supprimer</button></div></div>${blocks || '<div class="notice">Aucune clé de répartition disponible.</div>'}<div class="budget-total-bar"><span>Total général du budget</span><strong id="budgetGrandTotalV11">${money(total)}</strong></div>`;
+    }
+
+    async function validateBudgetHeaderV113(headerId) {
+      const header = state.budgetHeaders.find((b) => b.id === headerId);
+      if (!header) return;
+      const lines = state.budgetLines.filter((l) => l.budget_id === headerId);
+      const total = lines.reduce((s, l) => s + Number(l.amount || 0), 0);
+      if (!lines.length) return alert('Impossible de valider un budget sans ligne. Ajoute au moins une classe 6.');
+      if (total <= 0) return alert('Impossible de valider un budget dont le total est à 0.');
+      const sameValidated = state.budgetHeaders.find((b) => b.id !== headerId && b.copro_id === header.copro_id && b.fiscal_year_id === header.fiscal_year_id && b.status === 'validated');
+      const msg = sameValidated
+        ? `Un autre budget est déjà validé pour cet exercice : "${sameValidated.label}". Valider celui-ci quand même ?`
+        : `Valider le budget "${header.label}" ? Il pourra alors être utilisé pour générer les appels.`;
+      if (!confirm(msg)) return;
+      const { error } = await supabaseClient.from('compta_budgets').update({ status: 'validated' }).eq('id', headerId);
+      if (error) return alert(error.message);
+      await loadBudgetHeaders();
+      renderBudgets();
+    }
+
+    async function deleteBudgetHeaderV113(headerId) {
+      const header = state.budgetHeaders.find((b) => b.id === headerId);
+      if (!header) return;
+      if (hasCallsForBudgetContext(headerId)) {
+        return alert('Suppression refusée : des appels existent déjà sur cette copropriété/exercice. Pour éviter une incohérence, archive ou crée un nouveau budget plutôt que supprimer celui-ci.');
+      }
+      if (!confirm(`Supprimer définitivement le budget "${header.label || 'Budget'}" et toutes ses lignes ?`)) return;
+      const { error: lineError } = await supabaseClient.from('compta_budget_lines').delete().eq('budget_id', headerId);
+      if (lineError) return alert(lineError.message);
+      const { error } = await supabaseClient.from('compta_budgets').delete().eq('id', headerId);
+      if (error) return alert(error.message);
+      state.selectedBudgetHeaderId = '';
+      await loadBudgetHeaders();
+      await loadBudgetLines();
+      renderBudgets();
+    }
+
+    async function saveBudgetLineQuick(id) {
+      const amount = Number(document.querySelector(`[data-budget-amount-v11="${id}"]`)?.value || document.querySelector(`[data-budget-amount="${id}"]`)?.value || 0);
+      const label = document.querySelector(`[data-budget-label-v11="${id}"]`)?.value?.trim() || document.querySelector(`[data-budget-label="${id}"]`)?.value?.trim() || null;
+      const line = state.budgetLines.find((l) => l.id === id);
+      const headerId = line?.budget_id;
+      if (line && Number(line.amount || 0) !== amount) {
+        const header = state.budgetHeaders.find((b) => b.id === headerId);
+        const needsWarning = hasCallsForBudgetContext(headerId) || header?.status === 'validated';
+        if (needsWarning && !budgetEditWarningsShownV113.has(headerId)) {
+          const ok = confirm('Attention : tu modifies un budget validé ou lié à un exercice/copropriété où des appels existent. Les appels déjà créés ne seront pas recalculés automatiquement. Ce message ne s’affichera qu’une fois pendant cette édition. Continuer ?');
+          if (!ok) return;
+          budgetEditWarningsShownV113.add(headerId);
+        }
+      }
+      const { error } = await supabaseClient.from('compta_budget_lines').update({ amount, label }).eq('id', id);
+      if (error) return alert(error.message);
+      const local = state.budgetLines.find((l) => l.id === id);
+      if (local) { local.amount = amount; local.label = label; }
+      recalcBudgetTotalsV11();
+    }
+
+    function openCallProjectModal() {
+      const coproId = state.activeCoproId || $('callsCoproFilter')?.value || '';
+      const body = `<div class="popup-form"><div class="modal-help">Pour les provisions sur charges, seuls les budgets validés sont utilisables. Les autres types peuvent utiliser un montant manuel.</div><div class="form-grid"><label>Copropriété <select id="modalCallCopro">${coproOptions(coproId)}</select></label><label>Exercice <select id="modalCallYear">${fiscalYearOptions('')}</select></label><label>Budget validé <select id="modalCallBudget">${validatedBudgetOptionsV113('')}</select></label><label>Type d'appel <select id="modalCallType"><option value="provisions">Provisions sur charges</option><option value="reserve">Fonds de réserve</option><option value="working_fund">Fonds de roulement</option><option value="extraordinary">Appel extraordinaire</option></select></label><label>Périodicité <select id="modalCallPeriodicity"><option value="quarterly">Trimestrielle</option><option value="monthly">Mensuelle</option><option value="semiannual">Semestrielle</option><option value="annual">Annuelle</option></select></label><label>Date premier appel <input id="modalCallStart" type="date" value="${new Date().toISOString().slice(0,10)}"></label><label>Montant manuel si hors budget <input id="modalCallManualAmount" type="number" step="0.01" value="0"></label><label>Libellé <input id="modalCallLabel" value="Appel de fonds"></label></div></div>`;
+      openAppModal('Nouvel appel de fonds', body, modalFormFooter('modalGenerateCallsBtn'), {size:'wide'});
+      const refreshBudgetSelect = () => { $('modalCallBudget').innerHTML = validatedBudgetOptionsV113($('modalCallBudget').value || ''); };
+      $('modalCallCopro').onchange = refreshBudgetSelect;
+      $('modalCallYear').onchange = refreshBudgetSelect;
+      $('modalGenerateCallsBtn').onclick = generateCallsFromModal;
+    }
+
+    async function generateCallsFromModal(){
+      const coproId=$('modalCallCopro').value;
+      const yearId=$('modalCallYear').value||null;
+      const type=$('modalCallType').value;
+      const periodicity=$('modalCallPeriodicity').value;
+      const firstDate=$('modalCallStart').value;
+      const baseLabel=$('modalCallLabel').value.trim()||'Appel de fonds';
+      if(!coproId||!firstDate)return alert('Choisis copropriété et date.');
+      const count=periodicityCount(periodicity);
+      const step=periodicity==='monthly'?1:periodicity==='semiannual'?6:periodicity==='annual'?12:3;
+      const selectedBudgetId = $('modalCallBudget')?.value || '';
+      let budgetLines=[];
+      if (type === 'provisions') {
+        if (!selectedBudgetId) return alert('Pour les provisions sur charges, choisis d’abord un budget validé.');
+        const selectedBudget = state.budgetHeaders.find((b)=>b.id===selectedBudgetId);
+        if (!selectedBudget || selectedBudget.status !== 'validated') return alert('Le budget choisi n’est pas validé. Valide-le dans le module Budget avant de générer les appels.');
+        budgetLines=state.budgetLines.filter((b)=>b.budget_id===selectedBudgetId);
+      }
+      const manual=Number($('modalCallManualAmount').value||0);
+      const totalBudget=budgetLines.reduce((s,b)=>s+Number(b.amount||0),0);
+      const totalAmount=type==='provisions'?totalBudget:manual;
+      if(!totalAmount)return alert('Aucun montant à appeler. Encode/valide un budget ou indique un montant manuel.');
+      const lots=state.lots.filter((l)=>l.copro_id===coproId&&l.active!==false&&l.owner_id);
+      if(!lots.length)return alert('Aucun lot/propriétaire disponible pour répartir.');
+      const totalQ=lots.reduce((s,l)=>s+Number(l.quotities||0),0)||1;
+      for(let i=0;i<count;i++){
+        const due=addMonths(firstDate,i*step); const periodAmount=totalAmount/count; const label=`${baseLabel} - ${monthLabel(due)}`;
+        const {data:call,error}=await supabaseClient.from('compta_calls').insert({copro_id:coproId,fiscal_year_id:yearId,label,call_date:due,due_date:due,amount_total:periodAmount,status:'pending',accounting_status:'pending',call_type:type,periodicity,source_budget_total:totalBudget,created_by:currentUser.id}).select('id').single(); if(error)return alert(error.message);
+        for(const lot of lots){ const amount=periodAmount*(Number(lot.quotities||0)/totalQ); await supabaseClient.from('compta_owner_calls').insert({call_id:call.id,copro_id:coproId,fiscal_year_id:yearId,owner_id:lot.owner_id,lot_id:lot.id,label,due_date:due,amount_due:Number(amount.toFixed(2)),amount_paid:0,status:'unpaid',accounting_status:'pending',call_type:type,period_label:monthLabel(due),created_by:currentUser.id}); }
+      }
+      closeAppModal(); await loadAll();
+    }
+
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t?.dataset?.validateBudgetHeader) validateBudgetHeaderV113(t.dataset.validateBudgetHeader);
+      if (t?.dataset?.deleteBudgetHeader) deleteBudgetHeaderV113(t.dataset.deleteBudgetHeader);
+    });
+
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
 </body>
