@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WAPI Compta</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -1281,6 +1282,20 @@
     .distribution-modal-table input[type="number"] { max-width:160px; }
     .safety-note { border-left:4px solid #f2a541; background:#fff8eb; border-radius:12px; padding:12px 14px; color:#6b4700; margin:10px 0 14px; }
 
+  
+
+    /* ---- V12 Paiement factures ---- */
+    .payment-copro-card { border:1px solid #e3ecf4; border-radius:16px; background:#fff; margin:16px 0; overflow:hidden; box-shadow:0 10px 24px rgba(17,24,39,.05); }
+    .payment-copro-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; background:#f8fbfd; border-bottom:1px solid #e7eef5; }
+    .payment-copro-head h3 { margin:0; font-size:17px; }
+    .payment-row--blocked { opacity:.66; background:#f1f5f9 !important; color:#64748b; }
+    .payment-row--sent { background:#fff7ed !important; }
+    .invoice-row--blocked { opacity:.66; background:#f1f5f9 !important; color:#64748b; }
+    .payment-checkbox { width:18px; height:18px; }
+    .payment-total-pill { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#eef8fb; color:#14586a; font-weight:800; }
+    .payment-warning { display:inline-flex; align-items:center; gap:6px; border-radius:999px; background:#fff4e5; color:#92400e; padding:6px 10px; font-weight:700; font-size:12px; }
+    .btn.blocked { background:#64748b; color:#fff; box-shadow:none; }
+
   </style>
 </head>
 <body>
@@ -1358,6 +1373,7 @@
           <div class="menu-group__body">
             <button data-view="dashboard" data-title="Tableau de bord" class="active" title="Tableau de bord"><span class="nav__item"><span class="nav-icon">🏠</span><span class="nav-label">Tableau de bord</span></span></button>
             <button data-view="processing" data-title="Centre de traitement" title="Centre de traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Centre de traitement</span></span></button>
+            <button data-view="payments" data-title="Paiement factures" title="Paiement factures"><span class="nav__item"><span class="nav-icon">💳</span><span class="nav-label">Paiement factures</span></span></button>
             <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
           </div>
         </div>
@@ -1528,6 +1544,35 @@
             <div class="status-strip"><span id="queueTotalBadge" class="badge">0 element</span><span id="queueToCheckBadge" class="badge warn">0 a verifier</span><span id="queueReadyBadge" class="badge ok">0 prets</span><span id="queueValidatedBadge" class="badge ok">0 valides</span></div>
             <div class="form-grid"><label>Filtre statut<select id="queueFilterStatus"><option value="active">A traiter</option><option value="all">Tous</option><option value="to_validate">Prets a valider</option><option value="to_verify">A verifier</option><option value="validated">Valides</option><option value="rejected">Rejetes</option></select></label><label>Filtre type<select id="queueFilterType"><option value="all">Tous</option><option value="invoice">Factures</option><option value="coda">CODA</option><option value="document">Documents</option></select></label><label>Filtre copropriete <select id="queueFilterCopro"></select></label></div>
             <h3>File de validation</h3><div id="validationQueueTable"></div><h3>Lots d'import recents</h3><div id="importBatchesTable"></div>
+          </div>
+        </section>
+
+        <section id="paymentsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <h2>Paiement des factures</h2>
+              <div class="top-actions">
+                <button class="btn secondary" id="refreshPaymentsBtn" type="button">Rafraichir</button>
+                <button class="btn" id="generatePaymentZipBtn" type="button">Generer ZIP Isabel6</button>
+              </div>
+            </div>
+            <div class="notice">
+              Sélectionne les factures à payer, même sur plusieurs copropriétés. Le ZIP contient un fichier XML par copropriété.
+              Une fois le ZIP généré, les factures passent en <strong>envoyées en paiement</strong>. Si le paiement ne passe pas dans Isabel, tu peux les réintégrer.
+            </div>
+            <div class="segment-tabs">
+              <button class="segment-tab active" type="button" data-payment-tab="todo">A payer</button>
+              <button class="segment-tab" type="button" data-payment-tab="sent">Envoyées en paiement</button>
+              <button class="segment-tab" type="button" data-payment-tab="blocked">Ne pas payer</button>
+            </div>
+            <div class="list-filters">
+              <label>Copropriété <select id="paymentCoproFilter"></select></label>
+              <label>Recherche <input id="paymentSearch" placeholder="Fournisseur, facture, montant..." /></label>
+              <label>Compte bancaire à utiliser <select id="paymentBankFilter"></select></label>
+              <label>&nbsp;<button class="btn secondary" id="selectAllVisiblePaymentsBtn" type="button">Tout cocher visible</button></label>
+            </div>
+            <div class="summary-line" id="paymentSummary"></div>
+            <div id="paymentsTable"></div>
           </div>
         </section>
 
@@ -6107,6 +6152,229 @@
       if (t?.dataset?.validateBudgetHeader) validateBudgetHeaderV113(t.dataset.validateBudgetHeader);
       if (t?.dataset?.deleteBudgetHeader) deleteBudgetHeaderV113(t.dataset.deleteBudgetHeader);
     });
+
+
+    // ---- V12 : module Paiement factures / Isabel6 ----
+    state.paymentTab = 'todo';
+
+    function supplierById(id) { return state.suppliers.find((s) => s.id === id) || {}; }
+    function coproById(id) { return state.copros.find((c) => c.id === id) || {}; }
+    function bankForCopro(coproId, preferredId='') {
+      if (preferredId) return state.bankAccounts.find((b) => b.id === preferredId) || null;
+      return state.bankAccounts.find((b) => b.copro_id === coproId && b.active !== false) || null;
+    }
+    function invoiceIsPaidV12(inv) { return invoicePaymentStatus(inv) === 'paid' || inv.status === 'paid'; }
+    function invoiceIsSentV12(inv) { return invoicePaymentStatus(inv) === 'payment_sent' || inv.sent_to_payment === true || inv.payment_status === 'payment_sent'; }
+    function invoiceIsBlockedV12(inv) { return inv.do_not_pay === true || inv.payment_status === 'do_not_pay'; }
+    function invoiceIsPayableV12(inv) {
+      if (invoiceIsPaidV12(inv)) return false;
+      if (invoiceIsSentV12(inv)) return false;
+      if (invoiceIsBlockedV12(inv)) return false;
+      if (inv.is_direct_debit || inv.payment_status === 'domiciliation') return false;
+      if (inv.status === 'rejected') return false;
+      return true;
+    }
+    function supplierIbanV12(inv) {
+      const s = supplierById(inv.supplier_id);
+      return (s.iban || s.bank_iban || '').replace(/\s+/g, '').toUpperCase();
+    }
+    function paymentInvoiceFilterV12(inv) {
+      const coproFilter = state.activeCoproId || $('paymentCoproFilter')?.value || '';
+      const search = ($('paymentSearch')?.value || '').toLowerCase().trim();
+      if (coproFilter && inv.copro_id !== coproFilter) return false;
+      if (search) {
+        const s = supplierById(inv.supplier_id);
+        const corpus = [inv.invoice_number, inv.description, inv.amount_total, inv.compta_copros?.name, inv.compta_suppliers?.name, s.name].join(' ').toLowerCase();
+        if (!corpus.includes(search)) return false;
+      }
+      if (state.paymentTab === 'todo') return invoiceIsPayableV12(inv);
+      if (state.paymentTab === 'sent') return invoiceIsSentV12(inv) && !invoiceIsPaidV12(inv);
+      if (state.paymentTab === 'blocked') return invoiceIsBlockedV12(inv) && !invoiceIsPaidV12(inv);
+      return false;
+    }
+    function paymentGroupedByCoproV12(invoices) {
+      const map = {};
+      invoices.forEach((inv) => { (map[inv.copro_id] = map[inv.copro_id] || []).push(inv); });
+      return Object.entries(map).sort((a,b) => (coproById(a[0]).name || '').localeCompare(coproById(b[0]).name || ''));
+    }
+    function renderPayments() {
+      if (!$('paymentsTable')) return;
+      const coproOptionsHtml = '<option value="">Toutes les copropriétés</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('paymentCoproFilter').innerHTML = coproOptionsHtml;
+      if (state.activeCoproId) $('paymentCoproFilter').value = state.activeCoproId;
+      $('paymentBankFilter').innerHTML = '<option value="">Compte bancaire de la copropriété</option>' + state.bankAccounts.map((b)=>`<option value="${b.id}">${escapeHtml((b.compta_copros?.name || '') + ' - ' + (b.label || '') + ' ' + (b.iban || ''))}</option>`).join('');
+      document.querySelectorAll('[data-payment-tab]').forEach((btn)=>btn.classList.toggle('active', btn.dataset.paymentTab === state.paymentTab));
+      const rows = state.invoices.filter(paymentInvoiceFilterV12);
+      const total = rows.reduce((s,i)=>s+Number(i.amount_total||0),0);
+      const selectedCount = document.querySelectorAll('.payment-checkbox:checked').length;
+      $('paymentSummary').innerHTML = `<span class="payment-total-pill">${rows.length} facture(s)</span><span class="payment-total-pill">Total visible : ${money(total)}</span><span class="badge">Sélection : ${selectedCount}</span>`;
+      const groups = paymentGroupedByCoproV12(rows);
+      if (!groups.length) {
+        $('paymentsTable').innerHTML = '<div class="notice">Aucune facture dans cet onglet pour les filtres actuels.</div>';
+        return;
+      }
+      $('paymentsTable').innerHTML = groups.map(([coproId, list]) => {
+        const copro = coproById(coproId);
+        const bank = bankForCopro(coproId, $('paymentBankFilter')?.value || '');
+        const groupTotal = list.reduce((s,i)=>s+Number(i.amount_total||0),0);
+        const warning = state.paymentTab === 'todo' && !bank ? '<span class="payment-warning">Compte bancaire copro manquant</span>' : '';
+        return `<div class="payment-copro-card">
+          <div class="payment-copro-head"><h3>${escapeHtml(copro.name || 'Copropriété')}</h3><div class="actions-inline"><span class="payment-total-pill">${money(groupTotal)}</span>${warning}</div></div>
+          <div class="table-wrap"><table><thead><tr><th></th><th>Date</th><th>Fournisseur</th><th>Facture</th><th>IBAN fournisseur</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
+          ${list.map((inv)=> {
+            const s = supplierById(inv.supplier_id);
+            const iban = supplierIbanV12(inv);
+            const blocked = invoiceIsBlockedV12(inv);
+            const sent = invoiceIsSentV12(inv);
+            const disabled = state.paymentTab !== 'todo' || blocked || !iban || !bank;
+            return `<tr class="${blocked ? 'payment-row--blocked' : sent ? 'payment-row--sent' : ''}"><td>${state.paymentTab === 'todo' ? `<input class="payment-checkbox" type="checkbox" data-pay-invoice="${inv.id}" ${disabled ? 'disabled' : ''}>` : ''}</td><td>${inv.invoice_date || ''}</td><td>${escapeHtml(s.name || inv.compta_suppliers?.name || '')}</td><td>${escapeHtml(inv.invoice_number || '')}</td><td>${iban ? escapeHtml(iban) : '<span class="payment-warning">IBAN manquant</span>'}</td><td><strong>${money(inv.amount_total)}</strong></td><td>${paymentStatusBadge(invoicePaymentStatus(inv))}${blocked ? `<div class="muted-note">${escapeHtml(inv.do_not_pay_reason || 'Ne pas payer')}</div>` : ''}</td><td><div class="actions-inline">${state.paymentTab === 'sent' ? `<button class="btn secondary small" data-reintegrate-invoice="${inv.id}" type="button">Réintégrer</button>` : ''}${blocked ? `<button class="btn secondary small" data-unblock-payment="${inv.id}" type="button">Désactiver</button>` : `<button class="btn blocked small" data-block-payment="${inv.id}" type="button">Ne pas payer</button>`}</div></td></tr>`;
+          }).join('')}
+          </tbody></table></div>
+        </div>`;
+      }).join('');
+    }
+
+    function escapeXmlV12(value) {
+      return String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&apos;');
+    }
+    function sanitizeFileNameV12(value) {
+      return String(value || 'copropriete').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80) || 'copropriete';
+    }
+    function buildPaymentXmlV12(coproId, invoices, batchRef, bank) {
+      const copro = coproById(coproId);
+      const now = new Date().toISOString();
+      const ctrlSum = invoices.reduce((s,i)=>s+Number(i.amount_total||0),0).toFixed(2);
+      const txs = invoices.map((inv, idx) => {
+        const sup = supplierById(inv.supplier_id);
+        const amount = Number(inv.amount_total || 0).toFixed(2);
+        const endToEnd = `${batchRef}-${idx+1}`.slice(0,35);
+        const remittance = `${inv.invoice_number || 'Facture'} ${sup.name || ''}`.slice(0,140);
+        const iban = supplierIbanV12(inv);
+        return `<CdtTrfTxInf><PmtId><EndToEndId>${escapeXmlV12(endToEnd)}</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">${amount}</InstdAmt></Amt><Cdtr><Nm>${escapeXmlV12(sup.name || inv.compta_suppliers?.name || 'Fournisseur')}</Nm></Cdtr><CdtrAcct><Id><IBAN>${escapeXmlV12(iban)}</IBAN></Id></CdtrAcct><RmtInf><Ustrd>${escapeXmlV12(remittance)}</Ustrd></RmtInf></CdtTrfTxInf>`;
+      }).join('');
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"><CstmrCdtTrfInitn><GrpHdr><MsgId>${escapeXmlV12(batchRef)}</MsgId><CreDtTm>${now}</CreDtTm><NbOfTxs>${invoices.length}</NbOfTxs><CtrlSum>${ctrlSum}</CtrlSum><InitgPty><Nm>${escapeXmlV12(copro.name || 'ACP')}</Nm></InitgPty></GrpHdr><PmtInf><PmtInfId>${escapeXmlV12(batchRef + '-' + sanitizeFileNameV12(copro.name))}</PmtInfId><PmtMtd>TRF</PmtMtd><BtchBookg>true</BtchBookg><NbOfTxs>${invoices.length}</NbOfTxs><CtrlSum>${ctrlSum}</CtrlSum><PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf><ReqdExctnDt>${new Date().toISOString().slice(0,10)}</ReqdExctnDt><Dbtr><Nm>${escapeXmlV12(copro.name || 'ACP')}</Nm></Dbtr><DbtrAcct><Id><IBAN>${escapeXmlV12((bank.iban || '').replace(/\s+/g,''))}</IBAN></Id></DbtrAcct><DbtrAgt><FinInstnId>${bank.bic ? `<BIC>${escapeXmlV12(bank.bic)}</BIC>` : '<Othr><Id>NOTPROVIDED</Id></Othr>'}</FinInstnId></DbtrAgt><ChrgBr>SLEV</ChrgBr>${txs}</PmtInf></CstmrCdtTrfInitn></Document>`;
+    }
+
+    async function generatePaymentZipV12() {
+      const selectedIds = Array.from(document.querySelectorAll('.payment-checkbox:checked')).map((el)=>el.dataset.payInvoice);
+      if (!selectedIds.length) return alert('Coche au moins une facture à payer.');
+      if (!window.JSZip) return alert('JSZip n’est pas chargé. Vérifie ta connexion internet ou recharge la page.');
+      const invoices = state.invoices.filter((i)=>selectedIds.includes(i.id));
+      const missing = invoices.filter((i)=>!supplierIbanV12(i));
+      if (missing.length) return alert(`Impossible de générer le fichier : ${missing.length} facture(s) ont un IBAN fournisseur manquant.`);
+      const bankFilter = $('paymentBankFilter')?.value || '';
+      const groups = paymentGroupedByCoproV12(invoices);
+      const missingBanks = groups.filter(([coproId])=>!bankForCopro(coproId, bankFilter));
+      if (missingBanks.length) return alert('Compte bancaire manquant pour : ' + missingBanks.map(([id])=>coproById(id).name || id).join(', '));
+      const batchRef = `WAPI-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}`;
+      const zip = new JSZip();
+      for (const [coproId, list] of groups) {
+        const bank = bankForCopro(coproId, bankFilter);
+        const copro = coproById(coproId);
+        zip.file(`${sanitizeFileNameV12(copro.name)}_${batchRef}.xml`, buildPaymentXmlV12(coproId, list, batchRef, bank));
+      }
+      const blob = await zip.generateAsync({type:'blob'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${batchRef}_paiements_isabel6.zip`; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      const updates = invoices.map((inv)=> supabaseClient.from('compta_invoices').update({ payment_status:'payment_sent', sent_to_payment:true, sent_to_payment_at:new Date().toISOString(), payment_batch_ref:batchRef, payment_batch_status:'sent' }).eq('id', inv.id));
+      const results = await Promise.all(updates);
+      const firstError = results.find((r)=>r.error)?.error;
+      if (firstError) return alert(firstError.message);
+      await loadAll();
+      state.paymentTab = 'sent';
+      renderPayments();
+      alert(`ZIP généré. ${invoices.length} facture(s) envoyée(s) en paiement.`);
+    }
+
+    async function reintegrateInvoicePaymentV12(id) {
+      const inv = state.invoices.find((i)=>i.id===id); if (!inv) return;
+      if (!confirm('Réintégrer cette facture dans la liste des paiements à préparer ?')) return;
+      const { error } = await supabaseClient.from('compta_invoices').update({ payment_status:'unpaid', sent_to_payment:false, payment_batch_status:null }).eq('id', id);
+      if (error) return alert(error.message);
+      await loadAll(); renderPayments(); renderInvoices();
+    }
+    async function blockInvoicePaymentV12(id) {
+      const inv = state.invoices.find((i)=>i.id===id); if (!inv) return;
+      const reason = prompt('Raison du blocage / ne pas payer :', inv.do_not_pay_reason || '');
+      if (reason === null) return;
+      if (!reason.trim()) return alert('Indique une raison.');
+      const { error } = await supabaseClient.from('compta_invoices').update({ do_not_pay:true, do_not_pay_reason:reason.trim(), payment_status:'do_not_pay' }).eq('id', id);
+      if (error) return alert(error.message);
+      await loadAll(); renderPayments(); renderInvoices();
+    }
+    async function unblockInvoicePaymentV12(id) {
+      const { error } = await supabaseClient.from('compta_invoices').update({ do_not_pay:false, do_not_pay_reason:null, payment_status:'unpaid' }).eq('id', id);
+      if (error) return alert(error.message);
+      await loadAll(); renderPayments(); renderInvoices();
+    }
+
+    const originalPaymentStatusBadgeV12 = paymentStatusBadge;
+    paymentStatusBadge = function(s) {
+      if (s === 'do_not_pay') return '<span class="badge">Ne pas payer</span>';
+      return originalPaymentStatusBadgeV12(s);
+    };
+    const originalInvoicePaymentStatusV12 = invoicePaymentStatus;
+    invoicePaymentStatus = function(invoice) {
+      if (invoice?.do_not_pay || invoice?.payment_status === 'do_not_pay') return 'do_not_pay';
+      return originalInvoicePaymentStatusV12(invoice);
+    };
+    const originalInvoiceRowClassV12 = invoiceRowClass;
+    invoiceRowClass = function(invoice) {
+      if (!state.invoiceColorMode) return '';
+      if (invoice?.do_not_pay || invoice?.payment_status === 'do_not_pay') return 'invoice-row--blocked';
+      return originalInvoiceRowClassV12(invoice);
+    };
+
+    function renderInvoicePaymentFilterV12() {
+      if ($('invoicePaymentDisplayFilter')) return;
+      const host = $('invoicesTable')?.parentElement;
+      if (!host) return;
+      const filter = document.createElement('div');
+      filter.className = 'list-filters';
+      filter.innerHTML = `<label>Affichage paiement<select id="invoicePaymentDisplayFilter"><option value="all">Toutes</option><option value="unpaid">Non payées</option><option value="payment_sent">Envoyées en paiement</option><option value="paid">Payées</option><option value="do_not_pay">Ne pas payer</option></select></label><label>Recherche<input id="invoiceListSearch" placeholder="Fournisseur, numéro, montant..."></label>`;
+      host.insertBefore(filter, $('invoicesTable'));
+      $('invoicePaymentDisplayFilter').addEventListener('change', renderInvoices);
+      $('invoiceListSearch').addEventListener('input', renderInvoices);
+    }
+    const previousRenderInvoicesV12 = renderInvoices;
+    renderInvoices = function() {
+      renderInvoicePaymentFilterV12();
+      const filter = $('invoicePaymentDisplayFilter')?.value || 'all';
+      const search = ($('invoiceListSearch')?.value || '').toLowerCase().trim();
+      const rows = state.invoices.filter((i) => {
+        if (state.activeCoproId && i.copro_id !== state.activeCoproId) return false;
+        const ps = invoicePaymentStatus(i);
+        if (filter !== 'all' && ps !== filter) return false;
+        if (search) {
+          const s = supplierById(i.supplier_id);
+          const corpus = [i.invoice_number, i.description, i.amount_total, i.compta_copros?.name, i.compta_suppliers?.name, s.name].join(' ').toLowerCase();
+          if (!corpus.includes(search)) return false;
+        }
+        return true;
+      });
+      $('invoicesTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriété</th><th>Fournisseur</th><th>Compte</th><th>Numero</th><th>Montant</th><th>Paiement</th><th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map((i)=>{ const acc = state.accounts.find((a)=>a.id===i.account_id); const ps=invoicePaymentStatus(i); return `<tr class="${invoiceRowClass(i)}"><td>${i.invoice_date || ''}</td><td>${i.compta_copros?.name || ''}</td><td>${i.compta_suppliers?.name || ''}</td><td>${escapeHtml(acc ? (acc.code + ' - ' + acc.label) : 'A classer')}</td><td>${escapeHtml(i.invoice_number || '')}</td><td>${money(i.amount_total)}</td><td>${paymentStatusBadge(ps)}${i.do_not_pay_reason ? `<div class="muted-note">${escapeHtml(i.do_not_pay_reason)}</div>`:''}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button>${ps==='payment_sent'?`<button class="btn secondary small" data-reintegrate-invoice="${i.id}" type="button">Réintégrer paiement</button>`:''}${ps==='do_not_pay'?`<button class="btn secondary small" data-unblock-payment="${i.id}" type="button">Débloquer</button>`:`<button class="btn blocked small" data-block-payment="${i.id}" type="button">Ne pas payer</button>`}<button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="9">Aucune facture.</td></tr>'}</tbody></table></div>`;
+    };
+
+    const previousRenderAllV12 = renderAll;
+    renderAll = function() { previousRenderAllV12(); renderPayments(); };
+
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t?.dataset?.paymentTab) { state.paymentTab = t.dataset.paymentTab; renderPayments(); }
+      if (t?.id === 'generatePaymentZipBtn') generatePaymentZipV12();
+      if (t?.id === 'refreshPaymentsBtn') renderPayments();
+      if (t?.id === 'selectAllVisiblePaymentsBtn') { document.querySelectorAll('.payment-checkbox:not(:disabled)').forEach((cb)=>cb.checked=true); renderPayments(); }
+      if (t?.dataset?.reintegrateInvoice) reintegrateInvoicePaymentV12(t.dataset.reintegrateInvoice);
+      if (t?.dataset?.blockPayment) blockInvoicePaymentV12(t.dataset.blockPayment);
+      if (t?.dataset?.unblockPayment) unblockInvoicePaymentV12(t.dataset.unblockPayment);
+    });
+    document.addEventListener('change', (e) => {
+      if (['paymentCoproFilter','paymentBankFilter'].includes(e.target?.id)) renderPayments();
+      if (e.target?.classList?.contains('payment-checkbox')) renderPayments();
+    });
+    document.addEventListener('input', (e) => { if (e.target?.id === 'paymentSearch') renderPayments(); });
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
