@@ -1371,6 +1371,37 @@
     .ocr-scan-note { margin:8px 0 0; padding:9px 10px; border-radius:12px; background:#fff7e6; border:1px solid #ffd79a; color:#7a4a00; font-size:12px; line-height:1.35; }
 
 
+
+    /* ---- V14 Assemblees generales + correctif OCR liste ---- */
+    .ag-shell { display:grid; gap:18px; }
+    .ag-list-row, .resolution-row { display:grid; grid-template-columns: 1.5fr 1fr 1fr .9fr auto; gap:14px; align-items:center; padding:14px 16px; border:1px solid var(--line); border-radius:16px; background:#fff; margin-bottom:10px; box-shadow:0 8px 22px rgba(15,23,42,.045); }
+    .resolution-row { grid-template-columns: 1.5fr 1fr 1fr auto; }
+    .ag-list-row:hover, .resolution-row:hover { border-color:rgba(31,122,140,.35); background:#fbfeff; }
+    .ag-detail-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:18px; border:1px solid var(--line); border-radius:18px; background:linear-gradient(135deg,#ffffff,#f4fbfd); margin-bottom:16px; }
+    .ag-detail-title { margin:0; color:var(--brand); font-size:22px; }
+    .ag-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 16px; }
+    .ag-tab { border:1px solid var(--line); background:#fff; color:var(--text); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:700; }
+    .ag-tab.active { background:var(--brand); color:white; border-color:var(--brand); }
+    .ag-panel { border:1px solid var(--line); border-radius:18px; padding:16px; background:#fff; }
+    .ag-quorum-grid { display:grid; grid-template-columns: repeat(4,minmax(150px,1fr)); gap:12px; }
+    .ag-quorum-card { border:1px solid var(--line); border-radius:16px; padding:14px; background:#f8fbfc; }
+    .ag-quorum-card strong { display:block; font-size:21px; color:var(--brand); margin-top:4px; }
+    .ag-point-card { border:1px solid var(--line); border-radius:18px; background:#fff; padding:14px; margin-bottom:12px; }
+    .ag-point-head { display:grid; grid-template-columns: 52px 1fr auto; gap:12px; align-items:center; }
+    .ag-point-number { width:42px; height:42px; display:flex; align-items:center; justify-content:center; border-radius:14px; background:#eaf7fa; color:var(--brand); font-weight:900; }
+    .ag-vote-summary { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .ag-vote-chip { border:1px solid var(--line); border-radius:999px; padding:6px 10px; background:#fafafa; font-weight:700; }
+    .ag-vote-chip.ok { background:#eaf8ef; color:#146c2e; border-color:#bce7c9; }
+    .ag-vote-chip.no { background:#fdecec; color:#9b1c1c; border-color:#facaca; }
+    .ag-vote-chip.warn { background:#fff7e6; color:#9a5b00; border-color:#ffe0a3; }
+    .ag-attendance-table select, .ag-vote-table select { min-width:120px; }
+    .ag-pdf-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .proxy-box { border:2px dashed #b7dce5; border-radius:18px; padding:18px; margin-top:22px; }
+    .pdf-page { page-break-after: always; }
+    .ocr-item { cursor:pointer; user-select:none; }
+    .ocr-item * { pointer-events:none; }
+    @media (max-width:1000px){ .ag-list-row,.resolution-row,.ag-detail-header,.ag-point-head{grid-template-columns:1fr; display:grid;} .ag-quorum-grid{grid-template-columns:1fr 1fr;} }
+
   </style>
 </head>
 <body>
@@ -2166,35 +2197,45 @@
           </div>
         </section>
 
+
         <section id="meetingsView" class="view hidden">
           <div class="card">
             <div class="toolbar">
-              <h2>Assemblees generales</h2>
-              <span class="badge warn">Module a structurer</span>
+              <div>
+                <h2>Assemblées générales</h2>
+                <p class="muted-note">Création, convocations, présence, quorum, votes et PV.</p>
+              </div>
+              <div class="quick-actions">
+                <button class="btn secondary" id="agBackToListBtn" type="button">Liste AG</button>
+                <button class="btn" id="createAgBtn" type="button">+ Créer AG</button>
+              </div>
             </div>
             <div class="context-banner">
               <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+              <span class="muted-note">Les convocations reprennent les copropriétaires et lots de la copropriété sélectionnée.</span>
             </div>
-            <p style="color:var(--muted); line-height:1.5;">Préparation AG liée à la comptabilité : budgets, comptes, décomptes, décisions et appels votés.</p>
-            <div class="module-grid"><div class="module-card"><h3>Comptes AG</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Budgets</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Décisions</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div id="agModuleRoot" class="ag-shell"></div>
           </div>
         </section>
+
 
         <section id="resolutionsView" class="view hidden">
           <div class="card">
             <div class="toolbar">
-              <h2>Catalogue des resolutions</h2>
-              <span class="badge warn">Module a structurer</span>
+              <div>
+                <h2>Catalogue des résolutions</h2>
+                <p class="muted-note">Points récurrents à reprendre dans les ordres du jour des AG.</p>
+              </div>
+              <div class="quick-actions">
+                <button class="btn secondary" id="seedAgCatalogBtn" type="button">Ajouter modèles syndic</button>
+                <button class="btn" id="createResolutionBtn" type="button">+ Nouvelle résolution</button>
+              </div>
             </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
-            </div>
-            <p style="color:var(--muted); line-height:1.5;">Modèles de résolutions pour budgets, travaux, appels extraordinaires et approbation des comptes.</p>
-            <div class="module-grid"><div class="module-card"><h3>Résolutions types</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Majorités</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Modèles</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="notice">Les résolutions du catalogue peuvent être sélectionnées une par une ou en bloc lors de la préparation d’une AG.</div>
+            <div id="resolutionCatalogRoot"></div>
           </div>
         </section>
+
 
         <section id="agencyView" class="view hidden">
           <div class="card">
@@ -7683,6 +7724,385 @@
       previousRenderAllV132();
       setTimeout(() => enhanceCommonSelectsV132(document), 0);
     };
+
+
+    // ---- V14 : Correctif clic liste OCR + module Assemblees generales ----
+    state.agMeetings = state.agMeetings || [];
+    state.agPoints = state.agPoints || [];
+    state.agAttendees = state.agAttendees || [];
+    state.agVotes = state.agVotes || [];
+    state.agCatalog = state.agCatalog || [];
+    state.agSelectedMeetingId = state.agSelectedMeetingId || '';
+    state.agActiveTab = state.agActiveTab || 'overview';
+
+    // Correctif: clic sur le texte/interieur d'une facture OCR = selection correcte sans devoir viser un coin.
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest?.('[data-select-ocr]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      state.ocrSelectedQueueId = btn.dataset.selectOcr;
+      renderInvoiceOcrV13();
+    }, true);
+
+    const AG_MAJORITY_TYPES = [
+      { value:'info', label:'Information / pas de vote', threshold:0, help:'Point informatif sans calcul de majorité.' },
+      { value:'simple', label:'Majorité simple des voix présentes/représentées', threshold:0.5, help:'Adopté si les voix pour dépassent la moitié des voix exprimées prises en compte.' },
+      { value:'absolute', label:'Majorité absolue des présents/représentés', threshold:0.5, help:'Utilisée pour les décisions courantes et certains actes conservatoires selon la nature du point.' },
+      { value:'two_thirds', label:'Majorité des 2/3', threshold:2/3, help:'Ex. certains travaux affectant les parties communes ou modifications statutaires limitées.' },
+      { value:'four_fifths', label:'Majorité des 4/5', threshold:4/5, help:'Ex. modifications importantes des statuts, charges, destination, disposition de biens communs.' },
+      { value:'unanimity', label:'Unanimité', threshold:1, help:'À réserver aux décisions qui exigent l’accord de tous les copropriétaires concernés.' }
+    ];
+    function majorityLabel(value){ return (AG_MAJORITY_TYPES.find(m=>m.value===value)||AG_MAJORITY_TYPES[1]).label; }
+    function majorityHelp(value){ return (AG_MAJORITY_TYPES.find(m=>m.value===value)||{}).help || ''; }
+    function majorityOptions(selected='simple') { return AG_MAJORITY_TYPES.map(m=>`<option value="${m.value}" ${m.value===selected?'selected':''}>${escapeHtml(m.label)}</option>`).join(''); }
+
+    function agTablesMissing(error){ return /does not exist|schema cache|relation .* does not exist|Could not find/i.test(error?.message || ''); }
+    async function loadAgMeetings(){
+      const { data, error } = await supabaseClient.from('compta_ag_meetings').select('*, compta_copros(name)').order('meeting_date', { ascending:false });
+      if (error) { if (!agTablesMissing(error)) console.warn(error.message); state.agMeetings=[]; return; }
+      state.agMeetings = data || [];
+    }
+    async function loadAgPoints(){
+      const { data, error } = await supabaseClient.from('compta_ag_points').select('*').order('position', { ascending:true });
+      if (error) { if (!agTablesMissing(error)) console.warn(error.message); state.agPoints=[]; return; }
+      state.agPoints = data || [];
+    }
+    async function loadAgAttendees(){
+      const { data, error } = await supabaseClient.from('compta_ag_attendees').select('*, compta_owners(display_name,email)').order('created_at', { ascending:true });
+      if (error) { if (!agTablesMissing(error)) console.warn(error.message); state.agAttendees=[]; return; }
+      state.agAttendees = data || [];
+    }
+    async function loadAgVotes(){
+      const { data, error } = await supabaseClient.from('compta_ag_votes').select('*');
+      if (error) { if (!agTablesMissing(error)) console.warn(error.message); state.agVotes=[]; return; }
+      state.agVotes = data || [];
+    }
+    async function loadAgCatalog(){
+      const { data, error } = await supabaseClient.from('compta_ag_resolution_catalog').select('*').order('category', { ascending:true }).order('title', { ascending:true });
+      if (error) { if (!agTablesMissing(error)) console.warn(error.message); state.agCatalog=[]; return; }
+      state.agCatalog = data || [];
+    }
+    async function loadAgModuleData(){ await Promise.all([loadAgMeetings(), loadAgPoints(), loadAgAttendees(), loadAgVotes(), loadAgCatalog()]); }
+
+    function getCoproOwnersForAg(coproId){
+      const lots = state.lots.filter(l=>l.copro_id===coproId && l.active!==false && l.owner_id);
+      const map = new Map();
+      lots.forEach(l=>{
+        const owner = state.owners.find(o=>o.id===l.owner_id) || { id:l.owner_id, display_name:'Copropriétaire' };
+        if (!map.has(l.owner_id)) map.set(l.owner_id, { owner, lots:[], quotities:0 });
+        const rec = map.get(l.owner_id);
+        rec.lots.push(l);
+        rec.quotities += Number(l.quotities || 0);
+      });
+      return [...map.values()].sort((a,b)=>String(a.owner.display_name||'').localeCompare(String(b.owner.display_name||'')));
+    }
+    function totalCoproQuotities(coproId){ return state.lots.filter(l=>l.copro_id===coproId && l.active!==false).reduce((s,l)=>s+Number(l.quotities||0),0); }
+    function agMeeting(){ return state.agMeetings.find(m=>m.id===state.agSelectedMeetingId) || null; }
+    function agMeetingPoints(meetingId){ return state.agPoints.filter(p=>p.meeting_id===meetingId).sort((a,b)=>Number(a.position||0)-Number(b.position||0)); }
+    function agMeetingAttendees(meetingId){ return state.agAttendees.filter(a=>a.meeting_id===meetingId); }
+    function agPointVotes(pointId){ return state.agVotes.filter(v=>v.point_id===pointId); }
+    function agParticipantStatusBadge(status){
+      if (status==='present') return '<span class="badge ok">Présent</span>';
+      if (status==='represented') return '<span class="badge warn">Représenté</span>';
+      return '<span class="badge">Absent</span>';
+    }
+    function agStatusBadge(status){
+      const s = status || 'draft';
+      if (s==='closed') return '<span class="badge ok">PV clôturé</span>';
+      if (s==='sent') return '<span class="badge warn">Convocations envoyées</span>';
+      if (s==='in_progress') return '<span class="badge warn">AG en cours</span>';
+      return '<span class="badge">Brouillon</span>';
+    }
+    function computeAgQuorum(meeting){
+      if (!meeting) return { ownerTotal:0, presentOwners:0, quotityTotal:0, presentQuotities:0, ownerRatio:0, quotityRatio:0, ok:false };
+      const owners = getCoproOwnersForAg(meeting.copro_id);
+      const attendees = agMeetingAttendees(meeting.id);
+      const present = attendees.filter(a=>['present','represented'].includes(a.status));
+      const quotityTotal = totalCoproQuotities(meeting.copro_id) || owners.reduce((s,o)=>s+Number(o.quotities||0),0) || 0;
+      const presentQuotities = present.reduce((s,a)=>s+Number(a.quotities||0),0);
+      const ownerTotal = owners.length;
+      const presentOwners = new Set(present.map(a=>a.owner_id)).size;
+      const ownerRatio = ownerTotal ? presentOwners / ownerTotal : 0;
+      const quotityRatio = quotityTotal ? presentQuotities / quotityTotal : 0;
+      const ok = ownerRatio >= .5 && quotityRatio >= .5;
+      return { ownerTotal, presentOwners, quotityTotal, presentQuotities, ownerRatio, quotityRatio, ok };
+    }
+    function computeAgVoteResult(point){
+      const meeting = state.agMeetings.find(m=>m.id===point.meeting_id);
+      const attendees = agMeetingAttendees(point.meeting_id).filter(a=>['present','represented'].includes(a.status));
+      const attendeeMap = new Map(attendees.map(a=>[a.owner_id, a]));
+      const votes = agPointVotes(point.id).filter(v=>attendeeMap.has(v.owner_id));
+      let yes=0,no=0,abstain=0;
+      votes.forEach(v=>{ const q=Number(v.quotities || attendeeMap.get(v.owner_id)?.quotities || 0); if(v.vote==='yes') yes+=q; else if(v.vote==='no') no+=q; else abstain+=q; });
+      const basePresent = attendees.reduce((s,a)=>s+Number(a.quotities||0),0) || 0;
+      const expressed = yes + no;
+      const type = point.majority_type || 'simple';
+      if (type === 'info') return { yes,no,abstain,base:0,ratio:0,passed:null,label:'Information' };
+      let base = type === 'simple' ? expressed : basePresent;
+      if (!base) base = basePresent;
+      const ratio = base ? yes/base : 0;
+      let passed = false;
+      if (type === 'unanimity') passed = yes > 0 && no === 0 && abstain === 0 && yes >= basePresent;
+      else {
+        const threshold = (AG_MAJORITY_TYPES.find(m=>m.value===type)||AG_MAJORITY_TYPES[1]).threshold;
+        passed = ratio > threshold || Math.abs(ratio - threshold) < 0.000001 && type !== 'simple';
+        if (type === 'simple' || type === 'absolute') passed = ratio > .5;
+      }
+      return { yes,no,abstain,base,ratio,passed,label: passed ? 'Adopté' : 'Rejeté' };
+    }
+
+    function renderMeetingsV14(){
+      const root = $('agModuleRoot');
+      if (!root) return;
+      if (!state.agMeetings && !state.agCatalog) return;
+      const selected = agMeeting();
+      if (selected) return renderAgDetailV14(selected);
+      const coproFilter = state.activeCoproId || '';
+      const rows = state.agMeetings.filter(m=>!coproFilter || m.copro_id===coproFilter);
+      if (!state.agMeetings.length && !state.agCatalog.length) {
+        root.innerHTML = '<div class="notice danger">Module AG non initialisé. Exécute la migration SQL V14 dans Supabase, puis recharge la page.</div>';
+        return;
+      }
+      root.innerHTML = `
+        <div class="summary-line"><span class="badge">${rows.length} AG</span><span class="badge">Copropriété : ${escapeHtml(coproContextLabel())}</span></div>
+        <div>${rows.map(m=>`<div class="ag-list-row">
+          <div><strong>${escapeHtml(m.title || 'Assemblée générale')}</strong><div class="muted-note">${escapeHtml(m.compta_copros?.name || coproNameByIdV14(m.copro_id))}</div></div>
+          <div>${escapeHtml(formatDateV14(m.meeting_date))} ${escapeHtml(m.meeting_time || '')}</div>
+          <div>${escapeHtml(m.location || '-')}</div>
+          <div>${agStatusBadge(m.status)}</div>
+          <div class="actions-inline"><button class="btn secondary small" type="button" data-open-ag="${m.id}">Ouvrir</button><button class="btn danger small" type="button" data-delete-ag="${m.id}">Supprimer</button></div>
+        </div>`).join('') || '<div class="notice">Aucune AG créée pour ce filtre.</div>'}</div>`;
+    }
+    function coproNameByIdV14(id){ return state.copros.find(c=>c.id===id)?.name || ''; }
+    function formatDateV14(v){ if(!v) return ''; try { return new Date(v+'T00:00:00').toLocaleDateString('fr-BE'); } catch(e){ return v; } }
+
+    function renderAgDetailV14(meeting){
+      const root = $('agModuleRoot');
+      const q = computeAgQuorum(meeting);
+      const points = agMeetingPoints(meeting.id);
+      root.innerHTML = `<div class="ag-detail-header">
+        <div><h2 class="ag-detail-title">${escapeHtml(meeting.title || 'Assemblée générale')}</h2><div class="muted-note">${escapeHtml(coproNameByIdV14(meeting.copro_id))} · ${formatDateV14(meeting.meeting_date)} ${escapeHtml(meeting.meeting_time || '')} · ${escapeHtml(meeting.location || '')}</div><div style="margin-top:8px;">${agStatusBadge(meeting.status)}</div></div>
+        <div class="ag-pdf-actions"><button class="btn secondary" type="button" data-edit-ag="${meeting.id}">Modifier AG</button><button class="btn secondary" type="button" data-print-convocation="${meeting.id}">PDF convocation</button><button class="btn secondary" type="button" data-print-pv="${meeting.id}">PDF PV</button><button class="btn" type="button" data-close-ag="${meeting.id}">Clôturer PV</button></div>
+      </div>
+      <div class="ag-tabs">${[['overview','Vue générale'],['attendees','Présences / quorum'],['agenda','Ordre du jour'],['votes','Votes / PV']].map(t=>`<button class="ag-tab ${state.agActiveTab===t[0]?'active':''}" data-ag-tab="${t[0]}" type="button">${t[1]}</button>`).join('')}</div>
+      <div class="ag-panel">${renderAgActivePanelV14(meeting, q, points)}</div>`;
+    }
+    function renderAgActivePanelV14(meeting, quorum, points){
+      if (state.agActiveTab === 'attendees') return renderAgAttendeesPanelV14(meeting, quorum);
+      if (state.agActiveTab === 'agenda') return renderAgAgendaPanelV14(meeting, points);
+      if (state.agActiveTab === 'votes') return renderAgVotesPanelV14(meeting, points);
+      return `<div class="ag-quorum-grid">
+        <div class="ag-quorum-card">Copropriétaires présents/représentés<strong>${quorum.presentOwners} / ${quorum.ownerTotal}</strong><span>${Math.round(quorum.ownerRatio*100)}%</span></div>
+        <div class="ag-quorum-card">Quotités présentes/représentées<strong>${Number(quorum.presentQuotities).toLocaleString('fr-BE')} / ${Number(quorum.quotityTotal).toLocaleString('fr-BE')}</strong><span>${Math.round(quorum.quotityRatio*100)}%</span></div>
+        <div class="ag-quorum-card">Quorum légal indicatif<strong>${quorum.ok ? 'Atteint' : 'Non atteint'}</strong><span>½ personnes + ½ quotités</span></div>
+        <div class="ag-quorum-card">Points à l’ordre du jour<strong>${points.length}</strong><span>${points.filter(p=>p.result_status==='adopted').length} adopté(s)</span></div>
+      </div>
+      <div class="notice" style="margin-top:14px;">Le module applique une aide au calcul : présence/représentation, quotités, majorités par point, génération convocation + procuration et PV.</div>`;
+    }
+    function renderAgAttendeesPanelV14(meeting, quorum){
+      const owners = getCoproOwnersForAg(meeting.copro_id);
+      const attendees = agMeetingAttendees(meeting.id);
+      const rows = owners.map(o=>{
+        const a = attendees.find(x=>x.owner_id===o.owner.id) || {};
+        return `<tr data-ag-att-owner="${o.owner.id}"><td>${escapeHtml(o.owner.display_name || '')}</td><td>${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</td><td>${Number(o.quotities).toLocaleString('fr-BE')}</td><td><select data-ag-att-field="status"><option value="absent" ${(a.status||'absent')==='absent'?'selected':''}>Absent</option><option value="present" ${a.status==='present'?'selected':''}>Présent</option><option value="represented" ${a.status==='represented'?'selected':''}>Représenté</option></select></td><td><input data-ag-att-field="representative_name" value="${escapeHtml(a.representative_name||'')}" placeholder="Mandataire"></td><td><input type="checkbox" data-ag-att-field="proxy_received" ${a.proxy_received?'checked':''}></td><td>${agParticipantStatusBadge(a.status||'absent')}</td></tr>`;
+      }).join('');
+      return `<div class="summary-line"><span class="badge ${quorum.ok?'ok':'warn'}">Quorum : ${quorum.ok?'atteint':'non atteint'}</span><span class="badge">Personnes : ${quorum.presentOwners}/${quorum.ownerTotal}</span><span class="badge">Quotités : ${Number(quorum.presentQuotities).toLocaleString('fr-BE')}/${Number(quorum.quotityTotal).toLocaleString('fr-BE')}</span><button class="btn secondary small" type="button" data-init-ag-attendees="${meeting.id}">Synchroniser copropriétaires</button><button class="btn" type="button" data-save-ag-attendees="${meeting.id}">Enregistrer présences</button></div>
+      <div class="table-wrap"><table class="ag-attendance-table"><thead><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Présence</th><th>Mandataire</th><th>Procuration</th><th>Statut</th></tr></thead><tbody>${rows || '<tr><td colspan="7">Aucun copropriétaire avec lot.</td></tr>'}</tbody></table></div>`;
+    }
+    function renderAgAgendaPanelV14(meeting, points){
+      return `<div class="top-actions" style="justify-content:flex-start;"><button class="btn" type="button" data-add-ag-point="${meeting.id}">+ Ajouter point</button><button class="btn secondary" type="button" data-import-catalog-ag="${meeting.id}">Reprendre catalogue</button></div>
+      <div style="margin-top:14px;">${points.map((p,idx)=>renderAgPointCardV14(p,idx)).join('') || '<div class="notice">Aucun point. Ajoute un point ou reprends des résolutions du catalogue.</div>'}</div>`;
+    }
+    function renderAgVotesPanelV14(meeting, points){
+      return `${points.map((p,idx)=>renderAgPointCardV14(p,idx,true)).join('') || '<div class="notice">Aucun vote tant qu’il n’y a pas de point.</div>'}`;
+    }
+    function renderAgPointCardV14(p, idx, voteMode=false){
+      const r = computeAgVoteResult(p);
+      return `<div class="ag-point-card"><div class="ag-point-head"><div class="ag-point-number">${idx+1}</div><div><strong>${escapeHtml(p.title||'Point')}</strong><div class="muted-note">${escapeHtml(majorityLabel(p.majority_type||'simple'))}</div></div><div class="actions-inline"><button class="btn secondary small" type="button" data-edit-ag-point="${p.id}">Modifier</button><button class="btn secondary small" type="button" data-vote-ag-point="${p.id}">Votes</button><button class="btn danger small" type="button" data-delete-ag-point="${p.id}">Supprimer</button></div></div>
+      <div class="muted-note" style="margin-top:8px;">${escapeHtml(p.description||'')}</div>
+      <div class="ag-vote-summary"><span class="ag-vote-chip ok">Pour : ${Number(r.yes).toLocaleString('fr-BE')}</span><span class="ag-vote-chip no">Contre : ${Number(r.no).toLocaleString('fr-BE')}</span><span class="ag-vote-chip warn">Abst. : ${Number(r.abstain).toLocaleString('fr-BE')}</span><span class="ag-vote-chip ${r.passed===true?'ok':r.passed===false?'no':''}">${escapeHtml(r.label)}</span></div>
+      ${p.remarks ? `<div class="notice" style="margin-top:10px;"><strong>PV / remarques :</strong><br>${escapeHtml(p.remarks)}</div>` : ''}</div>`;
+    }
+
+    async function initAgAttendeesV14(meetingId){
+      const meeting = state.agMeetings.find(m=>m.id===meetingId); if(!meeting) return;
+      const owners = getCoproOwnersForAg(meeting.copro_id);
+      const existing = agMeetingAttendees(meetingId);
+      const inserts = owners.filter(o=>!existing.some(a=>a.owner_id===o.owner.id)).map(o=>({ meeting_id:meetingId, copro_id:meeting.copro_id, owner_id:o.owner.id, status:'absent', quotities:Number(o.quotities||0), lots_label:o.lots.map(l=>l.lot_number).join(', '), created_by:currentUser.id }));
+      if (inserts.length) { const { error } = await supabaseClient.from('compta_ag_attendees').insert(inserts); if(error) return alert(error.message); }
+      await loadAgModuleData(); renderMeetingsV14();
+    }
+    async function saveAgAttendeesV14(meetingId){
+      const meeting = state.agMeetings.find(m=>m.id===meetingId); if(!meeting) return;
+      const rows = [...document.querySelectorAll('[data-ag-att-owner]')];
+      for (const tr of rows) {
+        const ownerId = tr.dataset.agAttOwner;
+        const ownerRec = getCoproOwnersForAg(meeting.copro_id).find(o=>o.owner.id===ownerId);
+        const payload = { meeting_id:meetingId, copro_id:meeting.copro_id, owner_id:ownerId, status:tr.querySelector('[data-ag-att-field="status"]').value, representative_name:tr.querySelector('[data-ag-att-field="representative_name"]').value.trim() || null, proxy_received:tr.querySelector('[data-ag-att-field="proxy_received"]').checked, quotities:Number(ownerRec?.quotities||0), lots_label:ownerRec?.lots.map(l=>l.lot_number).join(', ') || '', created_by:currentUser.id };
+        const existing = state.agAttendees.find(a=>a.meeting_id===meetingId && a.owner_id===ownerId);
+        const res = existing ? await supabaseClient.from('compta_ag_attendees').update(payload).eq('id', existing.id) : await supabaseClient.from('compta_ag_attendees').insert(payload);
+        if (res.error) return alert(res.error.message);
+      }
+      await loadAgModuleData(); renderMeetingsV14();
+    }
+
+    function openAgModalV14(id=''){
+      const m = state.agMeetings.find(x=>x.id===id) || {};
+      const selectedCopro = state.activeCoproId || m.copro_id || '';
+      const body = `<div class="form-grid"><label>Copropriété<select id="agModalCopro">${coproOptions(selectedCopro)}</select></label><label>Type<select id="agModalType"><option value="ordinary" ${(m.meeting_type||'ordinary')==='ordinary'?'selected':''}>AG ordinaire</option><option value="extraordinary" ${m.meeting_type==='extraordinary'?'selected':''}>AG extraordinaire</option><option value="second" ${m.meeting_type==='second'?'selected':''}>Seconde séance</option></select></label><label>Libellé<input id="agModalTitle" value="${escapeHtml(m.title||'Assemblée générale ordinaire')}" /></label><label>Date AG<input id="agModalDate" type="date" value="${escapeHtml(m.meeting_date||'')}" /></label><label>Heure<input id="agModalTime" type="time" value="${escapeHtml(m.meeting_time||'')}" /></label><label>Lieu<input id="agModalLocation" value="${escapeHtml(m.location||'')}" /></label><label>Date convocation<input id="agModalConvocationDate" type="date" value="${escapeHtml(m.convocation_date||'')}" /></label><label>Statut<select id="agModalStatus"><option value="draft" ${(m.status||'draft')==='draft'?'selected':''}>Brouillon</option><option value="sent" ${m.status==='sent'?'selected':''}>Convocations envoyées</option><option value="in_progress" ${m.status==='in_progress'?'selected':''}>AG en cours</option><option value="closed" ${m.status==='closed'?'selected':''}>PV clôturé</option></select></label></div><label>Notes internes<textarea id="agModalNotes">${escapeHtml(m.notes||'')}</textarea></label>`;
+      openAppModal(id?'Modifier AG':'Créer AG', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-save-ag-modal="${id}">Enregistrer</button>`, {size:'wide'});
+      setTimeout(()=>enhanceCommonSelectsV132($('globalModalBody')),0);
+    }
+    async function saveAgModalV14(id=''){
+      const payload = { copro_id:$('agModalCopro').value || state.activeCoproId || null, meeting_type:$('agModalType').value, title:$('agModalTitle').value.trim() || 'Assemblée générale', meeting_date:$('agModalDate').value || null, meeting_time:$('agModalTime').value || null, location:$('agModalLocation').value.trim() || null, convocation_date:$('agModalConvocationDate').value || null, status:$('agModalStatus').value || 'draft', notes:$('agModalNotes').value.trim() || null, created_by: currentUser.id };
+      if (!payload.copro_id) return alert('Choisis une copropriété.');
+      if (!payload.meeting_date) return alert('Indique la date de l’AG.');
+      const res = id ? await supabaseClient.from('compta_ag_meetings').update(payload).eq('id',id).select().single() : await supabaseClient.from('compta_ag_meetings').insert(payload).select().single();
+      if (res.error) return alert(res.error.message);
+      closeAppModal(); await loadAgModuleData(); state.agSelectedMeetingId = res.data?.id || id; await initAgAttendeesV14(state.agSelectedMeetingId); renderMeetingsV14();
+    }
+
+    function openAgPointModalV14(meetingId, pointId=''){
+      const p = state.agPoints.find(x=>x.id===pointId) || { meeting_id:meetingId, majority_type:'simple', position: agMeetingPoints(meetingId).length + 1 };
+      const body = `<div class="form-grid"><label>N°<input id="agPointPosition" type="number" value="${escapeHtml(p.position||1)}"></label><label>Majorité<select id="agPointMajority">${majorityOptions(p.majority_type||'simple')}</select></label><label>Résultat manuel<select id="agPointResult"><option value="" ${!p.result_status?'selected':''}>Automatique</option><option value="adopted" ${p.result_status==='adopted'?'selected':''}>Adopté</option><option value="rejected" ${p.result_status==='rejected'?'selected':''}>Rejeté</option><option value="postponed" ${p.result_status==='postponed'?'selected':''}>Reporté</option></select></label><label>Titre<input id="agPointTitle" value="${escapeHtml(p.title||'')}"></label></div><label>Description / ordre du jour<textarea id="agPointDescription">${escapeHtml(p.description||'')}</textarea></label><label>Décision proposée / décision prise<textarea id="agPointDecision">${escapeHtml(p.decision_text||'')}</textarea></label><label>Remarques PV<textarea id="agPointRemarks">${escapeHtml(p.remarks||'')}</textarea></label><div class="notice"><strong>Aide majorité :</strong> <span id="agMajorityHelp">${escapeHtml(majorityHelp(p.majority_type||'simple'))}</span></div>`;
+      openAppModal(pointId?'Modifier point':'Ajouter point', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-save-ag-point="${pointId}" data-meeting-id="${meetingId}">Enregistrer</button>`, {size:'wide'});
+      setTimeout(()=>{ enhanceCommonSelectsV132($('globalModalBody')); $('agPointMajority')?.addEventListener('change', e=>{ $('agMajorityHelp').textContent = majorityHelp(e.target.value); }); },0);
+    }
+    async function saveAgPointModalV14(meetingId, pointId=''){
+      const payload = { meeting_id:meetingId, position:Number($('agPointPosition').value||1), title:$('agPointTitle').value.trim(), description:$('agPointDescription').value.trim() || null, majority_type:$('agPointMajority').value, decision_text:$('agPointDecision').value.trim() || null, remarks:$('agPointRemarks').value.trim() || null, result_status:$('agPointResult').value || null, created_by:currentUser.id };
+      if (!payload.title) return alert('Indique le titre du point.');
+      const res = pointId ? await supabaseClient.from('compta_ag_points').update(payload).eq('id',pointId) : await supabaseClient.from('compta_ag_points').insert(payload);
+      if (res.error) return alert(res.error.message);
+      closeAppModal(); await loadAgModuleData(); renderMeetingsV14();
+    }
+
+    function openAgVoteModalV14(pointId){
+      const p = state.agPoints.find(x=>x.id===pointId); if(!p) return;
+      const attendees = agMeetingAttendees(p.meeting_id).filter(a=>['present','represented'].includes(a.status));
+      const votes = agPointVotes(pointId);
+      const rows = attendees.map(a=>{ const v=votes.find(x=>x.owner_id===a.owner_id)||{}; return `<tr data-ag-vote-owner="${a.owner_id}"><td>${escapeHtml(a.compta_owners?.display_name || ownerDisplayNameById(a.owner_id) || '')}</td><td>${escapeHtml(a.lots_label||'')}</td><td>${Number(a.quotities||0).toLocaleString('fr-BE')}</td><td><select data-ag-vote-field="vote"><option value="yes" ${(v.vote||'yes')==='yes'?'selected':''}>Pour</option><option value="no" ${v.vote==='no'?'selected':''}>Contre</option><option value="abstain" ${v.vote==='abstain'?'selected':''}>Abstention</option></select></td><td><input data-ag-vote-field="comment" value="${escapeHtml(v.comment||'')}" placeholder="Commentaire"></td></tr>`; }).join('');
+      openAppModal('Votes - '+(p.title||''), `<div class="notice">Seuls les copropriétaires présents ou représentés sont repris.</div><div class="table-wrap"><table class="ag-vote-table"><thead><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Vote</th><th>Commentaire</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Aucun présent/représenté. Va d’abord dans Présences.</td></tr>'}</tbody></table></div>`, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-save-ag-votes="${pointId}">Enregistrer votes</button>`, {size:'wide'});
+      setTimeout(()=>enhanceCommonSelectsV132($('globalModalBody')),0);
+    }
+    async function saveAgVotesV14(pointId){
+      const p = state.agPoints.find(x=>x.id===pointId); if(!p) return;
+      const rows=[...document.querySelectorAll('[data-ag-vote-owner]')];
+      for(const tr of rows){
+        const ownerId=tr.dataset.agVoteOwner; const attendee=state.agAttendees.find(a=>a.meeting_id===p.meeting_id && a.owner_id===ownerId); const existing=state.agVotes.find(v=>v.point_id===pointId && v.owner_id===ownerId);
+        const payload={ point_id:pointId, meeting_id:p.meeting_id, owner_id:ownerId, vote:tr.querySelector('[data-ag-vote-field="vote"]').value, quotities:Number(attendee?.quotities||0), comment:tr.querySelector('[data-ag-vote-field="comment"]').value.trim() || null, created_by:currentUser.id };
+        const res = existing ? await supabaseClient.from('compta_ag_votes').update(payload).eq('id', existing.id) : await supabaseClient.from('compta_ag_votes').insert(payload);
+        if(res.error) return alert(res.error.message);
+      }
+      closeAppModal(); await loadAgModuleData(); renderMeetingsV14();
+    }
+
+    function openCatalogPickerV14(meetingId){
+      const rows = state.agCatalog.filter(c=>c.active!==false).map(c=>`<label class="catalog-pick-row" style="display:flex;gap:10px;align-items:flex-start;padding:10px;border-bottom:1px solid var(--line);"><input type="checkbox" data-catalog-pick="${c.id}"><span><strong>${escapeHtml(c.title||'')}</strong><br><small>${escapeHtml(c.category||'Général')} · ${escapeHtml(majorityLabel(c.majority_type||'simple'))}</small></span></label>`).join('');
+      openAppModal('Reprendre du catalogue', `<div class="top-actions" style="justify-content:flex-start;"><button class="btn secondary small" type="button" id="agSelectAllCatalogBtn">Tout cocher</button></div><div>${rows || '<div class="notice">Catalogue vide.</div>'}</div>`, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-import-catalog-selection="${meetingId}">Ajouter à l’AG</button>`, {size:'wide'});
+      setTimeout(()=>$('agSelectAllCatalogBtn')?.addEventListener('click',()=>document.querySelectorAll('[data-catalog-pick]').forEach(c=>c.checked=true)),0);
+    }
+    async function importCatalogSelectionV14(meetingId){
+      const ids=[...document.querySelectorAll('[data-catalog-pick]:checked')].map(x=>x.dataset.catalogPick);
+      if(!ids.length) return alert('Coche au moins une résolution.');
+      const start = agMeetingPoints(meetingId).length;
+      const rows=ids.map((id,idx)=>{ const c=state.agCatalog.find(x=>x.id===id); return { meeting_id:meetingId, position:start+idx+1, title:c.title, description:c.description, majority_type:c.majority_type||'simple', decision_text:c.default_decision || null, catalog_id:c.id, created_by:currentUser.id }; });
+      const { error } = await supabaseClient.from('compta_ag_points').insert(rows); if(error) return alert(error.message);
+      closeAppModal(); await loadAgModuleData(); state.agActiveTab='agenda'; renderMeetingsV14();
+    }
+
+    function renderResolutionCatalogV14(){
+      const root=$('resolutionCatalogRoot'); if(!root) return;
+      const rows = state.agCatalog || [];
+      if (!rows.length && state.agMeetings.length===0) { root.innerHTML = '<div class="notice">Catalogue vide ou migration SQL V14 non exécutée. Clique sur “Ajouter modèles syndic” après migration.</div>'; return; }
+      root.innerHTML = rows.map(r=>`<div class="resolution-row"><div><strong>${escapeHtml(r.title||'')}</strong><div class="muted-note">${escapeHtml(r.description||'')}</div></div><div>${escapeHtml(r.category||'Général')}</div><div>${escapeHtml(majorityLabel(r.majority_type||'simple'))}</div><div class="actions-inline"><button class="btn secondary small" data-edit-resolution="${r.id}" type="button">Modifier</button><button class="btn danger small" data-delete-resolution="${r.id}" type="button">Supprimer</button></div></div>`).join('') || '<div class="notice">Aucune résolution dans le catalogue.</div>';
+    }
+    function openResolutionModalV14(id=''){
+      const r=state.agCatalog.find(x=>x.id===id)||{majority_type:'simple',category:'Général'};
+      const body=`<div class="form-grid"><label>Catégorie<input id="resolutionCategory" value="${escapeHtml(r.category||'Général')}"></label><label>Majorité<select id="resolutionMajority">${majorityOptions(r.majority_type||'simple')}</select></label><label>Titre<input id="resolutionTitle" value="${escapeHtml(r.title||'')}"></label></div><label>Description / ordre du jour<textarea id="resolutionDescription">${escapeHtml(r.description||'')}</textarea></label><label>Décision type<textarea id="resolutionDefaultDecision">${escapeHtml(r.default_decision||'')}</textarea></label>`;
+      openAppModal(id?'Modifier résolution':'Nouvelle résolution', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-save-resolution="${id}">Enregistrer</button>`, {size:'wide'});
+      setTimeout(()=>enhanceCommonSelectsV132($('globalModalBody')),0);
+    }
+    async function saveResolutionV14(id=''){
+      const payload={ category:$('resolutionCategory').value.trim() || 'Général', title:$('resolutionTitle').value.trim(), description:$('resolutionDescription').value.trim() || null, majority_type:$('resolutionMajority').value, default_decision:$('resolutionDefaultDecision').value.trim() || null, active:true, created_by:currentUser.id };
+      if(!payload.title) return alert('Indique le titre.');
+      const res = id ? await supabaseClient.from('compta_ag_resolution_catalog').update(payload).eq('id',id) : await supabaseClient.from('compta_ag_resolution_catalog').insert(payload);
+      if(res.error) return alert(res.error.message);
+      closeAppModal(); await loadAgCatalog(); renderResolutionCatalogV14();
+    }
+    async function seedAgCatalogV14(){
+      const seeds = [
+        ['Ouverture de séance, désignation du président et du secrétaire','Administration','simple','Constat de validité de l’assemblée, désignation du président de séance et du secrétaire.'],
+        ['Approbation des comptes de l’exercice écoulé','Comptabilité','simple','L’assemblée générale approuve les comptes de l’exercice présenté.'],
+        ['Décharge au syndic','Administration','simple','L’assemblée générale donne décharge au syndic pour sa gestion.'],
+        ['Décharge au commissaire aux comptes','Comptabilité','simple','L’assemblée générale donne décharge au commissaire aux comptes.'],
+        ['Approbation du budget prévisionnel','Budget','simple','L’assemblée générale approuve le budget prévisionnel annexé à la convocation.'],
+        ['Fixation des appels de provisions','Appels','simple','L’assemblée générale fixe les modalités des appels de provisions.'],
+        ['Fonds de réserve','Fonds','simple','L’assemblée générale décide du montant à affecter au fonds de réserve.'],
+        ['Nomination ou renouvellement du syndic','Syndic','simple','L’assemblée générale décide de la nomination ou du renouvellement du mandat du syndic.'],
+        ['Nomination du commissaire aux comptes','Comptabilité','simple','L’assemblée générale désigne le commissaire aux comptes.'],
+        ['Travaux affectant les parties communes','Travaux','two_thirds','L’assemblée générale décide des travaux proposés sur les parties communes.'],
+        ['Modification de la répartition des charges','Statuts','four_fifths','L’assemblée générale décide de la modification de la répartition des charges.'],
+        ['Questions diverses sans vote','Divers','info','Point informatif : aucune décision ne peut être prise si le point n’est pas inscrit à l’ordre du jour.']
+      ];
+      const existingTitles = new Set(state.agCatalog.map(r=>String(r.title||'').toLowerCase()));
+      const rows = seeds.filter(s=>!existingTitles.has(s[0].toLowerCase())).map(s=>({ title:s[0], category:s[1], majority_type:s[2], description:s[3], default_decision:null, active:true, created_by:currentUser.id }));
+      if(!rows.length) return alert('Les modèles syndic sont déjà présents.');
+      const { error } = await supabaseClient.from('compta_ag_resolution_catalog').insert(rows); if(error) return alert(error.message);
+      await loadAgCatalog(); renderResolutionCatalogV14();
+    }
+
+    function pdfCssAgV14(){ return `body{font-family:Century Gothic,Arial,sans-serif;margin:0;color:#172033}.page{box-sizing:border-box;min-height:100vh;padding:38px;page-break-after:always}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.muted{color:#667085}.box{border:1px solid #dde3ee;border-radius:14px;padding:16px;margin-top:18px}h1,h2{color:#14586a}table{width:100%;border-collapse:collapse;margin-top:10px}td,th{padding:8px;border-bottom:1px solid #e6eef5;text-align:left}.proxy-box{border:2px dashed #a8d7e2;border-radius:16px;padding:18px;margin-top:28px}.sign{height:80px;border-bottom:1px solid #aaa;margin-top:24px}@media print{.page{page-break-after:always}}`; }
+    function printAgConvocationV14(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const owners=getCoproOwnersForAg(m.copro_id); const copro=coproNameByIdV14(m.copro_id);
+      const pages = owners.map(o=>`<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Convocation à l’assemblée générale</h1><strong>${escapeHtml(copro)}</strong></div></div><div class="box"><p><strong>Destinataire :</strong> ${escapeHtml(o.owner.display_name||'')}</p><p><strong>Lots :</strong> ${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</p><p><strong>Date :</strong> ${formatDateV14(m.meeting_date)} à ${escapeHtml(m.meeting_time||'')}</p><p><strong>Lieu :</strong> ${escapeHtml(m.location||'')}</p></div><h2>Ordre du jour</h2><ol>${points.map(p=>`<li><strong>${escapeHtml(p.title||'')}</strong><br><span class="muted">${escapeHtml(p.description||'')}</span><br><em>${escapeHtml(majorityLabel(p.majority_type||'simple'))}</em></li>`).join('')}</ol><div class="proxy-box"><h2>Procuration</h2><p>Je soussigné(e) ${escapeHtml(o.owner.display_name||'')}, propriétaire du/des lot(s) ${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}, donne procuration à :</p><p>Nom du mandataire : .......................................................................................</p><p>Pour me représenter à l’assemblée générale du ${formatDateV14(m.meeting_date)}.</p><div class="sign"></div><p class="muted">Signature précédée de la mention “bon pour pouvoir”.</p></div></section>`).join('');
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Convocations AG</title><style>${pdfCssAgV14()}</style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
+    }
+    function printAgPvV14(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const attendees=agMeetingAttendees(meetingId); const q=computeAgQuorum(m); const copro=coproNameByIdV14(m.copro_id);
+      const attendeesRows = attendees.map(a=>`<tr><td>${escapeHtml(a.compta_owners?.display_name || ownerDisplayNameById(a.owner_id) || '')}</td><td>${escapeHtml(a.lots_label||'')}</td><td>${Number(a.quotities||0).toLocaleString('fr-BE')}</td><td>${escapeHtml(a.status||'absent')}</td><td>${escapeHtml(a.representative_name||'')}</td></tr>`).join('');
+      const pointsHtml = points.map((p,idx)=>{ const r=computeAgVoteResult(p); return `<div class="box"><h2>${idx+1}. ${escapeHtml(p.title||'Point')}</h2><p>${escapeHtml(p.description||'')}</p><p><strong>Majorité :</strong> ${escapeHtml(majorityLabel(p.majority_type||'simple'))}</p><table><tr><th>Pour</th><th>Contre</th><th>Abstention</th><th>Résultat</th></tr><tr><td>${Number(r.yes).toLocaleString('fr-BE')}</td><td>${Number(r.no).toLocaleString('fr-BE')}</td><td>${Number(r.abstain).toLocaleString('fr-BE')}</td><td>${escapeHtml(r.label)}</td></tr></table><p><strong>Décision :</strong><br>${escapeHtml(p.decision_text||'')}</p><p><strong>Remarques :</strong><br>${escapeHtml(p.remarks||'')}</p></div>`; }).join('');
+      const html=`<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Procès-verbal d’assemblée générale</h1><strong>${escapeHtml(copro)}</strong></div></div><div class="box"><p><strong>Date :</strong> ${formatDateV14(m.meeting_date)} ${escapeHtml(m.meeting_time||'')}</p><p><strong>Lieu :</strong> ${escapeHtml(m.location||'')}</p><p><strong>Quorum :</strong> ${q.ok?'atteint':'non atteint'} — personnes ${q.presentOwners}/${q.ownerTotal}, quotités ${Number(q.presentQuotities).toLocaleString('fr-BE')}/${Number(q.quotityTotal).toLocaleString('fr-BE')}</p></div><h2>Présences</h2><table><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Statut</th><th>Mandataire</th></tr>${attendeesRows}</table></section><section class="page"><h1>Points et décisions</h1>${pointsHtml}<div class="box"><p>Président de séance : ............................................................</p><p>Secrétaire : ............................................................</p></div></section>`;
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}</style></head><body>${html}<script>window.print();<\/script></body></html>`); win.document.close();
+    }
+
+    async function deleteAgV14(id){ if(!confirm('Supprimer cette AG et ses points/votes ?')) return; const {error}=await supabaseClient.from('compta_ag_meetings').delete().eq('id',id); if(error) return alert(error.message); state.agSelectedMeetingId=''; await loadAgModuleData(); renderMeetingsV14(); }
+    async function closeAgV14(id){ if(!confirm('Clôturer le PV de cette AG ?')) return; const {error}=await supabaseClient.from('compta_ag_meetings').update({status:'closed'}).eq('id',id); if(error) return alert(error.message); await loadAgModuleData(); renderMeetingsV14(); }
+
+    document.addEventListener('click', async (e)=>{
+      const t=e.target.closest?.('button'); if(!t) return;
+      if(t.id==='createAgBtn') openAgModalV14('');
+      if(t.id==='agBackToListBtn') { state.agSelectedMeetingId=''; renderMeetingsV14(); }
+      if(t.dataset.openAg) { state.agSelectedMeetingId=t.dataset.openAg; state.agActiveTab='overview'; await initAgAttendeesV14(t.dataset.openAg); renderMeetingsV14(); }
+      if(t.dataset.editAg) openAgModalV14(t.dataset.editAg);
+      if(t.dataset.saveAgModal!==undefined) saveAgModalV14(t.dataset.saveAgModal || '');
+      if(t.dataset.deleteAg) deleteAgV14(t.dataset.deleteAg);
+      if(t.dataset.closeAg) closeAgV14(t.dataset.closeAg);
+      if(t.dataset.agTab) { state.agActiveTab=t.dataset.agTab; renderMeetingsV14(); }
+      if(t.dataset.initAgAttendees) initAgAttendeesV14(t.dataset.initAgAttendees);
+      if(t.dataset.saveAgAttendees) saveAgAttendeesV14(t.dataset.saveAgAttendees);
+      if(t.dataset.addAgPoint) openAgPointModalV14(t.dataset.addAgPoint,'');
+      if(t.dataset.editAgPoint) { const p=state.agPoints.find(x=>x.id===t.dataset.editAgPoint); if(p) openAgPointModalV14(p.meeting_id,p.id); }
+      if(t.dataset.saveAgPoint!==undefined) saveAgPointModalV14(t.dataset.meetingId, t.dataset.saveAgPoint || '');
+      if(t.dataset.deleteAgPoint) { if(confirm('Supprimer ce point ?')) { const {error}=await supabaseClient.from('compta_ag_points').delete().eq('id',t.dataset.deleteAgPoint); if(error) return alert(error.message); await loadAgModuleData(); renderMeetingsV14(); } }
+      if(t.dataset.voteAgPoint) openAgVoteModalV14(t.dataset.voteAgPoint);
+      if(t.dataset.saveAgVotes) saveAgVotesV14(t.dataset.saveAgVotes);
+      if(t.dataset.importCatalogAg) openCatalogPickerV14(t.dataset.importCatalogAg);
+      if(t.dataset.importCatalogSelection) importCatalogSelectionV14(t.dataset.importCatalogSelection);
+      if(t.dataset.printConvocation) printAgConvocationV14(t.dataset.printConvocation);
+      if(t.dataset.printPv) printAgPvV14(t.dataset.printPv);
+      if(t.id==='createResolutionBtn') openResolutionModalV14('');
+      if(t.dataset.editResolution) openResolutionModalV14(t.dataset.editResolution);
+      if(t.dataset.saveResolution!==undefined) saveResolutionV14(t.dataset.saveResolution || '');
+      if(t.dataset.deleteResolution) { if(confirm('Supprimer cette résolution du catalogue ?')) { const {error}=await supabaseClient.from('compta_ag_resolution_catalog').delete().eq('id', t.dataset.deleteResolution); if(error) return alert(error.message); await loadAgCatalog(); renderResolutionCatalogV14(); } }
+      if(t.id==='seedAgCatalogBtn') seedAgCatalogV14();
+    });
+
+    const previousLoadAllV14 = loadAll;
+    loadAll = async function(){ await previousLoadAllV14(); await loadAgModuleData(); renderAll(); };
+    const previousRenderAllV14 = renderAll;
+    renderAll = function(){ previousRenderAllV14(); renderMeetingsV14(); renderResolutionCatalogV14(); };
+
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
