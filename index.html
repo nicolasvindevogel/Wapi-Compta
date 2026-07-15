@@ -1349,6 +1349,28 @@
     .ocr-confidence-danger { color:#b42318; font-weight:700; }
     @media (max-width: 1250px) { .ocr-workbench { grid-template-columns:1fr; } .ocr-list__items { max-height:260px; } .ocr-preview iframe { min-height:52vh; } }
 
+    /* ---- V13.2 OCR scans + champs de recherche déroulants ---- */
+    .smart-combo-source { display:none !important; }
+    .smart-combo { position:relative; width:100%; min-width:160px; }
+    .smart-combo__row { display:flex; align-items:stretch; width:100%; }
+    .smart-combo__input { width:100%; border:1px solid var(--line); border-radius:10px 0 0 10px; padding:9px 10px; background:#fff; color:var(--ink); min-width:0; }
+    .smart-combo__btn { border:1px solid var(--line); border-left:0; border-radius:0 10px 10px 0; background:#f8fafc; padding:0 10px; cursor:pointer; color:var(--muted); }
+    .smart-combo__btn:hover { background:#eef4fb; color:var(--brand-dark); }
+    .smart-combo__menu { position:absolute; z-index:9999; left:0; right:0; top:calc(100% + 4px); max-height:260px; overflow:auto; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 16px 34px rgba(15, 23, 42, .18); padding:6px; display:none; }
+    .smart-combo.open .smart-combo__menu { display:block; }
+    .smart-combo__option { width:100%; display:block; border:0; background:#fff; text-align:left; padding:9px 10px; border-radius:9px; cursor:pointer; color:var(--ink); line-height:1.25; }
+    .smart-combo__option:hover, .smart-combo__option.active { background:#eaf4ff; color:var(--brand-dark); }
+    .smart-combo__empty { padding:10px; color:var(--muted); font-size:12px; }
+    .active-copro-card .smart-combo { margin-top:8px; }
+    .active-copro-card .smart-combo__input { background:#0f2338; color:#fff; border-color:rgba(255,255,255,.22); }
+    .active-copro-card .smart-combo__input::placeholder { color:rgba(255,255,255,.65); }
+    .active-copro-card .smart-combo__btn { background:#102a43; color:#fff; border-color:rgba(255,255,255,.22); }
+    .active-copro-card .smart-combo__menu { background:#102a43; border-color:rgba(255,255,255,.18); }
+    .active-copro-card .smart-combo__option { background:#102a43; color:#fff; }
+    .active-copro-card .smart-combo__option:hover, .active-copro-card .smart-combo__option.active { background:#173a5e; color:#fff; }
+    .ocr-scan-note { margin:8px 0 0; padding:9px 10px; border-radius:12px; background:#fff7e6; border:1px solid #ffd79a; color:#7a4a00; font-size:12px; line-height:1.35; }
+
+
   </style>
 </head>
 <body>
@@ -7354,6 +7376,313 @@
       renderInvoiceOcrV13();
     };
 
+
+
+
+    // ---- V13.2 : OCR PDF scannés + champs de recherche déroulants ----
+    function waitForV132(ms = 0) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function cloneCanvasForOcrV132(sourceCanvas) {
+      const canvas = document.createElement('canvas');
+      canvas.width = sourceCanvas.width;
+      canvas.height = sourceCanvas.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently:true });
+      ctx.drawImage(sourceCanvas, 0, 0);
+      try {
+        const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = image.data;
+        let total = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const gray = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+          total += gray;
+        }
+        const avg = total / (d.length / 4 || 1);
+        const threshold = Math.max(132, Math.min(186, avg - 6));
+        for (let i = 0; i < d.length; i += 4) {
+          let gray = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+          gray = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
+          const v = gray > threshold ? 255 : 0;
+          d[i] = d[i + 1] = d[i + 2] = v;
+          d[i + 3] = 255;
+        }
+        ctx.putImageData(image, 0, 0);
+      } catch (error) {
+        console.warn('Prétraitement OCR impossible', error);
+      }
+      return canvas;
+    }
+
+    async function renderPdfPageCanvasV132(page, scale = 2.25) {
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext('2d', { willReadFrequently:true });
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext:ctx, viewport }).promise;
+      return canvas;
+    }
+
+    async function runTesseractOnCanvasV132(canvas, label = 'page') {
+      if (!window.Tesseract) return '';
+      const preprocessed = cloneCanvasForOcrV132(canvas);
+      try {
+        const result = await Tesseract.recognize(preprocessed, 'fra+eng');
+        return result?.data?.text || '';
+      } catch (error) {
+        console.warn(`OCR scan impossible (${label})`, error);
+        return '';
+      }
+    }
+
+    async function extractPdfTextV132(fileOrBlob, options = {}) {
+      if (!window.pdfjsLib) return '';
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buffer = await fileOrBlob.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data:buffer }).promise;
+        let embeddedText = '';
+        const textPages = Math.min(pdf.numPages, options.maxTextPages || 5);
+        for (let p = 1; p <= textPages; p++) {
+          const page = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          embeddedText += '\n' + content.items.map((it)=>it.str || '').join(' ');
+        }
+        const forceOcr = options.forceOcr === true;
+        if (!forceOcr && embeddedText.trim().length > 80) return embeddedText.trim();
+
+        let ocrText = '';
+        const ocrPages = Math.min(pdf.numPages, options.maxOcrPages || 4);
+        for (let p = 1; p <= ocrPages; p++) {
+          const page = await pdf.getPage(p);
+          const canvas = await renderPdfPageCanvasV132(page, options.scale || 2.35);
+          ocrText += '\n' + await runTesseractOnCanvasV132(canvas, `PDF page ${p}`);
+          await waitForV132(20);
+        }
+        return (embeddedText + '\n' + ocrText).replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      } catch (error) {
+        console.warn('OCR PDF scanné impossible', error);
+        return '';
+      }
+    }
+
+    extractPdfTextV13 = extractPdfTextV132;
+
+    const previousExtractImageTextV132 = extractImageTextV13;
+    async function extractImageTextV132(fileOrBlob) {
+      if (!window.Tesseract) return '';
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(fileOrBlob);
+          const image = new Image();
+          image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+          image.onerror = reject;
+          image.src = url;
+        });
+        const maxWidth = Math.max(img.width, 1800);
+        const scale = img.width < 1800 ? 1800 / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d', { willReadFrequently:true });
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return await runTesseractOnCanvasV132(canvas, 'image');
+      } catch (error) {
+        console.warn('OCR image V13.2 impossible', error);
+        return previousExtractImageTextV132 ? await previousExtractImageTextV132(fileOrBlob) : '';
+      }
+    }
+    extractImageTextV13 = extractImageTextV132;
+
+    const previousRerunOcrForQueueV132 = rerunOcrForQueueV13;
+    rerunOcrForQueueV13 = async function(id) {
+      const q = state.validationQueue.find((x)=>x.id===id);
+      const item = state.importItems.find((i)=>i.id===q?.item_id);
+      if (!q || !item) return alert('Élément introuvable.');
+      const raw = item.raw_data || {};
+      let text = '';
+      let mode = raw.ocr_mode || 'rerun';
+      const blob = raw.file_data_url ? dataUrlToBlobV131(raw.file_data_url) : null;
+      try {
+        if (blob && (/\.pdf$/i.test(item.file_name || '') || (item.mime_type || raw.mime_type || '').includes('pdf'))) {
+          text = await extractPdfTextV132(blob, { forceOcr:true, maxOcrPages:4, scale:2.45 });
+          mode = 'pdf_scan_ocr_v13_2';
+        } else if (blob && ((item.mime_type || raw.mime_type || '').startsWith('image/') || /\.(png|jpe?g|webp|tiff?)$/i.test(item.file_name || ''))) {
+          text = await extractImageTextV132(blob);
+          mode = 'image_ocr_v13_2';
+        } else if (blob && /\.docx$/i.test(item.file_name || '')) {
+          text = await extractDocxTextV131(blob);
+          mode = text ? 'docx_text_rerun' : 'docx_unread';
+        } else if (blob && /\.doc$/i.test(item.file_name || '')) {
+          text = await extractOfficeBinaryTextV131(blob);
+          mode = text ? 'doc_binary_best_effort_rerun' : 'doc_unread';
+        } else {
+          text = item.raw_text || '';
+        }
+      } catch (error) {
+        console.warn('Relance OCR V13.2 impossible', error);
+      }
+      if (!text || text.trim().length < 8) return alert('Le PDF semble être un scan difficile à lire. Essaie de réimporter un scan plus net ou une version PDF texte.');
+      const detectionText = `${item.file_name || ''}\n${text}`;
+      const extracted = extractInvoiceFieldsV131(text, item.file_name || '');
+      const bankDetection = detectBankAccountFromText(detectionText);
+      const coproFromBank = bankDetection.account ? state.copros.find((c)=>c.id===bankDetection.account.copro_id) : null;
+      const coproDetection = coproFromBank ? { copro:coproFromBank, confidence:bankDetection.confidence } : detectCoproFromText(detectionText);
+      const supplierDetection = detectSupplierFromText(detectionText);
+      const corrected = { ...(q.corrected_data || {}), ...extracted };
+      if (supplierDetection.supplier) corrected.supplier_id = supplierDetection.supplier.id;
+      if (coproDetection.copro) corrected.copro_id = coproDetection.copro.id;
+      if (bankDetection.account) corrected.bank_account_id = bankDetection.account.id;
+      const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 9;
+      const confidence = Math.min(98, Math.max(Number(item.confidence || 0), supplierDetection.confidence || 0, coproDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + 10);
+      const { error } = await supabaseClient.from('compta_import_items').update({
+        confidence,
+        raw_text:text,
+        detected_supplier_id:supplierDetection.supplier?.id || item.detected_supplier_id || null,
+        detected_copro_id:coproDetection.copro?.id || item.detected_copro_id || null,
+        detected_bank_account_id:bankDetection.account?.id || item.detected_bank_account_id || null,
+        raw_data:{ ...raw, extracted, ocr_mode:mode, ocr_text_length:text.length, rerun_at:new Date().toISOString() }
+      }).eq('id', item.id);
+      if (error) return alert(error.message);
+      await supabaseClient.from('compta_validation_queue').update({ extracted_data:extracted, corrected_data:corrected, copro_id:corrected.copro_id || null, status: corrected.copro_id && corrected.supplier_id && corrected.account_id && corrected.amount ? 'to_validate' : 'to_verify' }).eq('id', q.id);
+      await loadAll();
+      state.ocrSelectedQueueId = id;
+      renderInvoiceOcrV13();
+    };
+
+    function comboNormalizeV132(value) {
+      return normalizeTextForDetection(value || '').replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
+    function shouldEnhanceSelectV132(select) {
+      if (!select || select.disabled) return false;
+      const id = select.id || '';
+      if (id === 'activeCoproSelect') return true;
+      if (/ocrField(Copro|Supplier|Account)|invoice(Copro|Supplier|Account)|manualModal(Account|Third)|budget.*(Copro|Year|Account|Key)|distribution.*(Copro|Key)|calls.*(Copro|Year|Budget)|thirdBalance.*(Copro|Year)|payment(Copro|Bank)/i.test(id)) return true;
+      if (select.options && select.options.length >= 9 && !/status|filter|page|mode|type|tab|period|display|color/i.test(id)) return true;
+      return false;
+    }
+
+    function enhanceSelectToComboV132(select) {
+      if (!select || !shouldEnhanceSelectV132(select)) return;
+      if (select.dataset.smartComboReady === '1') {
+        if (typeof select._smartComboSyncV132 === 'function') select._smartComboSyncV132();
+        return;
+      }
+      select.dataset.smartComboReady = '1';
+      select.classList.add('smart-combo-source');
+      const wrap = document.createElement('div');
+      wrap.className = 'smart-combo';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'smart-combo__input';
+      input.autocomplete = 'off';
+      input.placeholder = select.getAttribute('data-placeholder') || 'Tapez pour rechercher...';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'smart-combo__btn';
+      btn.title = 'Afficher la liste';
+      btn.textContent = '▾';
+      const row = document.createElement('div');
+      row.className = 'smart-combo__row';
+      const menu = document.createElement('div');
+      menu.className = 'smart-combo__menu';
+      row.append(input, btn);
+      wrap.append(row, menu);
+      select.insertAdjacentElement('afterend', wrap);
+
+      let activeIndex = -1;
+      let forcedAll = false;
+      const options = () => Array.from(select.options || []).map((o)=>({ value:o.value, label:o.textContent || '', disabled:o.disabled })).filter((o)=>!o.disabled);
+      const currentLabel = () => (select.selectedOptions && select.selectedOptions[0] ? select.selectedOptions[0].textContent : '') || '';
+      const sync = () => { input.value = currentLabel(); };
+      select._smartComboSyncV132 = sync;
+
+      function filteredOptions() {
+        const q = comboNormalizeV132(forcedAll ? '' : input.value);
+        const opts = options();
+        if (!q) return opts;
+        const parts = q.split(/\s+/).filter(Boolean);
+        return opts.filter((o)=>{
+          const hay = comboNormalizeV132(o.label + ' ' + o.value);
+          return parts.every((p)=>hay.includes(p));
+        });
+      }
+      function renderMenu() {
+        const opts = filteredOptions();
+        activeIndex = opts.length ? Math.max(0, Math.min(activeIndex, opts.length - 1)) : -1;
+        if (!opts.length) {
+          menu.innerHTML = `<div class="smart-combo__empty">Aucun résultat. Clique sur ▾ pour afficher toute la liste.</div>`;
+          return;
+        }
+        menu.innerHTML = opts.slice(0, 80).map((o, idx)=>`<button type="button" class="smart-combo__option ${idx===activeIndex?'active':''}" data-smart-value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</button>`).join('');
+      }
+      function open(all = false) { forcedAll = all; wrap.classList.add('open'); renderMenu(); }
+      function close() { wrap.classList.remove('open'); forcedAll = false; activeIndex = -1; }
+      function choose(value) {
+        select.value = value;
+        select.dispatchEvent(new Event('change', { bubbles:true }));
+        sync();
+        close();
+      }
+      input.addEventListener('focus', () => open(false));
+      input.addEventListener('input', () => open(false));
+      btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); wrap.classList.contains('open') && forcedAll ? close() : open(true); });
+      menu.addEventListener('mousedown', (e)=>e.preventDefault());
+      menu.addEventListener('click', (e)=>{
+        const opt = e.target.closest('[data-smart-value]');
+        if (opt) choose(opt.dataset.smartValue || '');
+      });
+      input.addEventListener('keydown', (e)=>{
+        const opts = filteredOptions();
+        if (e.key === 'ArrowDown') { e.preventDefault(); open(forcedAll); activeIndex = Math.min((activeIndex < 0 ? 0 : activeIndex + 1), opts.length - 1); renderMenu(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); open(forcedAll); activeIndex = Math.max(activeIndex - 1, 0); renderMenu(); }
+        if (e.key === 'Enter') { if (wrap.classList.contains('open') && opts[activeIndex]) { e.preventDefault(); choose(opts[activeIndex].value); } }
+        if (e.key === 'Escape') { close(); sync(); }
+        if (e.key === 'Tab') { if (opts.length === 1 && comboNormalizeV132(input.value) && select.value !== opts[0].value) choose(opts[0].value); else close(); }
+      });
+      select.addEventListener('change', sync);
+      document.addEventListener('mousedown', (e)=>{ if (!wrap.contains(e.target) && e.target !== select) close(); });
+      sync();
+    }
+
+    function enhanceCommonSelectsV132(root = document) {
+      root.querySelectorAll('select').forEach(enhanceSelectToComboV132);
+    }
+
+    const previousRenderActiveCoproContextV132 = renderActiveCoproContext;
+    renderActiveCoproContext = function() {
+      previousRenderActiveCoproContextV132();
+      enhanceSelectToComboV132($('activeCoproSelect'));
+    };
+
+    const previousRenderInvoiceOcrV132 = renderInvoiceOcrV13;
+    renderInvoiceOcrV13 = function() {
+      previousRenderInvoiceOcrV132();
+      if ($('invoiceOcrWorkbench')) {
+        enhanceCommonSelectsV132($('invoiceOcrWorkbench'));
+        const q = state.validationQueue.find((x)=>x.id===state.ocrSelectedQueueId);
+        const item = state.importItems.find((i)=>i.id===q?.item_id);
+        const raw = item?.raw_data || {};
+        if (item && /pdf/i.test(item.mime_type || raw.mime_type || item.file_name || '') && (!item.raw_text || String(item.raw_text).length < 40)) {
+          const host = document.querySelector('.ocr-preview__head');
+          if (host && !host.querySelector('.ocr-scan-note')) {
+            host.insertAdjacentHTML('afterend', '<div class="ocr-scan-note">PDF scanné détecté : clique sur <strong>Relancer reconnaissance</strong> pour lancer l’OCR image page par page si les champs ne sont pas remplis.</div>');
+          }
+        }
+      }
+    };
+
+    const previousRenderAllV132 = renderAll;
+    renderAll = function() {
+      previousRenderAllV132();
+      setTimeout(() => enhanceCommonSelectsV132(document), 0);
+    };
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
