@@ -6,6 +6,8 @@
   <title>WAPI Compta</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -1312,6 +1314,41 @@
     .active-copro-box select:focus,
     #activeCoproSelect:focus { box-shadow:0 0 0 3px rgba(242,165,65,.22) !important; }
 
+
+
+    /* ---- V13 Traitement factures OCR ---- */
+    .ocr-workbench { display:grid; grid-template-columns: 300px minmax(360px, 1.15fr) minmax(360px, .95fr); gap:14px; align-items:stretch; }
+    .ocr-list, .ocr-preview, .ocr-fields { min-height:70vh; }
+    .ocr-list { border:1px solid var(--line); border-radius:16px; background:#fff; overflow:hidden; }
+    .ocr-list__head { padding:12px; border-bottom:1px solid var(--line); background:#f8fafc; display:flex; flex-direction:column; gap:8px; }
+    .ocr-list__items { max-height: calc(70vh - 120px); overflow:auto; }
+    .ocr-item { width:100%; border:0; border-bottom:1px solid var(--line); background:#fff; text-align:left; padding:12px; cursor:pointer; display:block; }
+    .ocr-item:hover { background:#f8fbff; }
+    .ocr-item.active { background:#eaf4ff; box-shadow: inset 4px 0 0 var(--brand); }
+    .ocr-item strong { display:block; font-size:13px; margin-bottom:4px; }
+    .ocr-item small { color:var(--muted); display:block; line-height:1.35; }
+    .ocr-preview { border:1px solid var(--line); border-radius:16px; background:#eef2f7; overflow:hidden; display:flex; flex-direction:column; }
+    .ocr-preview__head { padding:10px 12px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .ocr-preview__body { flex:1; min-height:0; display:grid; place-items:stretch; }
+    .ocr-preview iframe { width:100%; height:100%; min-height:64vh; border:0; background:#fff; }
+    .ocr-preview img { max-width:100%; max-height:70vh; object-fit:contain; margin:auto; display:block; }
+    .ocr-fields { border:1px solid var(--line); border-radius:16px; background:#fff; padding:14px; overflow:auto; }
+    .ocr-fields h3 { margin-top:0; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .ocr-field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .ocr-field-grid label { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--muted); }
+    .ocr-field-grid input, .ocr-field-grid select, .ocr-fields textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 10px; background:#fff; color:var(--ink); }
+    .ocr-fields textarea { min-height:76px; resize:vertical; }
+    .ocr-score { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+    .ocr-score-bar { width:120px; height:8px; border-radius:999px; background:#e5e7eb; overflow:hidden; }
+    .ocr-score-bar span { display:block; height:100%; background:linear-gradient(90deg, #f04438, #f79009, #12b76a); }
+    .ocr-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; position:sticky; bottom:-14px; background:#fff; padding:12px 0 2px; border-top:1px solid var(--line); }
+    .ocr-empty { border:1px dashed var(--line); border-radius:16px; padding:22px; background:#fff; color:var(--muted); }
+    .ocr-raw-text { white-space:pre-wrap; max-height:160px; overflow:auto; background:#0f172a; color:#e2e8f0; border-radius:12px; padding:12px; font-size:12px; }
+    .ocr-confidence-ok { color:#12805c; font-weight:700; }
+    .ocr-confidence-warn { color:#b54708; font-weight:700; }
+    .ocr-confidence-danger { color:#b42318; font-weight:700; }
+    @media (max-width: 1250px) { .ocr-workbench { grid-template-columns:1fr; } .ocr-list__items { max-height:260px; } .ocr-preview iframe { min-height:52vh; } }
+
   </style>
 </head>
 <body>
@@ -1389,6 +1426,7 @@
           <div class="menu-group__body">
             <button data-view="dashboard" data-title="Tableau de bord" class="active" title="Tableau de bord"><span class="nav__item"><span class="nav-icon">🏠</span><span class="nav-label">Tableau de bord</span></span></button>
             <button data-view="processing" data-title="Centre de traitement" title="Centre de traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Centre de traitement</span></span></button>
+            <button data-view="invoiceOcr" data-title="Traitement factures OCR" title="Traitement factures OCR"><span class="nav__item"><span class="nav-icon">🔎</span><span class="nav-label">Traitement factures OCR</span></span></button>
             <button data-view="payments" data-title="Paiement factures" title="Paiement factures"><span class="nav__item"><span class="nav-icon">💳</span><span class="nav-label">Paiement factures</span></span></button>
             <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
           </div>
@@ -1560,6 +1598,33 @@
             <div class="status-strip"><span id="queueTotalBadge" class="badge">0 element</span><span id="queueToCheckBadge" class="badge warn">0 a verifier</span><span id="queueReadyBadge" class="badge ok">0 prets</span><span id="queueValidatedBadge" class="badge ok">0 valides</span></div>
             <div class="form-grid"><label>Filtre statut<select id="queueFilterStatus"><option value="active">A traiter</option><option value="all">Tous</option><option value="to_validate">Prets a valider</option><option value="to_verify">A verifier</option><option value="validated">Valides</option><option value="rejected">Rejetes</option></select></label><label>Filtre type<select id="queueFilterType"><option value="all">Tous</option><option value="invoice">Factures</option><option value="coda">CODA</option><option value="document">Documents</option></select></label><label>Filtre copropriete <select id="queueFilterCopro"></select></label></div>
             <h3>File de validation</h3><div id="validationQueueTable"></div><h3>Lots d'import recents</h3><div id="importBatchesTable"></div>
+          </div>
+        </section>
+
+
+
+        <section id="invoiceOcrView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <div>
+                <h2>Traitement des factures OCR</h2>
+                <p class="muted-note">Contrôle façon “écran de validation” : PDF à l’écran, champs reconnus automatiquement et correction immédiate avant création de la facture fournisseur.</p>
+              </div>
+              <div class="top-actions">
+                <button class="btn secondary" id="ocrGoImportBtn" type="button">Importer des PDF</button>
+                <button class="btn secondary" id="ocrRefreshBtn" type="button">Rafraîchir</button>
+              </div>
+            </div>
+            <div class="notice">
+              Le Centre de traitement reste le point d’entrée des fichiers. Ce module sert uniquement à traiter les factures importées : reconnaissance, correction, choix du compte comptable, puis validation.
+              Les PDF récents sont visibles directement ; les anciens imports sans fichier intégré devront être réimportés.
+            </div>
+            <div class="list-filters">
+              <label>Statut <select id="ocrStatusFilter"><option value="active">À traiter</option><option value="to_verify">À vérifier</option><option value="to_validate">Prêtes à valider</option><option value="all">Toutes</option></select></label>
+              <label>Copropriété <select id="ocrCoproFilter"></select></label>
+              <label>Recherche <input id="ocrSearch" placeholder="Fichier, fournisseur, numéro, montant..." /></label>
+            </div>
+            <div id="invoiceOcrWorkbench"></div>
           </div>
         </section>
 
@@ -6528,6 +6593,472 @@
       renderPayments();
       alert(`ZIP généré. ${invoices.length} facture(s) envoyée(s) en paiement.`);
     }
+
+
+
+    // ---- V13 : Traitement factures OCR avec PDF visible + champs corrigibles ----
+    state.ocrSelectedQueueId = state.ocrSelectedQueueId || '';
+    state.ocrStatusFilter = state.ocrStatusFilter || 'active';
+    state.ocrCoproFilter = state.ocrCoproFilter || 'all';
+
+    function parseMoneyV13(value) {
+      if (value === null || value === undefined) return null;
+      const s = String(value).replace(/\s/g, '').replace(/€/g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function toIsoDateV13(day, month, year) {
+      if (!day || !month || !year) return '';
+      const yyyy = String(year).length === 2 ? '20' + String(year) : String(year);
+      return `${yyyy.padStart(4,'0')}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+
+    function detectDateNearV13(text, words) {
+      const source = String(text || '').replace(/\s+/g, ' ');
+      for (const word of words) {
+        const rx = new RegExp(`${word}[^0-9]{0,35}(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](20\\d{2}|\\d{2})`, 'i');
+        const m = source.match(rx);
+        if (m) return toIsoDateV13(m[1], m[2], m[3]);
+        const rx2 = new RegExp(`${word}[^0-9]{0,35}(20\\d{2})[\\/.-](\\d{1,2})[\\/.-](\\d{1,2})`, 'i');
+        const m2 = source.match(rx2);
+        if (m2) return `${m2[1]}-${String(m2[2]).padStart(2,'0')}-${String(m2[3]).padStart(2,'0')}`;
+      }
+      return '';
+    }
+
+    function findLargestAmountV13(text) {
+      const amounts = [];
+      String(text || '').replace(/(?:^|[^0-9])([0-9]{1,3}(?:[ .][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2})|[0-9]{1,7})(?:\s*€|\s*EUR)?/gi, (full, value) => {
+        const n = parseMoneyV13(value);
+        if (n !== null && n > 0 && n < 10000000) amounts.push(n);
+        return full;
+      });
+      return amounts.length ? Math.max(...amounts) : null;
+    }
+
+    function detectAmountNearV13(text) {
+      const source = String(text || '').replace(/\s+/g, ' ');
+      const patterns = [
+        /(?:montant\s*d[uû]|montant\s*du|net\s*à\s*payer|total\s*ttc|total\s*tvac|total\s*à\s*payer|montant\s*total|solde\s*à\s*payer)[^0-9-]{0,40}([0-9]{1,3}(?:[ .][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2})|[0-9]{1,7})/i,
+        /([0-9]{1,3}(?:[ .][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2}))\s*(?:€|EUR)\s*(?:montant\s*d[uû]|total|à\s*payer)/i
+      ];
+      for (const rx of patterns) {
+        const m = source.match(rx);
+        if (m) return parseMoneyV13(m[1]);
+      }
+      return findLargestAmountV13(source);
+    }
+
+    function guessAccountFromTextV13(text) {
+      const t = normalizeTextForDetection(text || '');
+      const candidates = [
+        { keys:['ascenseur','lift','kone','stannah','otis'], codes:['61011','61012','61010','6101'] },
+        { keys:['porte','menuiser','chassis','fenetre','serrure','cle','verre'], codes:['61043','61041','6104'] },
+        { keys:['chauffage','chaudiere','sanitaire','surpresseur','pompe','egout','debouchage'], codes:['61031','61032','61037','6103'] },
+        { keys:['electric','electricité','électricité','parlophone','videophone','vidéophone','alarme','camera','caméra'], codes:['61023','61022','6102'] },
+        { keys:['nettoyage','ordure','dechet','déchet','container','poubelle'], codes:['61050','61054','6105'] },
+        { keys:['jardin','tonte','haie','parking','abords'], codes:['61060','61063','6106'] },
+        { keys:['toiture','facade','façade','terrasse','cave','hall','couloir'], codes:['61073','61071','61072','61076','6107'] },
+        { keys:['eau','swde'], codes:['61200','61201','6120'] },
+        { keys:['electricite','électricité','engie','ores'], codes:['61210','6121'] },
+        { keys:['gaz'], codes:['61220','6122'] },
+        { keys:['honoraire','syndic','avocat','expert','architecte'], codes:['61300','61301','61303','6130'] },
+        { keys:['assurance','axa','ag insurance','franchise'], codes:['6140','6147','614'] },
+        { keys:['banque','frais bancaire'], codes:['650'] }
+      ];
+      for (const c of candidates) {
+        if (c.keys.some((k)=>t.includes(normalizeTextForDetection(k)))) {
+          for (const code of c.codes) {
+            const acc = state.accounts.find((a)=>String(a.code || '').startsWith(code));
+            if (acc) return acc.id;
+          }
+        }
+      }
+      const defaultAcc = state.accounts.find((a)=>String(a.code || '').startsWith('6109')) || state.accounts.find((a)=>String(a.code || '').startsWith('610'));
+      return defaultAcc?.id || '';
+    }
+
+    function extractInvoiceFieldsV13(text, fileName = '') {
+      const source = `${fileName || ''}\n${String(text || '')}`;
+      const flat = source.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+      const invoiceDate = detectDateNearV13(flat, ['date\\s*facture', 'facture\\s*du', 'émise\\s*le', 'emise\\s*le', 'date']);
+      const dueDate = detectDateNearV13(flat, ['échéance', 'echeance', 'à\\s*payer\\s*avant', 'a\\s*payer\\s*avant']);
+      let reference = '';
+      const refPatterns = [
+        /(?:facture|invoice)\s*(?:n[°o.]?|num(?:é|e)ro|nr|#)?\s*[:\- ]{0,8}([A-Z0-9][A-Z0-9\/._\-]{2,})/i,
+        /(?:n[°o.]|num(?:é|e)ro)\s*[:\- ]{0,8}([A-Z0-9][A-Z0-9\/._\-]{2,})/i,
+        /\b(20\d{2}[-\/.][0-9]{2,5})\b/i
+      ];
+      for (const rx of refPatterns) { const m = flat.match(rx); if (m) { reference = m[1]; break; } }
+      const amount = detectAmountNearV13(flat);
+      const vatRateMatch = flat.match(/(?:TVA|VAT)[^0-9]{0,20}([0-9]{1,2}(?:[,.][0-9]+)?)\s*%/i);
+      const vatRate = vatRateMatch ? parseMoneyV13(vatRateMatch[1]) : null;
+      const vatAmountMatch = flat.match(/(?:TVA|VAT)[^0-9]{0,35}([0-9]{1,3}(?:[ .][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2}))/i);
+      const vatAmount = vatAmountMatch ? parseMoneyV13(vatAmountMatch[1]) : null;
+      return {
+        date: invoiceDate || '',
+        due_date: dueDate || '',
+        reference: reference || '',
+        amount: amount !== null ? amount : '',
+        vat_rate: vatRate !== null ? vatRate : '',
+        vat_amount: vatAmount !== null ? vatAmount : '',
+        account_id: guessAccountFromTextV13(source)
+      };
+    }
+
+    const originalExtractSimpleFieldsFromTextV13 = extractSimpleFieldsFromText;
+    extractSimpleFieldsFromText = function(text, fileName, importType) {
+      if (importType === 'invoice') return extractInvoiceFieldsV13(text, fileName);
+      return originalExtractSimpleFieldsFromTextV13(text, fileName, importType);
+    };
+
+    const originalDetectSupplierFromTextV13 = detectSupplierFromText;
+    detectSupplierFromText = function(text) {
+      const normalized = normalizeTextForDetection(text || '');
+      const normalizedIban = normalizeIban(text || '');
+      let best = originalDetectSupplierFromTextV13(text);
+      for (const supplier of state.suppliers) {
+        const iban = normalizeIban(supplier.iban || '');
+        const email = normalizeTextForDetection(supplier.email || '');
+        const vat = normalizeTextForDetection(supplier.vat_number || '');
+        if (iban && normalizedIban.includes(iban)) best = { supplier, confidence: Math.max(best.confidence || 0, 96) };
+        if (email && normalized.includes(email)) best = { supplier, confidence: Math.max(best.confidence || 0, 90) };
+        if (vat && normalized.includes(vat)) best = { supplier, confidence: Math.max(best.confidence || 0, 92) };
+      }
+      return best;
+    };
+
+    const originalDetectCoproFromTextV13 = detectCoproFromText;
+    detectCoproFromText = function(text) {
+      const normalized = normalizeTextForDetection(text || '');
+      let best = originalDetectCoproFromTextV13(text);
+      for (const copro of state.copros) {
+        const address = normalizeTextForDetection(copro.address || '');
+        if (address && address.length > 6 && normalized.includes(address)) best = { copro, confidence: Math.max(best.confidence || 0, 86) };
+      }
+      if (state.activeCoproId && (!best.copro || (best.confidence || 0) < 45)) {
+        const active = state.copros.find((c)=>c.id===state.activeCoproId);
+        if (active) best = { copro: active, confidence: Math.max(best.confidence || 0, 40) };
+      }
+      return best;
+    };
+
+    async function extractPdfTextV13(file) {
+      if (!window.pdfjsLib) return '';
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+        let text = '';
+        const maxPages = Math.min(pdf.numPages, 4);
+        for (let p = 1; p <= maxPages; p++) {
+          const page = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          text += '\n' + content.items.map((it)=>it.str || '').join(' ');
+        }
+        if (text.trim().length > 40 || !window.Tesseract) return text;
+        // PDF scanné : OCR léger sur les deux premières pages pour éviter de bloquer le navigateur.
+        let ocrText = '';
+        const ocrPages = Math.min(pdf.numPages, 2);
+        for (let p = 1; p <= ocrPages; p++) {
+          const page = await pdf.getPage(p);
+          const viewport = page.getViewport({ scale: 1.45 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          const result = await Tesseract.recognize(canvas, 'fra+eng');
+          ocrText += '\n' + (result?.data?.text || '');
+        }
+        return (text + '\n' + ocrText).trim();
+      } catch (error) {
+        console.warn('OCR/PDF impossible', error);
+        return '';
+      }
+    }
+
+    async function extractImageTextV13(file) {
+      if (!window.Tesseract) return '';
+      try {
+        const result = await Tesseract.recognize(file, 'fra+eng');
+        return result?.data?.text || '';
+      } catch (error) {
+        console.warn('OCR image impossible', error);
+        return '';
+      }
+    }
+
+    async function importFilesToQueue() {
+      const files = Array.from($('importFiles').files || []);
+      const importType = $('importType').value;
+      const label = $('importBatchLabel').value.trim() || `${importTypeLabel(importType)} - ${new Date().toLocaleDateString('fr-BE')}`;
+      if (!files.length) return alert('Choisis au moins un fichier à importer.');
+      try {
+        const { data: batch, error: batchError } = await supabaseClient.from('compta_import_batches').insert({ import_type: importType, label, total_items: files.length, status:'imported', created_by:currentUser.id }).select('id').single();
+        if (batchError) throw batchError;
+        for (const file of files) {
+          const isText = /\.(cod|coda|txt|csv)$/i.test(file.name) || file.type.startsWith('text/');
+          const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+          const isImage = file.type.startsWith('image/');
+          let rawText = '';
+          let ocrMode = 'none';
+          if (isText) { rawText = await readFileAsText(file); ocrMode = 'text'; }
+          else if (importType === 'invoice' && isPdf) { rawText = await extractPdfTextV13(file); ocrMode = rawText ? 'pdf_text_or_ocr' : 'pdf_unread'; }
+          else if (importType === 'invoice' && isImage) { rawText = await extractImageTextV13(file); ocrMode = rawText ? 'image_ocr' : 'image_unread'; }
+          const fileDataUrl = !isText ? await readFileAsDataURL(file) : null;
+          const detectionText = `${file.name}\n${rawText}`;
+          const bankDetection = detectBankAccountFromText(detectionText);
+          const coproFromBank = bankDetection.account ? state.copros.find((c)=>c.id===bankDetection.account.copro_id) : null;
+          const coproDetection = coproFromBank ? { copro:coproFromBank, confidence:bankDetection.confidence } : detectCoproFromText(detectionText);
+          const supplierDetection = detectSupplierFromText(detectionText);
+          const extracted = extractSimpleFieldsFromText(rawText, file.name, importType);
+          const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 9;
+          const confidence = Math.min(98, Math.max(coproDetection.confidence || 0, supplierDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + (rawText ? 8 : 0));
+          const isReadyInvoice = importType !== 'invoice' || (coproDetection.copro && supplierDetection.supplier && extracted.amount && extracted.account_id);
+          const itemStatus = confidence >= 75 && isReadyInvoice ? 'to_validate' : 'to_verify';
+          const rawData = { file_name:file.name, file_size:file.size, mime_type:file.type || null, file_data_url:fileDataUrl, extracted, ocr_mode:ocrMode, ocr_text_length:rawText.length };
+          const { data:item, error:itemError } = await supabaseClient.from('compta_import_items').insert({ batch_id:batch.id, import_type:importType, file_name:file.name, file_size:file.size, mime_type:file.type || null, raw_text:rawText || null, raw_data:rawData, detected_copro_id:coproDetection.copro?.id || null, detected_supplier_id:supplierDetection.supplier?.id || null, detected_bank_account_id:bankDetection.account?.id || null, confidence, status:itemStatus, created_by:currentUser.id }).select('id').single();
+          if (itemError) throw itemError;
+          const corrected = { copro_id:coproDetection.copro?.id || null, supplier_id:supplierDetection.supplier?.id || null, bank_account_id:bankDetection.account?.id || null, ...extracted };
+          await supabaseClient.from('compta_validation_queue').insert({ item_id:item.id, target_type:importType, status:itemStatus, copro_id:coproDetection.copro?.id || null, extracted_data:extracted, corrected_data:corrected, notes: confidence >= 75 ? 'Reconnaissance automatique à confirmer.' : 'Reconnaissance incomplète : correction manuelle requise.', created_by:currentUser.id });
+        }
+        $('importFiles').value = '';
+        $('importBatchLabel').value = '';
+        await loadAll();
+        if (importType === 'invoice') switchToView('invoiceOcr');
+        alert(`${files.length} élément(s) importé(s).`);
+      } catch (error) {
+        alert(error.message || 'Erreur pendant l’import.');
+      }
+    }
+
+    function invoiceOcrRowsV13() {
+      const statusFilter = $('ocrStatusFilter')?.value || state.ocrStatusFilter || 'active';
+      const coproFilter = $('ocrCoproFilter')?.value || state.ocrCoproFilter || 'all';
+      const search = ($('ocrSearch')?.value || '').toLowerCase().trim();
+      return state.validationQueue.filter((q) => {
+        const item = state.importItems.find((i)=>i.id===q.item_id) || {};
+        const type = q.target_type || item.import_type;
+        if (type !== 'invoice') return false;
+        if (statusFilter === 'active' && ['validated','rejected'].includes(q.status)) return false;
+        if (statusFilter !== 'active' && statusFilter !== 'all' && q.status !== statusFilter) return false;
+        const corrected = q.corrected_data || {};
+        const coproId = q.copro_id || corrected.copro_id || item.detected_copro_id || '';
+        if (coproFilter !== 'all' && coproId !== coproFilter) return false;
+        if (search) {
+          const supplier = state.suppliers.find((s)=>s.id===(corrected.supplier_id || item.detected_supplier_id)) || {};
+          const copro = state.copros.find((c)=>c.id===coproId) || {};
+          const corpus = [item.file_name, q.notes, corrected.reference, corrected.amount, supplier.name, copro.name].join(' ').toLowerCase();
+          if (!corpus.includes(search)) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderInvoiceOcrFiltersV13() {
+      if (!$('ocrCoproFilter')) return;
+      const current = $('ocrCoproFilter').value || state.ocrCoproFilter || 'all';
+      $('ocrCoproFilter').innerHTML = '<option value="all">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('ocrCoproFilter').value = current;
+    }
+
+    function ocrConfidenceClassV13(score) {
+      score = Number(score || 0);
+      if (score >= 75) return 'ocr-confidence-ok';
+      if (score >= 45) return 'ocr-confidence-warn';
+      return 'ocr-confidence-danger';
+    }
+
+    function renderInvoiceOcrV13() {
+      if (!$('invoiceOcrWorkbench')) return;
+      renderInvoiceOcrFiltersV13();
+      const rows = invoiceOcrRowsV13();
+      if (rows.length && !rows.some((r)=>r.id===state.ocrSelectedQueueId)) state.ocrSelectedQueueId = rows[0].id;
+      const q = rows.find((r)=>r.id===state.ocrSelectedQueueId) || null;
+      const listHtml = `<div class="ocr-list"><div class="ocr-list__head"><strong>${rows.length} facture(s) à traiter</strong><small>Les factures validées sortent de cette liste.</small></div><div class="ocr-list__items">${rows.map((row)=>{
+        const item = state.importItems.find((i)=>i.id===row.item_id) || {};
+        const corrected = row.corrected_data || {};
+        const supplier = state.suppliers.find((s)=>s.id===(corrected.supplier_id || item.detected_supplier_id)) || {};
+        const score = Math.round(Number(item.confidence || 0));
+        return `<button type="button" class="ocr-item ${row.id===state.ocrSelectedQueueId?'active':''}" data-select-ocr="${row.id}"><strong>${escapeHtml(item.file_name || 'Facture importée')}</strong><small>${escapeHtml(supplier.name || 'Fournisseur non reconnu')} · ${escapeHtml(corrected.reference || 'N° ?')} · ${corrected.amount ? money(corrected.amount) : 'Montant ?'}</small><small class="${ocrConfidenceClassV13(score)}">${score}% confiance · ${statusBadge(row.status)}</small></button>`;
+      }).join('') || '<div class="ocr-empty">Aucune facture à traiter.</div>'}</div></div>`;
+      if (!q) {
+        $('invoiceOcrWorkbench').innerHTML = `<div class="ocr-workbench">${listHtml}<div class="ocr-empty">Importe des factures PDF depuis le Centre de traitement, puis reviens ici pour les contrôler.</div></div>`;
+        return;
+      }
+      const item = state.importItems.find((i)=>i.id===q.item_id) || {};
+      const raw = item.raw_data || {};
+      const extracted = q.extracted_data || raw.extracted || {};
+      const corrected = { ...extracted, ...(q.corrected_data || {}) };
+      const score = Math.round(Number(item.confidence || 0));
+      const fileUrl = raw.file_data_url || '';
+      const mime = item.mime_type || raw.mime_type || '';
+      const preview = fileUrl ? (mime.startsWith('image/') ? `<img src="${fileUrl}" alt="Facture">` : `<iframe src="${fileUrl}"></iframe>`) : `<div class="ocr-empty">Aucun aperçu PDF enregistré pour cet import. Réimporte le PDF via le Centre de traitement pour profiter de l'affichage intégré.</div>`;
+      const coproOptions = '<option value="">Choisir...</option>' + state.copros.map((c)=>`<option value="${c.id}" ${corrected.copro_id===c.id?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+      const supplierOptions = '<option value="">Choisir...</option>' + state.suppliers.map((s)=>`<option value="${s.id}" ${corrected.supplier_id===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+      $('invoiceOcrWorkbench').innerHTML = `<div class="ocr-workbench">
+        ${listHtml}
+        <div class="ocr-preview"><div class="ocr-preview__head"><strong>${escapeHtml(item.file_name || 'Facture')}</strong><button type="button" class="btn secondary small" data-rerun-ocr="${q.id}">Relancer reconnaissance</button></div><div class="ocr-preview__body">${preview}</div></div>
+        <div class="ocr-fields">
+          <h3>Informations reconnues <span class="badge ${score>=75?'ok':'warn'}">${score}%</span></h3>
+          <div class="ocr-score"><span>Qualité reconnaissance</span><span class="ocr-score-bar"><span style="width:${Math.max(4, Math.min(100, score))}%"></span></span><span class="${ocrConfidenceClassV13(score)}">${score >= 75 ? 'Bon' : score >= 45 ? 'À vérifier' : 'Faible'}</span></div>
+          <div class="ocr-field-grid">
+            <label>Copropriété<select id="ocrFieldCopro">${coproOptions}</select></label>
+            <label>Fournisseur<select id="ocrFieldSupplier">${supplierOptions}</select></label>
+            <label>Compte comptable<select id="ocrFieldAccount">${accountOptions(corrected.account_id || '')}</select></label>
+            <label>Numéro facture<input id="ocrFieldReference" value="${escapeHtml(corrected.reference || '')}" /></label>
+            <label>Date facture<input id="ocrFieldDate" type="date" value="${escapeHtml(corrected.date || '')}" /></label>
+            <label>Date échéance<input id="ocrFieldDueDate" type="date" value="${escapeHtml(corrected.due_date || '')}" /></label>
+            <label>Montant TVAC<input id="ocrFieldAmount" type="number" step="0.01" value="${escapeHtml(corrected.amount || '')}" /></label>
+            <label>Taux TVA<input id="ocrFieldVatRate" type="number" step="0.01" value="${escapeHtml(corrected.vat_rate || '')}" /></label>
+            <label>Montant TVA<input id="ocrFieldVatAmount" type="number" step="0.01" value="${escapeHtml(corrected.vat_amount || '')}" /></label>
+            <label>Statut<select id="ocrFieldStatus"><option value="to_verify" ${q.status==='to_verify'?'selected':''}>À vérifier</option><option value="to_validate" ${q.status==='to_validate'?'selected':''}>Prête à valider</option></select></label>
+          </div>
+          <label style="display:block;margin-top:12px;">Description / libellé interne<textarea id="ocrFieldDescription">${escapeHtml(corrected.description || '')}</textarea></label>
+          <label style="display:block;margin-top:12px;">Note de traitement<textarea id="ocrFieldNotes">${escapeHtml(corrected.notes || q.notes || '')}</textarea></label>
+          <details style="margin-top:12px;"><summary>Texte OCR reconnu</summary><div class="ocr-raw-text">${escapeHtml(item.raw_text || 'Aucun texte reconnu.')}</div></details>
+          <div class="ocr-actions">
+            <button type="button" class="btn secondary" id="ocrSaveBtn">Enregistrer corrections</button>
+            <button type="button" class="btn" id="ocrValidateBtn">Valider et créer facture</button>
+            <button type="button" class="btn danger" data-reject-ocr="${q.id}">Rejeter</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function getOcrPayloadFromFieldsV13() {
+      return {
+        copro_id: $('ocrFieldCopro')?.value || null,
+        supplier_id: $('ocrFieldSupplier')?.value || null,
+        account_id: $('ocrFieldAccount')?.value || null,
+        reference: $('ocrFieldReference')?.value.trim() || null,
+        date: $('ocrFieldDate')?.value || null,
+        due_date: $('ocrFieldDueDate')?.value || null,
+        amount: $('ocrFieldAmount')?.value ? Number($('ocrFieldAmount').value) : null,
+        vat_rate: $('ocrFieldVatRate')?.value ? Number($('ocrFieldVatRate').value) : null,
+        vat_amount: $('ocrFieldVatAmount')?.value ? Number($('ocrFieldVatAmount').value) : null,
+        description: $('ocrFieldDescription')?.value.trim() || null,
+        notes: $('ocrFieldNotes')?.value.trim() || null
+      };
+    }
+
+    async function saveOcrCorrectionsV13(validate = false) {
+      const id = state.ocrSelectedQueueId;
+      const q = state.validationQueue.find((x)=>x.id===id);
+      if (!q) return alert('Sélectionne une facture.');
+      const payload = getOcrPayloadFromFieldsV13();
+      if (validate) {
+        if (!payload.copro_id) return alert('Choisis la copropriété.');
+        if (!payload.supplier_id) return alert('Choisis le fournisseur.');
+        if (!payload.account_id) return alert('Choisis le compte comptable.');
+        if (!payload.reference) return alert('Indique le numéro de facture.');
+        if (!payload.date) return alert('Indique la date de facture.');
+        if (!payload.amount || payload.amount <= 0) return alert('Indique un montant TVAC valide.');
+      }
+      const nextStatus = validate || (payload.copro_id && payload.supplier_id && payload.account_id && payload.amount) ? 'to_validate' : ($('ocrFieldStatus')?.value || 'to_verify');
+      const { error } = await supabaseClient.from('compta_validation_queue').update({ target_type:'invoice', copro_id:payload.copro_id, corrected_data:payload, notes:payload.notes, status:nextStatus }).eq('id', id);
+      if (error) return alert(error.message);
+      if (!validate) { await loadAll(); state.ocrSelectedQueueId = id; renderInvoiceOcrV13(); return; }
+      await loadValidationQueue();
+      const updated = state.validationQueue.find((x)=>x.id===id) || { ...q, corrected_data:payload };
+      const item = state.importItems.find((i)=>i.id===updated.item_id) || {};
+      try {
+        await createInvoiceFromQueue(updated, item, payload);
+        await supabaseClient.from('compta_validation_queue').update({ status:'validated', validated_by:currentUser.id, validated_at:new Date().toISOString() }).eq('id', id);
+        if (updated.item_id) await supabaseClient.from('compta_import_items').update({ status:'validated' }).eq('id', updated.item_id);
+        await loadAll();
+        state.ocrSelectedQueueId = '';
+        renderInvoiceOcrV13();
+        alert('Facture créée et validée.');
+      } catch (error) {
+        alert(error.message || 'Validation impossible.');
+      }
+    }
+
+    async function rejectOcrInvoiceV13(id) {
+      if (!confirm('Rejeter cette facture importée ?')) return;
+      const { error } = await supabaseClient.from('compta_validation_queue').update({ status:'rejected' }).eq('id', id);
+      if (error) return alert(error.message);
+      const q = state.validationQueue.find((x)=>x.id===id);
+      if (q?.item_id) await supabaseClient.from('compta_import_items').update({ status:'rejected' }).eq('id', q.item_id);
+      await loadAll();
+      state.ocrSelectedQueueId = '';
+      renderInvoiceOcrV13();
+    }
+
+    async function rerunOcrForQueueV13(id) {
+      const q = state.validationQueue.find((x)=>x.id===id);
+      const item = state.importItems.find((i)=>i.id===q?.item_id);
+      if (!q || !item) return alert('Élément introuvable.');
+      const raw = item.raw_data || {};
+      const text = item.raw_text || '';
+      if (!text) return alert('Aucun texte OCR disponible à retraiter. Pour les anciens imports, réimporte le PDF.');
+      const extracted = extractInvoiceFieldsV13(text, item.file_name || '');
+      const supplierDetection = detectSupplierFromText(`${item.file_name}\n${text}`);
+      const coproDetection = detectCoproFromText(`${item.file_name}\n${text}`);
+      const corrected = { ...(q.corrected_data || {}), ...extracted };
+      if (!corrected.supplier_id && supplierDetection.supplier) corrected.supplier_id = supplierDetection.supplier.id;
+      if (!corrected.copro_id && coproDetection.copro) corrected.copro_id = coproDetection.copro.id;
+      const confidence = Math.min(98, Math.max(Number(item.confidence || 0), supplierDetection.confidence || 0, coproDetection.confidence || 0) + 8);
+      const { error } = await supabaseClient.from('compta_import_items').update({ confidence, raw_data:{ ...raw, extracted, rerun_at:new Date().toISOString() } }).eq('id', item.id);
+      if (error) return alert(error.message);
+      await supabaseClient.from('compta_validation_queue').update({ extracted_data:extracted, corrected_data:corrected, status: corrected.copro_id && corrected.supplier_id && corrected.account_id && corrected.amount ? 'to_validate' : 'to_verify' }).eq('id', q.id);
+      await loadAll();
+      state.ocrSelectedQueueId = id;
+      renderInvoiceOcrV13();
+    }
+
+    async function createInvoiceFromQueue(q, item, corrected) {
+      if (!corrected.account_id) throw new Error('Compte comptable obligatoire.');
+      const raw = item.raw_data || {};
+      const payload = {
+        copro_id: corrected.copro_id,
+        supplier_id: corrected.supplier_id,
+        account_id: corrected.account_id,
+        invoice_number: corrected.reference || item.file_name || null,
+        invoice_date: corrected.date || null,
+        due_date: corrected.due_date || null,
+        amount_total: Number(corrected.amount || 0),
+        vat_rate: corrected.vat_rate || null,
+        vat_amount: corrected.vat_amount || null,
+        status: 'validated',
+        payment_status: 'unpaid',
+        description: corrected.description || `Importé depuis ${item.file_name || 'import'}. ${corrected.notes || ''}`,
+        source: 'processing_center',
+        file_name: item.file_name || null,
+        file_data_url: raw.file_data_url || null,
+        pdf_mime_type: item.mime_type || raw.mime_type || null,
+        ocr_confidence: item.confidence || null,
+        ocr_text: item.raw_text || null,
+        ocr_source_item_id: item.id || null,
+        ocr_raw_json: { extracted: q.extracted_data || {}, corrected, raw_data: raw },
+        created_by: currentUser.id
+      };
+      const { error } = await supabaseClient.from('compta_invoices').insert(payload);
+      if (error) throw error;
+    }
+
+    const previousRenderAllV13 = renderAll;
+    renderAll = function() { previousRenderAllV13(); renderInvoiceOcrV13(); };
+
+    document.addEventListener('click', (e)=>{
+      const t = e.target;
+      if (t?.dataset?.selectOcr) { state.ocrSelectedQueueId = t.dataset.selectOcr; renderInvoiceOcrV13(); }
+      if (t?.id === 'ocrGoImportBtn') { switchToView('processing'); if ($('importType')) $('importType').value = 'invoice'; }
+      if (t?.id === 'ocrRefreshBtn') { loadAll(); }
+      if (t?.id === 'ocrSaveBtn') saveOcrCorrectionsV13(false);
+      if (t?.id === 'ocrValidateBtn') saveOcrCorrectionsV13(true);
+      if (t?.dataset?.rejectOcr) rejectOcrInvoiceV13(t.dataset.rejectOcr);
+      if (t?.dataset?.rerunOcr) rerunOcrForQueueV13(t.dataset.rerunOcr);
+    });
+    document.addEventListener('input', (e)=>{ if (e.target?.id === 'ocrSearch') renderInvoiceOcrV13(); });
+    document.addEventListener('change', (e)=>{
+      if (e.target?.id === 'ocrStatusFilter') { state.ocrStatusFilter = e.target.value; renderInvoiceOcrV13(); }
+      if (e.target?.id === 'ocrCoproFilter') { state.ocrCoproFilter = e.target.value; renderInvoiceOcrV13(); }
+    });
+
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
