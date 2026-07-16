@@ -7910,7 +7910,7 @@
       const points = agMeetingPoints(meeting.id);
       root.innerHTML = `<div class="ag-detail-header">
         <div><h2 class="ag-detail-title">${escapeHtml(meeting.title || 'Assemblée générale')}</h2><div class="muted-note">${escapeHtml(coproNameByIdV14(meeting.copro_id))} · ${formatDateV14(meeting.meeting_date)} ${escapeHtml(meeting.meeting_time || '')} · ${escapeHtml(meeting.location || '')}</div><div style="margin-top:8px;">${agStatusBadge(meeting.status)}</div></div>
-        <div class="ag-pdf-actions"><button class="btn secondary" type="button" data-edit-ag="${meeting.id}">Modifier AG</button><button class="btn secondary" type="button" data-print-convocation="${meeting.id}">PDF convocation</button><button class="btn secondary" type="button" data-print-pv="${meeting.id}">PDF PV</button><button class="btn" type="button" data-close-ag="${meeting.id}">Clôturer PV</button></div>
+        <div class="ag-pdf-actions"><button class="btn secondary" type="button" data-edit-ag="${meeting.id}">Modifier AG</button><button class="btn secondary" type="button" data-print-convocation="${meeting.id}">Générer convocations</button><button class="btn secondary" type="button" data-print-pv="${meeting.id}">Générer PV</button><button class="btn" type="button" data-close-ag="${meeting.id}">Clôturer PV</button></div>
       </div>
       <div class="ag-tabs">${[['overview','Vue générale'],['attendees','Présences / quorum'],['agenda','Ordre du jour'],['votes','Votes / PV']].map(t=>`<button class="ag-tab ${state.agActiveTab===t[0]?'active':''}" data-ag-tab="${t[0]}" type="button">${t[1]}</button>`).join('')}</div>
       <div class="ag-panel">${renderAgActivePanelV14(meeting, q, points)}</div>`;
@@ -8172,7 +8172,7 @@
       const points = agMeetingPoints(meeting.id);
       root.innerHTML = `<div class="ag-detail-header">
         <div><h2 class="ag-detail-title">${escapeHtml(meeting.title || 'Assemblée générale')}</h2><div class="muted-note">${escapeHtml(coproNameByIdV14(meeting.copro_id))} · ${formatDateV14(meeting.meeting_date)} ${escapeHtml(meeting.meeting_time || '')} · ${escapeHtml(meeting.location || '')}</div><div style="margin-top:8px;">${agStatusBadge(meeting.status)}</div></div>
-        <div class="ag-pdf-actions"><button class="btn secondary" type="button" data-edit-ag="${meeting.id}">Modifier AG</button><button class="btn secondary" type="button" data-print-convocation="${meeting.id}">PDF convocation</button><button class="btn secondary" type="button" data-print-pv="${meeting.id}">PDF PV</button><button class="btn" type="button" data-close-ag="${meeting.id}">Clôturer PV</button></div>
+        <div class="ag-pdf-actions"><button class="btn secondary" type="button" data-edit-ag="${meeting.id}">Modifier AG</button><button class="btn secondary" type="button" data-print-convocation="${meeting.id}">Générer convocations</button><button class="btn secondary" type="button" data-print-pv="${meeting.id}">Générer PV</button><button class="btn" type="button" data-close-ag="${meeting.id}">Clôturer PV</button></div>
       </div>
       ${agQuorumHtmlV15(q)}
       <div class="ag-tabs">${[['overview','Vue générale'],['attendees','Présences / quorum'],['agenda','Ordre du jour'],['votes','Votes'],['pv','Rédaction PV']].map(t=>`<button class="ag-tab ${state.agActiveTab===t[0]?'active':''}" data-ag-tab="${t[0]}" type="button">${t[1]}</button>`).join('')}</div>
@@ -8211,7 +8211,7 @@
       if (!points.length) return '<div class="notice">Ajoute d’abord les points à l’ordre du jour.</div>';
       return `<div class="notice">Page de rédaction du PV : complète les décisions et remarques point par point. Les votes restent dans l’onglet “Votes”.</div>
       ${points.map((p,idx)=>{ const r=computeAgVoteResult(p); return `<div class="ag-v15-card" data-pv-point="${p.id}"><div class="ag-v15-card-head"><div><span class="ag-v15-number">${idx+1}</span><strong>${escapeHtml(p.title||'Point')}</strong><div class="muted-note">${escapeHtml(majorityLabel(p.majority_type||'simple'))} · ${escapeHtml(r.label)}</div></div><div class="ag-vote-summary"><span class="ag-vote-chip ok">Oui ${Number(r.yes).toLocaleString('fr-BE')}</span><span class="ag-vote-chip no">Non ${Number(r.no).toLocaleString('fr-BE')}</span><span class="ag-vote-chip warn">Abs. ${Number(r.abstain).toLocaleString('fr-BE')}</span></div></div><div class="ag-v15-card-body"><div class="muted-note" style="margin-bottom:10px;">${escapeHtml(p.description||'')}</div><div class="ag-v15-editor-grid"><label>Décision reprise au PV<textarea data-ag-pv-field="decision_text">${escapeHtml(p.decision_text||'')}</textarea></label><label>Remarques / débats<textarea data-ag-pv-field="remarks">${escapeHtml(p.remarks||'')}</textarea></label></div></div></div>`; }).join('')}
-      <div class="ag-v15-pv-savebar"><button class="btn secondary" type="button" data-print-pv="${meeting.id}">PDF PV</button><button class="btn" type="button" data-save-ag-pv="${meeting.id}">Enregistrer rédaction PV</button></div>`;
+      <div class="ag-v15-pv-savebar"><button class="btn secondary" type="button" data-print-pv="${meeting.id}">Générer PV</button><button class="btn" type="button" data-save-ag-pv="${meeting.id}">Enregistrer rédaction PV</button></div>`;
     }
     function setVoteCellV15(cell, value){
       if (!cell) return;
@@ -8276,6 +8276,197 @@
       const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}</style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
+
+
+
+    // ---- V16 : PDF AG destinataires, annexes, budget/decompte, PV compact ----
+    state.agDocOwnerSelection = state.agDocOwnerSelection || {};
+
+    function agInjectV16Styles(){
+      if (document.getElementById('agV16Styles')) return;
+      const st=document.createElement('style');
+      st.id='agV16Styles';
+      st.textContent=`
+        .ag-owner-pick-list{border:1px solid var(--line);border-radius:16px;max-height:260px;overflow:auto;background:#fff;padding:8px;display:grid;gap:6px}
+        .ag-owner-pick-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid #eef2f6;border-radius:12px;background:#fbfdff}
+        .ag-owner-pick-row:hover{background:#f2fbfd}
+        .ag-doc-options-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+        .ag-doc-option-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px}
+        .ag-doc-option-card h3{margin:0 0 10px;color:var(--brand-dark)}
+        .ag-doc-actions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+        @media(max-width:900px){.ag-doc-options-grid{grid-template-columns:1fr}}
+      `;
+      document.head.appendChild(st);
+    }
+    agInjectV16Styles();
+
+    function ownerLotsLabelV16(o){ return (o.lots||[]).map(l=>l.lot_number||l.reference||'').filter(Boolean).join(', '); }
+    function ownerAddressBlockV16(owner){
+      const lines=[];
+      if(owner?.display_name) lines.push(owner.display_name);
+      const address = owner?.address || owner?.street || owner?.postal_address || '';
+      if(address) lines.push(address);
+      const zipCity = [owner?.postal_code || owner?.zip || '', owner?.city || ''].filter(Boolean).join(' ');
+      if(zipCity) lines.push(zipCity);
+      if(!address && !zipCity) lines.push('Adresse à compléter');
+      return lines.map(escapeHtml).join('<br>');
+    }
+    function agWindowAddressV16(owner){ return `<div class="window-address"><strong>${ownerAddressBlockV16(owner)}</strong></div>`; }
+    function agOwnersForMeetingV16(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return [];
+      return getCoproOwnersForAg(m.copro_id);
+    }
+    function agOwnerPickerHtmlV16(meetingId, prefix='agOwnerPick'){
+      const owners=agOwnersForMeetingV16(meetingId);
+      return `<div class="ag-doc-actions"><button class="btn secondary small" type="button" data-ag-owner-all-v16="${prefix}">Tous</button><button class="btn secondary small" type="button" data-ag-owner-none-v16="${prefix}">Aucun</button><span class="badge">${owners.length} copropriétaire(s)</span></div>
+      <div class="ag-owner-pick-list" data-ag-owner-list-v16="${prefix}">${owners.map((o,idx)=>`<label class="ag-owner-pick-row"><input type="checkbox" data-ag-owner-check-v16="${prefix}" value="${o.owner.id}" checked><span><strong>${escapeHtml(o.owner.display_name||'')}</strong><br><small>${escapeHtml(ownerLotsLabelV16(o))}</small></span><span class="badge">${Number(o.quotities||0).toLocaleString('fr-BE')} q.</span></label>`).join('') || '<div class="notice">Aucun copropriétaire trouvé.</div>'}</div>`;
+    }
+    function selectedOwnerIdsV16(prefix='agOwnerPick'){
+      return [...document.querySelectorAll(`[data-ag-owner-check-v16="${prefix}"]:checked`)].map(x=>x.value);
+    }
+    function budgetOptionsForCoproV16(coproId, selected=''){
+      const list=(state.budgetHeaders||[]).filter(b=>!coproId || b.copro_id===coproId);
+      return `<option value="">Choisir un budget...</option>`+list.map(b=>`<option value="${b.id}" ${b.id===selected?'selected':''}>${escapeHtml(b.label||'Budget')} ${b.status==='validated'?'✓ validé':''}</option>`).join('');
+    }
+    function fiscalYearOptionsForCoproV16(coproId, selected=''){
+      const list=(state.fiscalYears||[]).filter(y=>!coproId || y.copro_id===coproId);
+      return `<option value="">Choisir un exercice...</option>`+list.map(y=>`<option value="${y.id}" ${y.id===selected?'selected':''}>${escapeHtml(y.label||'Exercice')}</option>`).join('');
+    }
+    function agDefaultYearForMeetingV16(m){
+      return (state.fiscalYears||[]).find(y=>y.copro_id===m.copro_id && (!m.meeting_date || (y.starts_on<=m.meeting_date && y.ends_on>=m.meeting_date)))?.id || (state.fiscalYears||[]).find(y=>y.copro_id===m.copro_id)?.id || '';
+    }
+
+    function printAgConvocationV14(meetingId){ openAgConvocationOptionsV16(meetingId); }
+    function printAgPvV14(meetingId){ openAgPvOptionsV16(meetingId); }
+
+    function openAgConvocationOptionsV16(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return;
+      const yearId=agDefaultYearForMeetingV16(m);
+      const body=`<div class="modal-help">Choisis les copropriétaires et les annexes. Le PDF sera généré dans l’ordre : convocation, ordre du jour, procuration, budget, décompte individuel, documents joints.</div>
+      <h3>Destinataires</h3>${agOwnerPickerHtmlV16(meetingId,'agConvocOwner')}
+      <div class="ag-doc-options-grid">
+        <div class="ag-doc-option-card"><h3>Budget</h3><label style="display:flex;gap:8px;align-items:center;text-transform:none;"><input type="checkbox" id="agConvocIncludeBudget"> Inclure budget</label><label>Budget à joindre<select id="agConvocBudgetId">${budgetOptionsForCoproV16(m.copro_id)}</select></label></div>
+        <div class="ag-doc-option-card"><h3>Décompte individuel</h3><label style="display:flex;gap:8px;align-items:center;text-transform:none;"><input type="checkbox" id="agConvocIncludeStatement"> Inclure décompte / situation individuelle</label><label>Exercice du décompte<select id="agConvocStatementYear">${fiscalYearOptionsForCoproV16(m.copro_id,yearId)}</select></label></div>
+        <div class="ag-doc-option-card" style="grid-column:1/-1;"><h3>Autres documents</h3><p class="muted-note">Ajoute un devis, une note, un rapport, etc. Les images seront intégrées. Les PDF seront ajoutés comme annexes visibles dans le navigateur.</p><input id="agConvocAnnexFiles" type="file" multiple accept="application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.webp"></div>
+      </div>`;
+      openAppModal('Générer les convocations', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-generate-ag-convocation-v16="${meetingId}">Générer PDF</button>`, {size:'wide'});
+    }
+    function openAgPvOptionsV16(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return;
+      const body=`<div class="modal-help">Choisis les destinataires du PV. Chaque exemplaire commence par une page d’envoi avec l’adresse du copropriétaire pour enveloppe à fenêtre, puis le PV compact.</div><h3>Destinataires</h3>${agOwnerPickerHtmlV16(meetingId,'agPvOwner')}`;
+      openAppModal('Générer le PV', body, `<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" type="button" data-generate-ag-pv-v16="${meetingId}">Générer PDF</button>`, {size:'wide'});
+    }
+    async function readAnnexFilesV16(inputId){
+      const input=$(inputId); const files=[...(input?.files||[])];
+      const reads=files.map(file=>new Promise(resolve=>{
+        const r=new FileReader();
+        r.onload=()=>resolve({name:file.name,type:file.type||'',url:r.result});
+        r.onerror=()=>resolve({name:file.name,type:file.type||'',url:''});
+        r.readAsDataURL(file);
+      }));
+      return Promise.all(reads);
+    }
+    function openPrintWindowV16(title, content){
+      const win=window.open('','_blank');
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}</style></head><body>${content}<script>window.print();<\/script></body></html>`);
+      win.document.close();
+    }
+    function pdfCssAgV16(){ return `@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Century Gothic,Arial,sans-serif;margin:0;color:#172033;background:white;font-size:12px;line-height:1.38}.page{position:relative;min-height:267mm;padding:0 0 13mm 0;break-inside:avoid}.page:not(:last-child){break-after:page}.brandbar{height:7px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:16px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:13px;margin-bottom:16px}.logo{font-size:24px;color:#1f7a8c;font-weight:900;letter-spacing:.02em}.agency{font-size:10.5px;color:#475569;line-height:1.35}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:22px}.doc-title strong{display:block;margin-top:4px;color:#172033}.window-address{position:absolute;left:22mm;top:42mm;width:86mm;min-height:28mm;border:0;padding:0;font-size:12px;line-height:1.45;color:#111827}.with-window-space{padding-top:48mm}.intro{font-size:13px;line-height:1.55}.muted{color:#667085}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.meta,.box{border:1px solid #d9e6ec;border-radius:12px;padding:10px;background:#fbfdfe}.box{margin-top:12px}.meta span{display:block;color:#667085;font-size:9.5px;text-transform:uppercase;font-weight:800;letter-spacing:.04em}.meta strong{display:block;margin-top:3px;font-size:13px}h1,h2,h3{color:#14586a}h2{font-size:17px;margin:0 0 9px}.agenda-list{counter-reset:item;margin:0;padding:0;list-style:none}.agenda-list li{counter-increment:item;border-bottom:1px solid #e6eef5;padding:8px 0;break-inside:avoid}.agenda-list li:before{content:counter(item);display:inline-flex;width:24px;height:24px;border-radius:8px;background:#eaf7fa;color:#14586a;align-items:center;justify-content:center;font-weight:900;margin-right:8px}.agenda-title{font-weight:900}.agenda-desc{display:block;margin-left:36px;margin-top:2px;color:#475569;line-height:1.35}.proxy-box{border:2px solid #1f7a8c;border-radius:16px;padding:15px;margin-top:22px}.line{border-bottom:1px dotted #6b7280;height:24px;margin:7px 0}.sign{height:60px;border-bottom:1px solid #94a3b8;margin-top:16px}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:6px;color:#64748b;font-size:9.5px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10.5px}td,th{padding:5px 6px;border-bottom:1px solid #e6eef5;text-align:left;vertical-align:top}th{background:#f2f7fa;color:#14586a}.amount{text-align:right;white-space:nowrap}.vote-yes{color:#146c2e;font-weight:900}.vote-no{color:#991b1b;font-weight:900}.vote-abstain{color:#92400e;font-weight:900}.result{display:inline-block;border-radius:999px;padding:3px 8px;font-weight:900}.result.ok{background:#dff7e8;color:#146c2e}.result.no{background:#fde2e2;color:#991b1b}.quorum-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pill{border:1px solid #d9e6ec;border-radius:12px;padding:8px;background:#fbfdfe}.pill span{display:block;color:#667085;font-size:9px;text-transform:uppercase;font-weight:800}.pill strong{font-size:15px;color:#14586a}.pv-point{border:1px solid #d9e6ec;border-radius:12px;padding:10px;margin:9px 0;break-inside:avoid}.pv-point h3{font-size:14px;margin:0 0 6px}.pv-point-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.names{font-size:9.5px;color:#475569}.annex-img{max-width:100%;max-height:238mm;display:block;margin:0 auto}.annex-pdf{width:100%;height:238mm;border:1px solid #d9e6ec;border-radius:8px}.compact-section{break-inside:avoid}.page-auto{min-height:auto;padding-bottom:15mm}.page-auto:not(:last-child){break-after:auto}@media print{.page:not(:last-child){page-break-after:always}.page-auto:not(:last-child){page-break-after:auto}.pv-point{break-inside:avoid}}`; }
+    function agPdfHeaderV15(title, copro){ return `<div class="brandbar"></div><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div class="agency">Rue de Menin 400 · 7700 Mouscron<br>Boulevard du Roi Albert 42-44 · 7500 Tournai<br>info@wapi-syndik.be</div></div><div class="doc-title"><h1>${escapeHtml(title)}</h1><strong>${escapeHtml(copro)}</strong></div></div>`; }
+    function agPdfFooterV15(label){ return `<div class="footer"><span>${escapeHtml(label)}</span><span>WAPI-SYNDIK · document généré le ${new Date().toLocaleDateString('fr-BE')}</span></div>`; }
+    function agBudgetAnnexHtmlV16(budgetId,copro){
+      if(!budgetId) return '';
+      const header=(state.budgetHeaders||[]).find(b=>b.id===budgetId); if(!header) return '';
+      const lines=(state.budgetLines||[]).filter(l=>l.budget_id===budgetId);
+      const groups=new Map(); lines.forEach(l=>{ const key=l.distribution_key_id||'none'; if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(l); });
+      const blocks=[...groups.entries()].map(([keyId,arr])=>{ const key=state.distributionKeys.find(k=>k.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="compact-section"><h3>${escapeHtml(key?.name||'Sans clé')} — ${money(subtotal)}</h3><table><tr><th>Compte</th><th>Libellé</th><th class="amount">Budget</th></tr>${arr.map(l=>{ const acc=state.accounts.find(a=>a.id===l.account_id)||{}; return `<tr><td>${escapeHtml((acc.code||'')+' - '+(acc.label||''))}</td><td>${escapeHtml(l.label||acc.label||'')}</td><td class="amount">${money(l.amount)}</td></tr>`; }).join('')}</table></div>`; }).join('');
+      const total=lines.reduce((s,l)=>s+Number(l.amount||0),0);
+      return `<section class="page">${agPdfHeaderV15('Budget annexé',copro)}<div class="box"><h2>${escapeHtml(header.label||'Budget')}</h2><p><strong>Total général :</strong> ${money(total)}</p></div>${blocks || '<div class="box">Aucune ligne de budget.</div>'}${agPdfFooterV15('Budget')}</section>`;
+    }
+    function agOwnerStatementHtmlV16(ownerId,coproId,yearId,copro){
+      if(!yearId) return '';
+      const row=thirdRowsFor('owners',coproId,yearId).find(r=>r.id===ownerId); if(!row) return '';
+      const status=row.balance>=0?'Solde débiteur':'Solde créditeur';
+      return `<section class="page">${agPdfHeaderV15('Décompte / situation individuelle',copro)}${agWindowAddressV16({display_name:row.name,address:state.owners.find(o=>o.id===ownerId)?.address,city:state.owners.find(o=>o.id===ownerId)?.city,postal_code:state.owners.find(o=>o.id===ownerId)?.postal_code})}<div class="with-window-space"><div class="box"><h2>${escapeHtml(row.name||'')}</h2><p><strong>${status} :</strong> ${money(Math.abs(row.balance))}</p></div><table><tr><th>Date</th><th>Libellé</th><th class="amount">Débit</th><th class="amount">Crédit</th></tr>${row.details.map(d=>`<tr><td>${escapeHtml(d.date||'')}</td><td>${escapeHtml(d.label||'')}</td><td class="amount">${d.debit?money(d.debit):''}</td><td class="amount">${d.credit?money(d.credit):''}</td></tr>`).join('')}</table></div>${agPdfFooterV15('Situation individuelle')}</section>`;
+    }
+    function agAnnexPagesV16(annexes){
+      return (annexes||[]).map((f,idx)=>{
+        const safe=escapeHtml(f.name||`Annexe ${idx+1}`);
+        if((f.type||'').startsWith('image/')) return `<section class="page">${agPdfHeaderV15('Annexe','Document joint')}<h2>${safe}</h2><img class="annex-img" src="${f.url}" alt="${safe}">${agPdfFooterV15('Annexe')}</section>`;
+        if((f.type||'').includes('pdf')) return `<section class="page">${agPdfHeaderV15('Annexe PDF','Document joint')}<h2>${safe}</h2><object class="annex-pdf" data="${f.url}" type="application/pdf"><p>PDF joint : ${safe}</p></object>${agPdfFooterV15('Annexe')}</section>`;
+        return `<section class="page">${agPdfHeaderV15('Annexe','Document joint')}<div class="box"><h2>${safe}</h2><p>Document joint à consulter séparément si le navigateur ne peut pas l’intégrer à l’impression.</p></div>${agPdfFooterV15('Annexe')}</section>`;
+      }).join('');
+    }
+    function agConvocationPagesForOwnerV16(m,o,points,copro,opts,annexHtml){
+      const owner=o.owner;
+      const agenda=points.map(p=>`<li><span class="agenda-title">${escapeHtml(p.title||'Point')}</span><span class="agenda-desc">${escapeHtml(p.description||'')}</span><span class="agenda-desc"><em>${escapeHtml(majorityLabel(p.majority_type||'simple'))}</em></span></li>`).join('');
+      return `<section class="page">${agPdfHeaderV15('Convocation AG',copro)}${agWindowAddressV16(owner)}<div class="with-window-space intro"><p>Madame, Monsieur,</p><p>Nous avons l’honneur de vous inviter à participer à l’assemblée générale de l’association des copropriétaires mentionnée ci-dessus.</p><p>Votre présence est importante. En cas d’impossibilité, nous vous invitons à compléter la procuration jointe afin de vous faire représenter valablement.</p></div><div class="meta-grid"><div class="meta"><span>Destinataire</span><strong>${escapeHtml(owner.display_name||'')}</strong><div>${escapeHtml(ownerLotsLabelV16(o))}</div></div><div class="meta"><span>Date et heure</span><strong>${formatDateV14(m.meeting_date)} à ${escapeHtml(m.meeting_time||'')}</strong><div>${escapeHtml(m.location||'Lieu à préciser')}</div></div><div class="meta"><span>Type</span><strong>${escapeHtml(m.meeting_type==='extraordinary'?'Assemblée générale extraordinaire':m.meeting_type==='second'?'Seconde séance':'Assemblée générale ordinaire')}</strong></div><div class="meta"><span>Date convocation</span><strong>${formatDateV14(m.convocation_date)||new Date().toLocaleDateString('fr-BE')}</strong></div></div>${agPdfFooterV15('Convocation')}</section>
+      <section class="page">${agPdfHeaderV15('Ordre du jour',copro)}<ol class="agenda-list">${agenda}</ol>${agPdfFooterV15('Ordre du jour')}</section>
+      <section class="page">${agPdfHeaderV15('Procuration',copro)}${agWindowAddressV16(owner)}<div class="with-window-space proxy-box"><h2>Procuration</h2><p>Je soussigné(e) <strong>${escapeHtml(owner.display_name||'')}</strong>, propriétaire du/des lot(s) <strong>${escapeHtml(ownerLotsLabelV16(o))}</strong>, déclare donner procuration à :</p><div class="line"></div><p>afin de me représenter à l’assemblée générale du <strong>${formatDateV14(m.meeting_date)}</strong> et de voter en mon nom sur les points inscrits à l’ordre du jour.</p><p>Fait à : <span style="display:inline-block;width:180px;border-bottom:1px dotted #6b7280;"></span> le : <span style="display:inline-block;width:140px;border-bottom:1px dotted #6b7280;"></span></p><div class="sign"></div><p class="muted">Signature précédée de la mention “bon pour pouvoir”.</p></div>${agPdfFooterV15('Procuration')}</section>
+      ${opts.includeBudget ? agBudgetAnnexHtmlV16(opts.budgetId,copro) : ''}
+      ${opts.includeStatement ? agOwnerStatementHtmlV16(owner.id,m.copro_id,opts.statementYearId,copro) : ''}
+      ${annexHtml}`;
+    }
+    async function generateAgConvocationV16(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return;
+      const ownerIds=selectedOwnerIdsV16('agConvocOwner'); if(!ownerIds.length) return alert('Sélectionne au moins un copropriétaire.');
+      const owners=agOwnersForMeetingV16(meetingId).filter(o=>ownerIds.includes(o.owner.id));
+      const opts={includeBudget:$('agConvocIncludeBudget')?.checked, budgetId:$('agConvocBudgetId')?.value||'', includeStatement:$('agConvocIncludeStatement')?.checked, statementYearId:$('agConvocStatementYear')?.value||''};
+      if(opts.includeBudget && !opts.budgetId) return alert('Choisis le budget à inclure.');
+      if(opts.includeStatement && !opts.statementYearId) return alert('Choisis l’exercice du décompte.');
+      const annexes=await readAnnexFilesV16('agConvocAnnexFiles');
+      const annexHtml=agAnnexPagesV16(annexes);
+      const points=agMeetingPoints(meetingId); const copro=coproNameByIdV14(m.copro_id);
+      const pages=owners.map(o=>agConvocationPagesForOwnerV16(m,o,points,copro,opts,annexHtml)).join('');
+      closeAppModal(); openPrintWindowV16('Convocations AG', pages);
+    }
+    function agVoteNamesInlineV16(point,vote){ return agVoteNamesV15(point,vote).join(', ') || '—'; }
+    function agPvCompactContentV16(m,copro){
+      const points=agMeetingPoints(m.id); const attendees=agMeetingAttendees(m.id); const q=computeAgQuorum(m);
+      const presenceRows=attendees.map(a=>`<tr><td>${escapeHtml(a.compta_owners?.display_name || agOwnerNameV15(a.owner_id))}</td><td>${escapeHtml(a.lots_label||'')}</td><td class="amount">${Number(a.quotities||0).toLocaleString('fr-BE')}</td><td>${escapeHtml(a.status==='present'?'Présent':a.status==='represented'?'Représenté':'Absent')}</td><td>${escapeHtml(a.representative_name||'')}</td></tr>`).join('');
+      const pointBlocks=points.map((p,idx)=>{ const r=computeAgVoteResult(p); return `<div class="pv-point"><h3>${idx+1}. ${escapeHtml(p.title||'Point')}</h3>${p.description?`<p class="muted">${escapeHtml(p.description)}</p>`:''}<div class="pv-point-grid"><div><strong>Majorité requise :</strong> ${escapeHtml(majorityLabel(p.majority_type||'simple'))}<br><strong>Résultat :</strong> <span class="result ${r.passed===true?'ok':r.passed===false?'no':''}">${escapeHtml(r.label)}</span> ${r.base?`— ${agPercentV15(r.yes,r.base)}%`:''}</div><div><table><tr><th>Oui</th><th>Non</th><th>Abstention</th></tr><tr><td class="vote-yes">${Number(r.yes).toLocaleString('fr-BE')}</td><td class="vote-no">${Number(r.no).toLocaleString('fr-BE')}</td><td class="vote-abstain">${Number(r.abstain).toLocaleString('fr-BE')}</td></tr></table></div></div><table><tr><th>Oui</th><th>Non</th><th>Abstention</th></tr><tr><td class="names">${escapeHtml(agVoteNamesInlineV16(p,'yes'))}</td><td class="names">${escapeHtml(agVoteNamesInlineV16(p,'no'))}</td><td class="names">${escapeHtml(agVoteNamesInlineV16(p,'abstain'))}</td></tr></table><div class="box"><strong>Décision :</strong><br>${escapeHtml(p.decision_text||'')}</div>${p.remarks?`<div class="box"><strong>Remarques :</strong><br>${escapeHtml(p.remarks)}</div>`:''}</div>`; }).join('');
+      return `<section class="page">${agPdfHeaderV15('Procès-verbal',copro)}<div class="box"><h2>Informations de séance</h2><div class="meta-grid"><div class="meta"><span>Date</span><strong>${formatDateV14(m.meeting_date)} ${escapeHtml(m.meeting_time||'')}</strong></div><div class="meta"><span>Lieu</span><strong>${escapeHtml(m.location||'')}</strong></div><div class="meta"><span>Président</span><strong>${escapeHtml(m.president_name||'À compléter')}</strong></div><div class="meta"><span>Secrétaire</span><strong>${escapeHtml(m.secretary_name||'À compléter')}</strong></div></div></div><div class="box"><h2>Quorum</h2><div class="quorum-pills"><div class="pill"><span>Personnes présentes/représentées</span><strong>${q.presentOwners}/${q.ownerTotal}</strong><div>${agPercentV15(q.presentOwners,q.ownerTotal)}%</div></div><div class="pill"><span>Quotités présentes/représentées</span><strong>${Number(q.presentQuotities).toLocaleString('fr-BE')}</strong><div>${agPercentV15(q.presentQuotities,q.quotityTotal)}%</div></div><div class="pill"><span>Total quotités</span><strong>${Number(q.quotityTotal).toLocaleString('fr-BE')}</strong></div><div class="pill"><span>Quorum</span><strong>${q.ok?'Atteint':'Non atteint'}</strong></div></div></div><h2>Présences</h2><table><tr><th>Copropriétaire</th><th>Lots</th><th class="amount">Quotités</th><th>Statut</th><th>Mandataire</th></tr>${presenceRows}</table>${agPdfFooterV15('PV - informations et présences')}</section><section class="page page-auto">${agPdfHeaderV15('Décisions et votes',copro)}${pointBlocks}<div class="box"><p>Président de séance : ............................................................</p><p>Secrétaire : ............................................................</p></div>${agPdfFooterV15('PV - décisions')}</section>`;
+    }
+    function agPvCoverForOwnerV16(m,o,copro){
+      return `<section class="page">${agPdfHeaderV15('Transmission du PV',copro)}${agWindowAddressV16(o.owner)}<div class="with-window-space intro"><p>Madame, Monsieur,</p><p>Vous trouverez ci-après le procès-verbal de l’assemblée générale de l’association des copropriétaires tenue le <strong>${formatDateV14(m.meeting_date)}</strong>${m.meeting_time?' à '+escapeHtml(m.meeting_time):''}.</p><p>Le présent document reprend les présences, le quorum, les votes exprimés, les décisions prises et les remarques reprises point par point.</p></div><div class="meta-grid"><div class="meta"><span>Destinataire</span><strong>${escapeHtml(o.owner.display_name||'')}</strong><div>${escapeHtml(ownerLotsLabelV16(o))}</div></div><div class="meta"><span>Assemblée</span><strong>${formatDateV14(m.meeting_date)}</strong><div>${escapeHtml(m.location||'')}</div></div></div>${agPdfFooterV15('Transmission PV')}</section>`;
+    }
+    async function generateAgPvV16(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return;
+      const ownerIds=selectedOwnerIdsV16('agPvOwner'); if(!ownerIds.length) return alert('Sélectionne au moins un copropriétaire.');
+      const owners=agOwnersForMeetingV16(meetingId).filter(o=>ownerIds.includes(o.owner.id));
+      const copro=coproNameByIdV14(m.copro_id); const pv=agPvCompactContentV16(m,copro);
+      const pages=owners.map(o=>agPvCoverForOwnerV16(m,o,copro)+pv).join('');
+      closeAppModal(); openPrintWindowV16('PV AG', pages);
+    }
+
+
+    // PDF nominatif: appels de fonds et situations de compte avec adresse pour enveloppe fenêtre.
+    function printOwnerCallsV11(ids, title='Appels de fonds') {
+      const calls = ids.map((id)=>state.ownerCalls.find((c)=>c.id===id)).filter(Boolean);
+      if (!calls.length) return alert('Aucun copropriétaire sélectionné.');
+      const body = calls.map((c)=>{ const copro=state.copros.find((x)=>x.id===c.copro_id); const ownerObj=state.owners.find(o=>o.id===c.owner_id) || c.compta_owners || {display_name:''}; return `<section class="page">${agPdfHeaderV15('Appel de fonds',copro?.name||'')}${agWindowAddressV16(ownerObj)}<div class="with-window-space box"><p><strong>Copropriétaire :</strong> ${escapeHtml(ownerObj.display_name||'')}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p style="font-size:28px;color:#1f7a8c;font-weight:900;">${money(c.amount_due)}</p></div>${agPdfFooterV15('Appel de fonds')}</section>`; }).join('');
+      openPrintWindowV16(title, body);
+    }
+    function htmlForThirdSituation(row) {
+      const status = row.balance >= 0 ? 'Solde débiteur' : 'Solde créditeur';
+      const ownerObj = row.type==='owner' ? (state.owners.find(o=>o.id===row.id) || {display_name:row.name}) : {display_name:row.name};
+      const address = row.type==='owner' ? agWindowAddressV16(ownerObj) : '';
+      const spacer = row.type==='owner' ? 'with-window-space' : '';
+      return `<section class="page">${agPdfHeaderV15('Situation de compte', row.name||'')}${address}<div class="${spacer}"><div class="box"><h2>${status} : ${money(Math.abs(row.balance))}</h2><p><strong>${escapeHtml(row.name||'')}</strong> — ${escapeHtml(row.labelType||'')}</p></div><table><tr><th>Date</th><th>Libellé</th><th class="amount">Débit</th><th class="amount">Crédit</th></tr>${row.details.map((d)=>`<tr><td>${escapeHtml(d.date||'')}</td><td>${escapeHtml(d.label||'')}</td><td class="amount">${d.debit?money(d.debit):''}</td><td class="amount">${d.credit?money(d.credit):''}</td></tr>`).join('')}</table></div>${agPdfFooterV15('Situation de compte')}</section>`;
+    }
+    function printThirdRowsV11(rows, grouped=false) {
+      if (!rows.length) return alert('Aucun tiers sélectionné.');
+      const content = grouped ? `<section class="page">${agPdfHeaderV15('Balance des tiers','Situation groupée')}${rows.map((r)=>`<h2>${escapeHtml(r.name)} - ${r.balance>=0?'Débiteur':'Créditeur'} ${money(Math.abs(r.balance))}</h2><table><tr><th>Date</th><th>Libellé</th><th class="amount">Débit</th><th class="amount">Crédit</th></tr>${r.details.map((d)=>`<tr><td>${escapeHtml(d.date||'')}</td><td>${escapeHtml(d.label||'')}</td><td class="amount">${d.debit?money(d.debit):''}</td><td class="amount">${d.credit?money(d.credit):''}</td></tr>`).join('')}</table>`).join('<hr>')}${agPdfFooterV15('Balance groupée')}</section>` : rows.map(htmlForThirdSituation).join('');
+      openPrintWindowV16('Situation de compte', content);
+    }
+
+    document.addEventListener('click', async (e)=>{
+      const btn=e.target.closest?.('button'); if(!btn) return;
+      if(btn.dataset.agOwnerAllV16){ document.querySelectorAll(`[data-ag-owner-check-v16="${btn.dataset.agOwnerAllV16}"]`).forEach(c=>c.checked=true); }
+      if(btn.dataset.agOwnerNoneV16){ document.querySelectorAll(`[data-ag-owner-check-v16="${btn.dataset.agOwnerNoneV16}"]`).forEach(c=>c.checked=false); }
+      if(btn.dataset.generateAgConvocationV16){ await generateAgConvocationV16(btn.dataset.generateAgConvocationV16); }
+      if(btn.dataset.generateAgPvV16){ await generateAgPvV16(btn.dataset.generateAgPvV16); }
+    });
 
     const previousLoadAllV14 = loadAll;
     loadAll = async function(){ await previousLoadAllV14(); await loadAgModuleData(); renderAll(); };
