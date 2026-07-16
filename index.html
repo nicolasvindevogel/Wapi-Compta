@@ -1429,6 +1429,31 @@
     @media(max-width:1100px){.ag-v15-workflow,.ag-v15-quorum{grid-template-columns:1fr 1fr}.ag-v15-editor-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.ag-v15-workflow,.ag-v15-quorum{grid-template-columns:1fr}}
 
+  
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -2137,15 +2162,31 @@
         <section id="statementsView" class="view hidden">
           <div class="card">
             <div class="toolbar">
-              <h2>Decomptes</h2>
-              <span class="badge warn">Module a structurer</span>
+              <div>
+                <h2>Décomptes</h2>
+                <p class="muted-note">Décompte annuel par copropriétaire ou lot par lot : charges réelles, quotités, frais occupants, frais privatifs et situation de clôture.</p>
+              </div>
+              <div class="quick-actions">
+                <button class="btn secondary" id="settlementPreviewAllBtn" type="button">Actualiser</button>
+                <button class="btn" id="settlementPrintSelectedBtn" type="button">PDF sélection</button>
+                <button class="btn secondary" id="settlementPrintAllBtn" type="button">PDF tous</button>
+              </div>
             </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            <div class="notice">Le calcul utilise les factures fournisseurs de l’exercice, les comptes de classe 6, les clés de répartition et les lots du copropriétaire. Les frais occupants et frais privatifs sont préparés via les options ajoutées dans les factures.</div>
+            <div class="list-filters">
+              <label>Copropriété <select id="settlementCoproFilter"></select></label>
+              <label>Exercice <select id="settlementYearFilter"></select></label>
+              <label>Mode <select id="settlementMode"><option value="owner">Décompte copropriétaire global</option><option value="lot">Décompte lot par lot</option></select></label>
+              <label>Recherche <input id="settlementSearch" placeholder="Nom copropriétaire, lot..."></label>
             </div>
-            <p style="color:var(--muted); line-height:1.5;">Préparer les décomptes copropriétaires : charges, paiements, régularisation et solde.</p>
-            <div class="module-grid"><div class="module-card"><h3>Décompte annuel</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Situation individuelle</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Contrôle avant envoi</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div id="settlementSummary" class="settlement-dashboard"></div>
+            <div class="settlement-layout">
+              <div>
+                <div class="toolbar" style="margin-bottom:8px;"><strong>Copropriétaires</strong><div class="actions-inline"><button class="btn secondary small" type="button" id="settlementSelectAllBtn">Tous</button><button class="btn secondary small" type="button" id="settlementSelectNoneBtn">Aucun</button></div></div>
+                <div id="settlementOwnerList" class="settlement-owner-list"></div>
+              </div>
+              <div id="settlementDetail" class="settlement-detail"><div class="notice">Sélectionne un copropriétaire pour afficher son décompte.</div></div>
+            </div>
           </div>
         </section>
 
@@ -5132,7 +5173,32 @@
       closeAppModal(); await loadAll();
     }
 
-    function printOwnerCall(id){ const c=state.ownerCalls.find((x)=>x.id===id); if(!c)return; const copro=state.copros.find((x)=>x.id===c.copro_id); const owner=c.compta_owners?.display_name||''; const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Appel ${c.label}</title><style>body{font-family:Century Gothic,Arial;margin:40px;color:#172033}.head{display:flex;justify-content:space-between;border-bottom:4px solid #1f7a8c;padding-bottom:18px}.logo{font-weight:900;color:#1f7a8c;font-size:26px}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}.amount{font-size:30px;color:#1f7a8c;font-weight:900}</style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div><script>print();<\/script></body></html>`); win.document.close(); }
+    function printOwnerCall(id){ const c=state.ownerCalls.find((x)=>x.id===id); if(!c)return; const copro=state.copros.find((x)=>x.id===c.copro_id); const owner=c.compta_owners?.display_name||''; const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Appel ${c.label}</title><style>body{font-family:Century Gothic,Arial;margin:40px;color:#172033}.head{display:flex;justify-content:space-between;border-bottom:4px solid #1f7a8c;padding-bottom:18px}.logo{font-weight:900;color:#1f7a8c;font-size:26px}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}.amount{font-size:30px;color:#1f7a8c;font-weight:900}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div><script>print();<\/script></body></html>`); win.document.close(); }
     function printAllCalls(){ state.ownerCalls.filter((c)=>!state.activeCoproId||c.copro_id===state.activeCoproId).slice(0,50).forEach((c)=>printOwnerCall(c.id)); }
 
     function openDistributionKeyModal(id=null){ const key=id?state.distributionKeys.find(k=>k.id===id):null; const coproId=key?.copro_id||state.activeCoproId||$('distributionCopro')?.value||''; const body=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="modalDistCopro">${coproOptions(coproId)}</select></label><label>Nom de la clé <input id="modalDistName" value="${escapeHtml(key?.name||'')}"></label><label>Clé par défaut <select id="modalDistDefault"><option value="false">Non</option><option value="true" ${key?.is_default?'selected':''}>Oui</option></select></label></div></div>`; openAppModal(id?'Modifier clé de répartition':'Nouvelle clé de répartition', body, modalFormFooter('modalSaveDistBtn', id&&!key?.is_default?`<button class="btn danger" type="button" id="modalDeleteDistBtn">Supprimer</button>`:''), {size:'narrow'}); $('modalSaveDistBtn').onclick=async()=>{ const payload={copro_id:$('modalDistCopro').value,name:$('modalDistName').value.trim(),is_default:$('modalDistDefault').value==='true',created_by:currentUser.id}; if(!payload.copro_id||!payload.name)return alert('Complète les champs.'); const req=id?supabaseClient.from('compta_distribution_keys').update(payload).eq('id',id):supabaseClient.from('compta_distribution_keys').insert(payload); const {error}=await req; if(error)return alert(error.message); closeAppModal(); await loadAll(); }; if($('modalDeleteDistBtn'))$('modalDeleteDistBtn').onclick=async()=>{ if(!confirm('Supprimer cette clé ?'))return; await supabaseClient.from('compta_distribution_items').delete().eq('distribution_key_id',id); const {error}=await supabaseClient.from('compta_distribution_keys').delete().eq('id',id); if(error)return alert(error.message); closeAppModal(); await loadAll(); }; }
@@ -5288,7 +5354,32 @@
       const header = (state.budgetHeaders||[]).find((b)=>b.id===headerId);
       const groups = {};
       lines.forEach((l)=>{ const key=l.distribution_key_id||'none'; groups[key]=groups[key]||[]; groups[key].push(l); });
-      const htmlBody = `<!doctype html><html><head><title>Budget</title><style>body{font-family:Century Gothic,Arial;margin:35px;color:#172033}.head{border-bottom:5px solid #1f7a8c;padding-bottom:18px;display:flex;justify-content:space-between}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.key{margin-top:22px;border:1px solid #dde3ee;border-radius:12px;overflow:hidden}.key h2{margin:0;background:#eef8fc;padding:12px 14px;color:#14586a}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #e6eef5;text-align:left}.total{margin-top:24px;font-size:24px;font-weight:900;text-align:right;color:#1f7a8c}</style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>${escapeHtml(header?.label||'Budget')}</h1><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>${Object.entries(groups).map(([keyId,arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="key"><h2>${escapeHtml(k?.name||'Sans clé')} - ${money(subtotal)}</h2><table><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr>${arr.map((l)=>{const a=l.compta_accounts||state.accounts.find(x=>x.id===l.account_id)||{}; return `<tr><td>${escapeHtml((a.code||'')+' - '+(a.label||''))}</td><td>${escapeHtml(l.label||'')}</td><td>${money(l.amount)}</td></tr>`}).join('')}</table></div>`}).join('')}<div class="total">TOTAL BUDGET : ${money(total)}</div><script>window.print();<\/script></body></html>`;
+      const htmlBody = `<!doctype html><html><head><title>Budget</title><style>body{font-family:Century Gothic,Arial;margin:35px;color:#172033}.head{border-bottom:5px solid #1f7a8c;padding-bottom:18px;display:flex;justify-content:space-between}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.key{margin-top:22px;border:1px solid #dde3ee;border-radius:12px;overflow:hidden}.key h2{margin:0;background:#eef8fc;padding:12px 14px;color:#14586a}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #e6eef5;text-align:left}.total{margin-top:24px;font-size:24px;font-weight:900;text-align:right;color:#1f7a8c}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>${escapeHtml(header?.label||'Budget')}</h1><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>${Object.entries(groups).map(([keyId,arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="key"><h2>${escapeHtml(k?.name||'Sans clé')} - ${money(subtotal)}</h2><table><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr>${arr.map((l)=>{const a=l.compta_accounts||state.accounts.find(x=>x.id===l.account_id)||{}; return `<tr><td>${escapeHtml((a.code||'')+' - '+(a.label||''))}</td><td>${escapeHtml(l.label||'')}</td><td>${money(l.amount)}</td></tr>`}).join('')}</table></div>`}).join('')}<div class="total">TOTAL BUDGET : ${money(total)}</div><script>window.print();<\/script></body></html>`;
       const w=window.open('','_blank'); w.document.write(htmlBody); w.document.close();
     }
 
@@ -5380,7 +5471,32 @@
       renderThirdBalance();
       const content = $('thirdBalanceTable').innerHTML;
       const w=window.open('','_blank');
-      w.document.write(`<!doctype html><html><head><title>Situation de compte</title><style>body{font-family:Century Gothic,Arial;margin:35px;color:#172033}.head{border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.third-detail{display:block!important}.hidden{display:block!important}.btn{display:none}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #e6eef5;padding:8px;text-align:left}.third-balance-row{display:flex;justify-content:space-between;border-bottom:2px solid #dde3ee;padding:12px 0}.third-balance-amount{font-weight:900}</style></head><body><div class="head"><div class="logo">WAPI-SYNDIK</div><h1>Situation de compte / Balance des tiers</h1></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
+      w.document.write(`<!doctype html><html><head><title>Situation de compte</title><style>body{font-family:Century Gothic,Arial;margin:35px;color:#172033}.head{border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.third-detail{display:block!important}.hidden{display:block!important}.btn{display:none}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #e6eef5;padding:8px;text-align:left}.third-balance-row{display:flex;justify-content:space-between;border-bottom:2px solid #dde3ee;padding:12px 0}.third-balance-amount{font-weight:900}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body><div class="head"><div class="logo">WAPI-SYNDIK</div><h1>Situation de compte / Balance des tiers</h1></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
     }
 
     const originalRenderAllV10 = renderAll;
@@ -5643,7 +5759,32 @@
       const calls = ids.map((id)=>state.ownerCalls.find((c)=>c.id===id)).filter(Boolean);
       if (!calls.length) return alert('Aucun copropriétaire sélectionné.');
       const body = calls.map((c)=>{ const copro=state.copros.find((x)=>x.id===c.copro_id); const owner=c.compta_owners?.display_name||''; return `<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div></section>`; }).join('');
-      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>body{font-family:Century Gothic,Arial;margin:0;color:#172033}.page{min-height:100vh;box-sizing:border-box;padding:38px;page-break-after:always}.head{display:flex;justify-content:space-between;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-weight:900;color:#1f7a8c;font-size:26px}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}.amount{font-size:30px;color:#1f7a8c;font-weight:900}@media print{.page{page-break-after:always}}</style></head><body>${body}<script>window.print();<\/script></body></html>`); win.document.close();
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>body{font-family:Century Gothic,Arial;margin:0;color:#172033}.page{min-height:100vh;box-sizing:border-box;padding:38px;page-break-after:always}.head{display:flex;justify-content:space-between;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-weight:900;color:#1f7a8c;font-size:26px}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}.amount{font-size:30px;color:#1f7a8c;font-weight:900}@media print{.page{page-break-after:always}}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${body}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
     function printCallGroupAllV11(callKey) { printOwnerCallsV11(state.ownerCalls.filter((c)=>c.call_id===callKey).map((c)=>c.id), 'Appels de fonds'); }
@@ -5699,7 +5840,32 @@
       if (!rows.length) return alert('Aucun tiers sélectionné.');
       const content = grouped ? `<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Balance des tiers</h1></div></div>${rows.map((r)=>`<h2>${escapeHtml(r.name)} - ${r.balance>=0?'Débiteur':'Créditeur'} ${money(Math.abs(r.balance))}</h2>${table(['Date','Libellé','Débit','Crédit'], r.details.map((d)=>[d.date||'',d.label||'',d.debit?money(d.debit):'',d.credit?money(d.credit):'']))}`).join('<hr>')}</section>` : rows.map(htmlForThirdSituation).join('');
       const win = window.open('','_blank');
-      win.document.write(`<!doctype html><html><head><title>Situation de compte</title><style>body{font-family:Century Gothic,Arial;margin:0;color:#172033}.page{min-height:100vh;box-sizing:border-box;padding:36px;page-break-after:always}.head{display:flex;justify-content:space-between;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #e6eef5;text-align:left}h2{color:#14586a}@media print{.page{page-break-after:always}}</style></head><body>${content}<script>window.print();<\/script></body></html>`); win.document.close();
+      win.document.write(`<!doctype html><html><head><title>Situation de compte</title><style>body{font-family:Century Gothic,Arial;margin:0;color:#172033}.page{min-height:100vh;box-sizing:border-box;padding:36px;page-break-after:always}.head{display:flex;justify-content:space-between;border-bottom:5px solid #1f7a8c;padding-bottom:18px}.logo{font-size:26px;color:#1f7a8c;font-weight:900}.box{border:1px solid #dde3ee;border-radius:14px;padding:18px;margin-top:22px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #e6eef5;text-align:left}h2{color:#14586a}@media print{.page{page-break-after:always}}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${content}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
     function rowsForCurrentThirdBalanceV11() {
@@ -8083,14 +8249,64 @@
     function printAgConvocationV14(meetingId){
       const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const owners=getCoproOwnersForAg(m.copro_id); const copro=coproNameByIdV14(m.copro_id);
       const pages = owners.map(o=>`<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Convocation à l’assemblée générale</h1><strong>${escapeHtml(copro)}</strong></div></div><div class="box"><p><strong>Destinataire :</strong> ${escapeHtml(o.owner.display_name||'')}</p><p><strong>Lots :</strong> ${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</p><p><strong>Date :</strong> ${formatDateV14(m.meeting_date)} à ${escapeHtml(m.meeting_time||'')}</p><p><strong>Lieu :</strong> ${escapeHtml(m.location||'')}</p></div><h2>Ordre du jour</h2><ol>${points.map(p=>`<li><strong>${escapeHtml(p.title||'')}</strong><br><span class="muted">${escapeHtml(p.description||'')}</span><br><em>${escapeHtml(majorityLabel(p.majority_type||'simple'))}</em></li>`).join('')}</ol><div class="proxy-box"><h2>Procuration</h2><p>Je soussigné(e) ${escapeHtml(o.owner.display_name||'')}, propriétaire du/des lot(s) ${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}, donne procuration à :</p><p>Nom du mandataire : .......................................................................................</p><p>Pour me représenter à l’assemblée générale du ${formatDateV14(m.meeting_date)}.</p><div class="sign"></div><p class="muted">Signature précédée de la mention “bon pour pouvoir”.</p></div></section>`).join('');
-      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Convocations AG</title><style>${pdfCssAgV14()}</style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Convocations AG</title><style>${pdfCssAgV14()}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
     }
     function printAgPvV14(meetingId){
       const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const attendees=agMeetingAttendees(meetingId); const q=computeAgQuorum(m); const copro=coproNameByIdV14(m.copro_id);
       const attendeesRows = attendees.map(a=>`<tr><td>${escapeHtml(a.compta_owners?.display_name || ownerDisplayNameById(a.owner_id) || '')}</td><td>${escapeHtml(a.lots_label||'')}</td><td>${Number(a.quotities||0).toLocaleString('fr-BE')}</td><td>${escapeHtml(a.status||'absent')}</td><td>${escapeHtml(a.representative_name||'')}</td></tr>`).join('');
       const pointsHtml = points.map((p,idx)=>{ const r=computeAgVoteResult(p); return `<div class="box"><h2>${idx+1}. ${escapeHtml(p.title||'Point')}</h2><p>${escapeHtml(p.description||'')}</p><p><strong>Majorité :</strong> ${escapeHtml(majorityLabel(p.majority_type||'simple'))}</p><table><tr><th>Pour</th><th>Contre</th><th>Abstention</th><th>Résultat</th></tr><tr><td>${Number(r.yes).toLocaleString('fr-BE')}</td><td>${Number(r.no).toLocaleString('fr-BE')}</td><td>${Number(r.abstain).toLocaleString('fr-BE')}</td><td>${escapeHtml(r.label)}</td></tr></table><p><strong>Décision :</strong><br>${escapeHtml(p.decision_text||'')}</p><p><strong>Remarques :</strong><br>${escapeHtml(p.remarks||'')}</p></div>`; }).join('');
       const html=`<section class="page"><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Procès-verbal d’assemblée générale</h1><strong>${escapeHtml(copro)}</strong></div></div><div class="box"><p><strong>Date :</strong> ${formatDateV14(m.meeting_date)} ${escapeHtml(m.meeting_time||'')}</p><p><strong>Lieu :</strong> ${escapeHtml(m.location||'')}</p><p><strong>Quorum :</strong> ${q.ok?'atteint':'non atteint'} — personnes ${q.presentOwners}/${q.ownerTotal}, quotités ${Number(q.presentQuotities).toLocaleString('fr-BE')}/${Number(q.quotityTotal).toLocaleString('fr-BE')}</p></div><h2>Présences</h2><table><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Statut</th><th>Mandataire</th></tr>${attendeesRows}</table></section><section class="page"><h1>Points et décisions</h1>${pointsHtml}<div class="box"><p>Président de séance : ............................................................</p><p>Secrétaire : ............................................................</p></div></section>`;
-      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}</style></head><body>${html}<script>window.print();<\/script></body></html>`); win.document.close();
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${html}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
     async function deleteAgV14(id){ if(!confirm('Supprimer cette AG et ses points/votes ?')) return; const {error}=await supabaseClient.from('compta_ag_meetings').delete().eq('id',id); if(error) return alert(error.message); state.agSelectedMeetingId=''; await loadAgModuleData(); renderMeetingsV14(); }
@@ -8260,7 +8476,32 @@
         <section class="page">${agPdfHeaderV15('Convocation AG',copro)}<div class="intro"><p>Madame, Monsieur,</p><p>Nous avons l’honneur de vous inviter à participer à l’assemblée générale de l’association des copropriétaires mentionnée ci-dessus.</p><p>Votre présence est importante. En cas d’impossibilité, nous vous invitons à compléter la procuration jointe afin de vous faire représenter valablement.</p></div><div class="meta-grid"><div class="meta"><span>Destinataire</span><strong>${escapeHtml(o.owner.display_name||'')}</strong><div>${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</div></div><div class="meta"><span>Date et heure</span><strong>${formatDateV14(m.meeting_date)} à ${escapeHtml(m.meeting_time||'')}</strong><div>${escapeHtml(m.location||'Lieu à préciser')}</div></div><div class="meta"><span>Type</span><strong>${escapeHtml(m.meeting_type==='extraordinary'?'Assemblée générale extraordinaire':m.meeting_type==='second'?'Seconde séance':'Assemblée générale ordinaire')}</strong></div><div class="meta"><span>Date convocation</span><strong>${formatDateV14(m.convocation_date)||new Date().toLocaleDateString('fr-BE')}</strong></div></div>${agPdfFooterV15('Convocation')}</section>
         <section class="page">${agPdfHeaderV15('Ordre du jour',copro)}<ol class="agenda-list">${points.map(p=>`<li><span class="agenda-title">${escapeHtml(p.title||'Point')}</span><span class="agenda-desc">${escapeHtml(p.description||'')}</span><span class="agenda-desc"><em>${escapeHtml(majorityLabel(p.majority_type||'simple'))}</em></span></li>`).join('')}</ol>${agPdfFooterV15('Ordre du jour')}</section>
         <section class="page">${agPdfHeaderV15('Procuration',copro)}<div class="proxy-box"><h2>Procuration</h2><p>Je soussigné(e) <strong>${escapeHtml(o.owner.display_name||'')}</strong>, propriétaire du/des lot(s) <strong>${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</strong>, déclare donner procuration à :</p><div class="line"></div><p>afin de me représenter à l’assemblée générale du <strong>${formatDateV14(m.meeting_date)}</strong> et de voter en mon nom sur les points inscrits à l’ordre du jour.</p><p>Fait à : <span style="display:inline-block;width:180px;border-bottom:1px dotted #6b7280;"></span> le : <span style="display:inline-block;width:140px;border-bottom:1px dotted #6b7280;"></span></p><div class="sign"></div><p class="muted">Signature précédée de la mention “bon pour pouvoir”.</p></div>${agPdfFooterV15('Procuration')}</section>`).join('');
-      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Convocations AG</title><style>${pdfCssAgV14()}</style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Convocations AG</title><style>${pdfCssAgV14()}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
     }
     function voteDetailRowsV15(point){
       const attendees=agPresentAttendeesV15(point.meeting_id);
@@ -8273,7 +8514,32 @@
       const presence=`<section class="page">${agPdfHeaderV15('Présences et quorum',copro)}<div class="quorum-pills"><div class="pill"><span>Personnes</span><strong>${q.presentOwners}/${q.ownerTotal}</strong><div>${agPercentV15(q.presentOwners,q.ownerTotal)}%</div></div><div class="pill"><span>Quotités</span><strong>${Number(q.presentQuotities).toLocaleString('fr-BE')}/${Number(q.quotityTotal).toLocaleString('fr-BE')}</strong><div>${agPercentV15(q.presentQuotities,q.quotityTotal)}%</div></div><div class="pill"><span>Quorum</span><strong>${q.ok?'Atteint':'Non atteint'}</strong></div></div><table><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Statut</th><th>Mandataire</th></tr>${presenceRows}</table>${agPdfFooterV15('Présences')}</section>`;
       const pointPages=points.map((p,idx)=>{ const r=computeAgVoteResult(p); const yesNames=agVoteNamesV15(p,'yes').join('<br>')||'—'; const noNames=agVoteNamesV15(p,'no').join('<br>')||'—'; const abstNames=agVoteNamesV15(p,'abstain').join('<br>')||'—'; return `<section class="page">${agPdfHeaderV15(`Point ${idx+1}`,copro)}<h2>${escapeHtml(p.title||'Point')}</h2><p class="muted">${escapeHtml(p.description||'')}</p><div class="box"><p><strong>Majorité :</strong> ${escapeHtml(majorityLabel(p.majority_type||'simple'))}</p><p><strong>Résultat :</strong> <span class="result ${r.passed===true?'ok':r.passed===false?'no':''}">${escapeHtml(r.label)}</span> ${r.base?`— ${agPercentV15(r.yes,r.base)}% de voix favorables`:''}</p></div><table><tr><th></th><th>Quotités</th><th>% base</th><th>Copropriétaires</th></tr><tr><td class="vote-yes">Oui</td><td>${Number(r.yes).toLocaleString('fr-BE')}</td><td>${agPercentV15(r.yes,r.base)}%</td><td>${yesNames}</td></tr><tr><td class="vote-no">Non</td><td>${Number(r.no).toLocaleString('fr-BE')}</td><td>${agPercentV15(r.no,r.base)}%</td><td>${noNames}</td></tr><tr><td class="vote-abstain">Abstention</td><td>${Number(r.abstain).toLocaleString('fr-BE')}</td><td>${agPercentV15(r.abstain,r.base)}%</td><td>${abstNames}</td></tr></table><h3>Détail des votes</h3><table><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Vote</th></tr>${voteDetailRowsV15(p)}</table><div class="box"><p><strong>Décision :</strong><br>${escapeHtml(p.decision_text||'')}</p><p><strong>Remarques :</strong><br>${escapeHtml(p.remarks||'')}</p></div>${agPdfFooterV15(`PV - point ${idx+1}`)}</section>`; }).join('');
       const sign=`<section class="page">${agPdfHeaderV15('Signatures',copro)}<div class="box"><p>Président de séance :</p><div class="sign"></div><p>Secrétaire :</p><div class="sign"></div></div>${agPdfFooterV15('Signatures')}</section>`;
-      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}</style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
 
@@ -8368,7 +8634,32 @@
     }
     function openPrintWindowV16(title, content){
       const win=window.open('','_blank');
-      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}</style></head><body>${content}<script>window.print();<\/script></body></html>`);
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}
+
+    /* ---- V17 : Décomptes, PDF fenêtre droite et annexes imprimables ---- */
+    .settlement-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .settlement-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .settlement-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .settlement-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .settlement-layout{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+    .settlement-owner-list{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;max-height:72vh;overflow-y:auto}
+    .settlement-owner-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7;cursor:pointer}
+    .settlement-owner-row:hover,.settlement-owner-row.active{background:#f4fbfd}
+    .settlement-owner-row strong{display:block}.settlement-owner-row small{color:var(--muted)}
+    .settlement-detail{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+    .settlement-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin-top:12px}
+    .settlement-table th{background:#f2f7fa;color:#14586a;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .settlement-table td,.settlement-table th{padding:9px 10px;border-bottom:1px solid #edf2f7;vertical-align:top}
+    .settlement-table tr:last-child td{border-bottom:0}.settlement-table .amount{text-align:right;white-space:nowrap;font-weight:800}
+    .settlement-account-row{background:#fbfdfe;font-weight:900;color:#14586a}
+    .settlement-key-row{font-size:12px;color:#475569;background:#fff}.settlement-total-line{font-size:17px;font-weight:900;color:#14586a}
+    .settlement-big-result{border:2px solid rgba(31,122,140,.25);border-radius:20px;padding:18px;background:linear-gradient(135deg,#f7fdff,#fff);display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px}
+    .settlement-big-result strong{font-size:28px;color:#1f7a8c}.settlement-big-result.negative strong{color:#157347}.settlement-big-result.positive strong{color:#b42318}
+    .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
+    @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  </style></head><body>${content}<script>window.print();<\/script></body></html>`);
       win.document.close();
     }
     function pdfCssAgV16(){ return `@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Century Gothic,Arial,sans-serif;margin:0;color:#172033;background:white;font-size:12px;line-height:1.38}.page{position:relative;min-height:267mm;padding:0 0 13mm 0;break-inside:avoid}.page:not(:last-child){break-after:page}.brandbar{height:7px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:16px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:13px;margin-bottom:16px}.logo{font-size:24px;color:#1f7a8c;font-weight:900;letter-spacing:.02em}.agency{font-size:10.5px;color:#475569;line-height:1.35}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:22px}.doc-title strong{display:block;margin-top:4px;color:#172033}.window-address{position:absolute;left:22mm;top:42mm;width:86mm;min-height:28mm;border:0;padding:0;font-size:12px;line-height:1.45;color:#111827}.with-window-space{padding-top:48mm}.intro{font-size:13px;line-height:1.55}.muted{color:#667085}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.meta,.box{border:1px solid #d9e6ec;border-radius:12px;padding:10px;background:#fbfdfe}.box{margin-top:12px}.meta span{display:block;color:#667085;font-size:9.5px;text-transform:uppercase;font-weight:800;letter-spacing:.04em}.meta strong{display:block;margin-top:3px;font-size:13px}h1,h2,h3{color:#14586a}h2{font-size:17px;margin:0 0 9px}.agenda-list{counter-reset:item;margin:0;padding:0;list-style:none}.agenda-list li{counter-increment:item;border-bottom:1px solid #e6eef5;padding:8px 0;break-inside:avoid}.agenda-list li:before{content:counter(item);display:inline-flex;width:24px;height:24px;border-radius:8px;background:#eaf7fa;color:#14586a;align-items:center;justify-content:center;font-weight:900;margin-right:8px}.agenda-title{font-weight:900}.agenda-desc{display:block;margin-left:36px;margin-top:2px;color:#475569;line-height:1.35}.proxy-box{border:2px solid #1f7a8c;border-radius:16px;padding:15px;margin-top:22px}.line{border-bottom:1px dotted #6b7280;height:24px;margin:7px 0}.sign{height:60px;border-bottom:1px solid #94a3b8;margin-top:16px}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:6px;color:#64748b;font-size:9.5px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10.5px}td,th{padding:5px 6px;border-bottom:1px solid #e6eef5;text-align:left;vertical-align:top}th{background:#f2f7fa;color:#14586a}.amount{text-align:right;white-space:nowrap}.vote-yes{color:#146c2e;font-weight:900}.vote-no{color:#991b1b;font-weight:900}.vote-abstain{color:#92400e;font-weight:900}.result{display:inline-block;border-radius:999px;padding:3px 8px;font-weight:900}.result.ok{background:#dff7e8;color:#146c2e}.result.no{background:#fde2e2;color:#991b1b}.quorum-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pill{border:1px solid #d9e6ec;border-radius:12px;padding:8px;background:#fbfdfe}.pill span{display:block;color:#667085;font-size:9px;text-transform:uppercase;font-weight:800}.pill strong{font-size:15px;color:#14586a}.pv-point{border:1px solid #d9e6ec;border-radius:12px;padding:10px;margin:9px 0;break-inside:avoid}.pv-point h3{font-size:14px;margin:0 0 6px}.pv-point-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.names{font-size:9.5px;color:#475569}.annex-img{max-width:100%;max-height:238mm;display:block;margin:0 auto}.annex-pdf{width:100%;height:238mm;border:1px solid #d9e6ec;border-radius:8px}.compact-section{break-inside:avoid}.page-auto{min-height:auto;padding-bottom:15mm}.page-auto:not(:last-child){break-after:auto}@media print{.page:not(:last-child){page-break-after:always}.page-auto:not(:last-child){page-break-after:auto}.pv-point{break-inside:avoid}}`; }
@@ -8472,6 +8763,306 @@
     loadAll = async function(){ await previousLoadAllV14(); await loadAgModuleData(); renderAll(); };
     const previousRenderAllV14 = renderAll;
     renderAll = function(){ previousRenderAllV14(); renderMeetingsV14(); renderResolutionCatalogV14(); };
+
+
+
+
+    // ---- V17 : PDF fenêtre à droite, annexes réellement imprimables et module Décomptes ----
+    state.selectedSettlementOwnerId = state.selectedSettlementOwnerId || '';
+
+    function ownerCityZipLineV17(owner){ return [owner?.postal_code || owner?.zip || '', owner?.city || ''].filter(Boolean).join(' '); }
+    function ownerAddressBlockV16(owner){
+      const lines=[];
+      if(owner?.display_name) lines.push(owner.display_name);
+      const address = owner?.address || owner?.street || owner?.postal_address || '';
+      if(address) lines.push(address);
+      const zipCity = ownerCityZipLineV17(owner);
+      if(zipCity) lines.push(zipCity);
+      if(!address && !zipCity) lines.push('Adresse à compléter');
+      return lines.map(escapeHtml).join('<br>');
+    }
+    function agWindowAddressV16(owner){ return `<div class="window-address window-address-right">${ownerAddressBlockV16(owner)}</div>`; }
+
+    function pdfCssAgV16(){ return `@page{size:A4;margin:14mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Century Gothic,Arial,sans-serif;color:#172033;background:white;font-size:11.5px;line-height:1.34}.page{position:relative;min-height:267mm;padding:0 0 12mm 0;break-inside:avoid;page-break-inside:avoid}.page:not(:last-child){break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}.brandbar{height:7px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:14px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:12px;margin-bottom:14px}.logo{font-size:23px;color:#1f7a8c;font-weight:900;letter-spacing:.02em}.agency{font-size:10px;color:#475569;line-height:1.32}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:21px}.doc-title strong{display:block;margin-top:4px;color:#172033}.window-address{position:absolute;right:18mm;top:44mm;width:86mm;min-height:31mm;border:0;padding:0;font-size:12px;line-height:1.42;color:#111827;font-weight:700}.window-address-right{text-align:left}.with-window-space{padding-top:55mm}.intro{font-size:12.5px;line-height:1.52}.muted{color:#667085}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.meta,.box{border:1px solid #d9e6ec;border-radius:12px;padding:9px;background:#fbfdfe}.box{margin-top:10px}.meta span{display:block;color:#667085;font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:.04em}.meta strong{display:block;margin-top:3px;font-size:12.5px}h1,h2,h3{color:#14586a}h2{font-size:16px;margin:0 0 8px}.agenda-list{counter-reset:item;margin:0;padding:0;list-style:none}.agenda-list li{counter-increment:item;border-bottom:1px solid #e6eef5;padding:7px 0;break-inside:avoid;page-break-inside:avoid}.agenda-list li:before{content:counter(item);display:inline-flex;width:23px;height:23px;border-radius:8px;background:#eaf7fa;color:#14586a;align-items:center;justify-content:center;font-weight:900;margin-right:8px}.agenda-title{font-weight:900}.agenda-desc{display:block;margin-left:34px;margin-top:2px;color:#475569;line-height:1.32}.proxy-box{border:2px solid #1f7a8c;border-radius:16px;padding:15px;margin-top:10px}.line{border-bottom:1px dotted #6b7280;height:24px;margin:7px 0}.sign{height:58px;border-bottom:1px solid #94a3b8;margin-top:16px}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:6px;color:#64748b;font-size:9px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin-top:7px;font-size:10px}td,th{padding:4.5px 5.5px;border-bottom:1px solid #e6eef5;text-align:left;vertical-align:top}th{background:#f2f7fa;color:#14586a}.amount{text-align:right;white-space:nowrap}.vote-yes{color:#146c2e;font-weight:900}.vote-no{color:#991b1b;font-weight:900}.vote-abstain{color:#92400e;font-weight:900}.result{display:inline-block;border-radius:999px;padding:3px 8px;font-weight:900}.result.ok{background:#dff7e8;color:#146c2e}.result.no{background:#fde2e2;color:#991b1b}.quorum-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.pill{border:1px solid #d9e6ec;border-radius:12px;padding:8px;background:#fbfdfe}.pill span{display:block;color:#667085;font-size:8.8px;text-transform:uppercase;font-weight:800}.pill strong{font-size:14px;color:#14586a}.pv-point{border:1px solid #d9e6ec;border-radius:12px;padding:9px;margin:7px 0;break-inside:avoid;page-break-inside:avoid}.pv-point h3{font-size:13px;margin:0 0 5px}.pv-point-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.names{font-size:9px;color:#475569}.annex-img{width:100%;height:auto;max-height:250mm;object-fit:contain;display:block;margin:0 auto}.compact-section{break-inside:avoid;page-break-inside:avoid}.settlement-cover-total{font-size:24px;font-weight:900;color:#1f7a8c}.settlement-pay{border:2px solid #1f7a8c;border-radius:14px;padding:12px;margin-top:10px;background:#f7fdff}.debit{color:#b42318}.credit{color:#157347}@media print{.page:not(:last-child){page-break-after:always}.page:last-child{page-break-after:auto}.pv-point,.compact-section,tr{page-break-inside:avoid;break-inside:avoid}}`; }
+
+    async function renderPdfFileToImagesV17(file){
+      const pages=[];
+      if(!window.pdfjsLib) return pages;
+      try{
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buffer=await file.arrayBuffer();
+        const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
+        const maxPages=Math.min(pdf.numPages, 30);
+        for(let p=1;p<=maxPages;p++){
+          const page=await pdf.getPage(p);
+          const viewport=page.getViewport({scale:1.75});
+          const canvas=document.createElement('canvas');
+          const ctx=canvas.getContext('2d');
+          canvas.width=Math.floor(viewport.width); canvas.height=Math.floor(viewport.height);
+          await page.render({canvasContext:ctx, viewport}).promise;
+          pages.push(canvas.toDataURL('image/jpeg',0.92));
+        }
+      }catch(e){ console.warn('Annexe PDF non rendue', e); }
+      return pages;
+    }
+    async function readAnnexFilesV16(inputId){
+      const input=$(inputId); const files=[...(input?.files||[])];
+      const out=[];
+      for(const file of files){
+        const type=file.type||'';
+        if(type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf')){
+          const pages=await renderPdfFileToImagesV17(file);
+          out.push({name:file.name,type:'application/pdf-rendered',pages});
+        } else if(type.startsWith('image/')){
+          const url=await new Promise(resolve=>{const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=()=>resolve(''); r.readAsDataURL(file);});
+          out.push({name:file.name,type,url});
+        } else {
+          out.push({name:file.name,type,url:''});
+        }
+      }
+      return out;
+    }
+    function agAnnexPagesV16(annexes){
+      return (annexes||[]).map((f,idx)=>{
+        const safe=escapeHtml(f.name||`Annexe ${idx+1}`);
+        if(f.type==='application/pdf-rendered' && f.pages?.length){
+          return f.pages.map((url,p)=>`<section class="page">${agPdfHeaderV15(`Annexe ${idx+1}${f.pages.length>1?' - page '+(p+1):''}`,'Document joint')}<div class="muted" style="margin-bottom:6px;">${safe}</div><img class="annex-img" src="${url}" alt="${safe}">${agPdfFooterV15('Annexe')}</section>`).join('');
+        }
+        if((f.type||'').startsWith('image/')) return `<section class="page">${agPdfHeaderV15('Annexe','Document joint')}<div class="muted" style="margin-bottom:6px;">${safe}</div><img class="annex-img" src="${f.url}" alt="${safe}">${agPdfFooterV15('Annexe')}</section>`;
+        return `<section class="page">${agPdfHeaderV15('Annexe','Document joint')}<div class="box"><h2>${safe}</h2><p>Document joint à consulter séparément si le navigateur ne peut pas l’intégrer à l’impression.</p></div>${agPdfFooterV15('Annexe')}</section>`;
+      }).join('');
+    }
+    function openPrintWindowV16(title, content){
+      const win=window.open('','_blank');
+      const script=`<script>function go(){const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r;}))).then(()=>setTimeout(()=>window.print(),450));}window.addEventListener('load',go);<\/script>`;
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}</style></head><body>${content}${script}</body></html>`);
+      win.document.close();
+    }
+
+    function agConvocationPagesForOwnerV16(m,o,points,copro,opts,annexHtml){
+      const owner=o.owner;
+      const agenda=points.map(p=>`<li><span class="agenda-title">${escapeHtml(p.title||'Point')}</span><span class="agenda-desc">${escapeHtml(p.description||'')}</span><span class="agenda-desc"><em>${escapeHtml(majorityLabel(p.majority_type||'simple'))}</em></span></li>`).join('');
+      return `<section class="page">${agPdfHeaderV15('Convocation AG',copro)}${agWindowAddressV16(owner)}<div class="with-window-space intro"><p>Madame, Monsieur,</p><p>Nous avons l’honneur de vous inviter à participer à l’assemblée générale de l’association des copropriétaires mentionnée ci-dessus.</p><p>Votre présence est importante. En cas d’impossibilité, nous vous invitons à compléter la procuration jointe afin de vous faire représenter valablement.</p></div><div class="meta-grid"><div class="meta"><span>Destinataire</span><strong>${escapeHtml(owner.display_name||'')}</strong><div>${escapeHtml(ownerLotsLabelV16(o))}</div></div><div class="meta"><span>Date et heure</span><strong>${formatDateV14(m.meeting_date)} à ${escapeHtml(m.meeting_time||'')}</strong><div>${escapeHtml(m.location||'Lieu à préciser')}</div></div><div class="meta"><span>Type</span><strong>${escapeHtml(m.meeting_type==='extraordinary'?'Assemblée générale extraordinaire':m.meeting_type==='second'?'Seconde séance':'Assemblée générale ordinaire')}</strong></div><div class="meta"><span>Date convocation</span><strong>${formatDateV14(m.convocation_date)||new Date().toLocaleDateString('fr-BE')}</strong></div></div>${agPdfFooterV15('Convocation')}</section>
+      <section class="page">${agPdfHeaderV15('Ordre du jour',copro)}<ol class="agenda-list">${agenda}</ol>${agPdfFooterV15('Ordre du jour')}</section>
+      <section class="page">${agPdfHeaderV15('Procuration',copro)}<div class="proxy-box"><h2>Procuration</h2><p>Je soussigné(e) <strong>${escapeHtml(owner.display_name||'')}</strong>, propriétaire du/des lot(s) <strong>${escapeHtml(ownerLotsLabelV16(o))}</strong>, déclare donner procuration à :</p><div class="line"></div><p>afin de me représenter à l’assemblée générale du <strong>${formatDateV14(m.meeting_date)}</strong> et de voter en mon nom sur les points inscrits à l’ordre du jour.</p><p>Fait à : <span style="display:inline-block;width:180px;border-bottom:1px dotted #6b7280;"></span> le : <span style="display:inline-block;width:140px;border-bottom:1px dotted #6b7280;"></span></p><div class="sign"></div><p class="muted">Signature précédée de la mention “bon pour pouvoir”.</p></div>${agPdfFooterV15('Procuration')}</section>
+      ${opts.includeBudget ? agBudgetAnnexHtmlV16(opts.budgetId,copro) : ''}
+      ${opts.includeStatement ? agOwnerStatementHtmlV16(owner.id,m.copro_id,opts.statementYearId,copro) : ''}
+      ${annexHtml}`;
+    }
+
+    // Facture : affectation propriétaire/occupant/privatif pour le futur décompte.
+    function distributionKeyOptionsV17(coproId, selected=''){
+      const list=(state.distributionKeys||[]).filter(k=>!coproId||k.copro_id===coproId);
+      return '<option value="">Clé par défaut / quotités générales</option>'+list.map(k=>`<option value="${k.id}" ${k.id===selected?'selected':''}>${escapeHtml(k.name||'Clé')}</option>`).join('');
+    }
+    function ownerOptionsForCoproV17(coproId, selected=''){
+      const list=(state.owners||[]).filter(o=>!coproId||o.copro_id===coproId);
+      return '<option value="">Aucun</option>'+list.map(o=>`<option value="${o.id}" ${o.id===selected?'selected':''}>${escapeHtml(o.display_name||'')}</option>`).join('');
+    }
+    function invoiceModalHtml(invoice = null) {
+      const payment = invoice ? invoicePaymentStatus(invoice) : 'unpaid';
+      const coproId = invoice?.copro_id || state.activeCoproId || '';
+      const chargeTarget = invoice?.charge_target || 'common_owner';
+      return `
+        <div class="popup-form">
+          <div class="modal-help">Compte comptable obligatoire. Les options de décompte permettent de distinguer charges propriétaire, charges occupant et frais privatifs.</div>
+          <div class="form-grid">
+            <label>Copropriete <select id="modalInvoiceCopro">${coproOptions(coproId)}</select></label>
+            <label>Fournisseur <select id="modalInvoiceSupplier">${supplierOptions(invoice?.supplier_id || '')}</select></label>
+            <label>Compte comptable <select id="modalInvoiceAccount">${accountOptions(invoice?.account_id || '')}</select></label>
+            <label>Numero facture <input id="modalInvoiceNumber" value="${escapeHtml(invoice?.invoice_number || '')}" /></label>
+            <label>Date facture <input id="modalInvoiceDate" type="date" value="${escapeHtml(invoice?.invoice_date || '')}" /></label>
+            <label>Montant total <input id="modalInvoiceAmount" type="number" step="0.01" value="${escapeHtml(invoice?.amount_total || '')}" /></label>
+            <label>Etat paiement<select id="modalInvoicePaymentStatus"><option value="unpaid" ${payment==='unpaid'?'selected':''}>Non payee</option><option value="payment_sent" ${payment==='payment_sent'?'selected':''}>Envoyee en paiement</option><option value="partial" ${payment==='partial'?'selected':''}>Partiellement payee</option><option value="paid" ${payment==='paid'?'selected':''}>Payee / lettree</option><option value="domiciliation" ${payment==='domiciliation'?'selected':''}>Domiciliation</option></select></label>
+            <label>Statut dossier<select id="modalInvoiceStatus"><option value="draft" ${(invoice?.status||'draft')==='draft'?'selected':''}>Brouillon</option><option value="to_validate" ${invoice?.status==='to_validate'?'selected':''}>A valider</option><option value="validated" ${invoice?.status==='validated'?'selected':''}>Validee</option><option value="paid" ${invoice?.status==='paid'?'selected':''}>Payee</option><option value="rejected" ${invoice?.status==='rejected'?'selected':''}>Rejetee</option></select></label>
+          </div>
+          <div class="invoice-extra-grid">
+            <label>Clé de répartition <select id="modalInvoiceDistributionKey">${distributionKeyOptionsV17(coproId, invoice?.distribution_key_id || '')}</select></label>
+            <label>Affectation décompte <select id="modalInvoiceChargeTarget"><option value="common_owner" ${chargeTarget==='common_owner'?'selected':''}>Charge commune propriétaire</option><option value="common_occupant" ${chargeTarget==='common_occupant'?'selected':''}>Charge récupérable occupant</option><option value="private_settlement" ${chargeTarget==='private_settlement'?'selected':''}>Frais privatif dans décompte</option><option value="private_balance" ${chargeTarget==='private_balance'?'selected':''}>Frais privatif dans balance copropriétaire</option><option value="meter_pending" ${chargeTarget==='meter_pending'?'selected':''}>Relevé compteur / à traiter plus tard</option></select></label>
+            <label>Copropriétaire concerné si privatif <select id="modalInvoicePrivateOwner">${ownerOptionsForCoproV17(coproId, invoice?.private_owner_id || '')}</select></label>
+            <label>Note décompte <input id="modalInvoiceSettlementNote" value="${escapeHtml(invoice?.settlement_note || '')}" placeholder="Ex: réparation privative, récupérable locataire..." /></label>
+          </div>
+          <label>Description <textarea id="modalInvoiceDescription">${escapeHtml(invoice?.description || '')}</textarea></label>
+          ${invoice?.file_data_url ? '<div class="summary-line"><span class="badge ok">PDF disponible</span></div>' : ''}
+        </div>`;
+    }
+    async function saveInvoiceFromModal() {
+      const accountId = $('modalInvoiceAccount').value;
+      if (!accountId) return alert('Le compte comptable est obligatoire.');
+      const paymentStatus = $('modalInvoicePaymentStatus').value;
+      const amount = Number($('modalInvoiceAmount').value || 0);
+      const chargeTarget = $('modalInvoiceChargeTarget')?.value || 'common_owner';
+      const payload = {
+        copro_id: state.activeCoproId || $('modalInvoiceCopro').value,
+        supplier_id: $('modalInvoiceSupplier').value || null,
+        account_id: accountId,
+        invoice_number: $('modalInvoiceNumber').value.trim() || null,
+        invoice_date: $('modalInvoiceDate').value || null,
+        amount_total: amount,
+        status: paymentStatus === 'paid' ? 'paid' : $('modalInvoiceStatus').value,
+        payment_status: paymentStatus,
+        sent_to_payment: paymentStatus === 'payment_sent',
+        is_direct_debit: paymentStatus === 'domiciliation',
+        description: $('modalInvoiceDescription').value.trim() || null,
+        distribution_key_id: $('modalInvoiceDistributionKey')?.value || null,
+        charge_target: chargeTarget,
+        occupant_recoverable: chargeTarget === 'common_occupant',
+        private_owner_id: $('modalInvoicePrivateOwner')?.value || null,
+        settlement_destination: chargeTarget === 'private_balance' ? 'balance' : 'settlement',
+        settlement_note: $('modalInvoiceSettlementNote')?.value.trim() || null,
+        meter_related: chargeTarget === 'meter_pending',
+        source: 'manual',
+        created_by: currentUser.id
+      };
+      if (!payload.copro_id) return alert('Choisis une copropriete.');
+      if (!payload.supplier_id) return alert('Choisis un fournisseur.');
+      if (!payload.invoice_date) return alert('Indique la date de facture.');
+      if (!payload.invoice_number) return alert('Indique le numéro de facture.');
+      if (!amount) return alert('Indique un montant.');
+      if (['private_settlement','private_balance'].includes(chargeTarget) && !payload.private_owner_id) return alert('Choisis le copropriétaire concerné par le frais privatif.');
+      const req = state.selectedInvoiceId ? supabaseClient.from('compta_invoices').update(payload).eq('id', state.selectedInvoiceId) : supabaseClient.from('compta_invoices').insert(payload);
+      const { error } = await req;
+      if (error) return alert(error.message + "\n\nSi l’erreur parle d’une colonne inexistante, exécute la migration SQL V17.");
+      closeAppModal(); state.selectedInvoiceId = null; await loadAll();
+    }
+
+    function selectedSettlementCoproV17(){ return state.activeCoproId || $('settlementCoproFilter')?.value || state.copros[0]?.id || ''; }
+    function selectedSettlementYearV17(coproId){ return $('settlementYearFilter')?.value || (state.fiscalYears||[]).find(y=>y.copro_id===coproId)?.id || ''; }
+    function yearObjV17(yearId,coproId){ return (state.fiscalYears||[]).find(y=>y.id===yearId) || (state.fiscalYears||[]).find(y=>!coproId||y.copro_id===coproId) || null; }
+    function dateInYearV17(date, year){ return !year || !date || (date >= year.starts_on && date <= year.ends_on); }
+    function daysInRangeV17(start,end){ const a=new Date(start+'T00:00:00'), b=new Date(end+'T00:00:00'); return Math.max(1, Math.round((b-a)/86400000)+1); }
+    function lotProrataV17(lot,year){
+      if(!year) return {days:365,totalDays:365,ratio:1};
+      const total=daysInRangeV17(year.starts_on, year.ends_on);
+      let from=year.starts_on;
+      if(lot.mutation_date && lot.mutation_date>year.starts_on && lot.mutation_date<=year.ends_on) from=lot.mutation_date;
+      const days=daysInRangeV17(from, year.ends_on);
+      return {days,totalDays:total,ratio:days/total};
+    }
+    function ownerLotsForSettlementV17(ownerId,coproId,year){
+      return (state.lots||[]).filter(l=>l.copro_id===coproId && l.owner_id===ownerId && l.active!==false).map(l=>({...l,_prorata:lotProrataV17(l,year)}));
+    }
+    function keyNameV17(keyId){ return (state.distributionKeys||[]).find(k=>k.id===keyId)?.name || 'Quotités générales'; }
+    function accountLabelV17(accountId){ const a=(state.accounts||[]).find(x=>x.id===accountId)||{}; return [a.code,a.label].filter(Boolean).join(' - ') || 'Compte à préciser'; }
+    function accountCodeV17(accountId){ return (state.accounts||[]).find(x=>x.id===accountId)?.code || ''; }
+    function defaultKeyForCoproV17(coproId){ return (state.distributionKeys||[]).find(k=>k.copro_id===coproId && k.is_default) || (state.distributionKeys||[]).find(k=>k.copro_id===coproId) || null; }
+    function keyItemsMapV17(keyId){
+      const arr=(state.distributionItems||[]).filter(i=>i.distribution_key_id===keyId && i.included!==false);
+      return new Map(arr.map(i=>[i.lot_id, Number(i.quotities||0)]));
+    }
+    function lotKeyQuotityV17(lot,keyId){
+      if(keyId){ const map=keyItemsMapV17(keyId); if(map.has(lot.id)) return map.get(lot.id); }
+      return Number(lot.quotities||0);
+    }
+    function ownerKeyShareV17(ownerId,coproId,keyId,year){
+      const lots=ownerLotsForSettlementV17(ownerId,coproId,year);
+      const ownerQ=lots.reduce((s,l)=>s + lotKeyQuotityV17(l,keyId)*l._prorata.ratio,0);
+      const allLots=(state.lots||[]).filter(l=>l.copro_id===coproId && l.active!==false);
+      const totalQ=allLots.reduce((s,l)=>s + lotKeyQuotityV17(l,keyId),0) || 1;
+      return {ownerQ,totalQ,ratio:ownerQ/totalQ,lots};
+    }
+    function invoicesForSettlementV17(coproId,year){
+      return (state.invoices||[]).filter(i=>i.copro_id===coproId && dateInYearV17(i.invoice_date,year) && String(accountCodeV17(i.account_id)||'').startsWith('6'));
+    }
+    function settlementForOwnerV17(ownerId,coproId,yearId, mode='owner'){
+      const year=yearObjV17(yearId,coproId); const owner=(state.owners||[]).find(o=>o.id===ownerId)||{};
+      const lots=ownerLotsForSettlementV17(ownerId,coproId,year);
+      const invoices=invoicesForSettlementV17(coproId,year);
+      const groups=new Map(); let totalOwner=0,totalOccupant=0,totalPrivateBalance=0,totalBuilding=0;
+      const pushLine=(accountId,keyId,label,building,ownerShare,occupantShare,privateBalance)=>{
+        const acc=accountLabelV17(accountId); const key=keyNameV17(keyId); const mapKey=acc+'||'+key;
+        if(!groups.has(mapKey)) groups.set(mapKey,{account:acc,key,building:0,owner:0,occupant:0,privateBalance:0,details:[]});
+        const g=groups.get(mapKey); g.building+=building; g.owner+=ownerShare; g.occupant+=occupantShare; g.privateBalance+=privateBalance; g.details.push({label,building,owner:ownerShare,occupant:occupantShare,privateBalance});
+      };
+      invoices.forEach(inv=>{
+        const amount=Number(inv.amount_total||0); if(!amount) return;
+        const charge=inv.charge_target || 'common_owner'; const keyId=inv.distribution_key_id || defaultKeyForCoproV17(coproId)?.id || '';
+        const label=inv.settlement_note || inv.description || `Facture ${inv.invoice_number||''}`;
+        if(charge==='private_settlement' && inv.private_owner_id===ownerId){ pushLine(inv.account_id,keyId,label,amount,amount,0,0); totalOwner+=amount; totalBuilding+=amount; return; }
+        if(charge==='private_balance' && inv.private_owner_id===ownerId){ pushLine(inv.account_id,keyId,label,amount,0,0,amount); totalPrivateBalance+=amount; totalBuilding+=amount; return; }
+        if(charge==='meter_pending') return;
+        if(['common_owner','common_occupant',null,undefined,''].includes(charge)){
+          const sh=ownerKeyShareV17(ownerId,coproId,keyId,year); const part=amount*sh.ratio;
+          const own=charge==='common_occupant'?0:part; const occ=charge==='common_occupant'?part:0;
+          pushLine(inv.account_id,keyId,label,amount,own,occ,0); totalOwner+=own; totalOccupant+=occ; totalBuilding+=amount;
+        }
+      });
+      const balanceRow=thirdRowsFor('owners',coproId,yearId).find(r=>r.id===ownerId) || {balance:0,details:[]};
+      return {owner,lots,year,groups:[...groups.values()],totalOwner,totalOccupant,totalPrivateBalance,totalBuilding,balanceRow,mode};
+    }
+    function settlementOwnersV17(){
+      const coproId=selectedSettlementCoproV17(); const year=yearObjV17(selectedSettlementYearV17(coproId),coproId); const search=($('settlementSearch')?.value||'').toLowerCase();
+      return (state.owners||[]).filter(o=>o.copro_id===coproId).filter(o=>{
+        const lots=ownerLotsForSettlementV17(o.id,coproId,year); const hay=[o.display_name,...lots.map(l=>l.lot_number)].join(' ').toLowerCase();
+        return !search || hay.includes(search);
+      }).sort((a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||'')));
+    }
+    function renderStatementsV17(){
+      if(!$('settlementCoproFilter')) return;
+      const currentCopro=selectedSettlementCoproV17();
+      const oldCopro=$('settlementCoproFilter').value || currentCopro;
+      $('settlementCoproFilter').innerHTML=state.copros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('settlementCoproFilter').value=state.activeCoproId || oldCopro || currentCopro;
+      const coproId=selectedSettlementCoproV17();
+      const oldYear=$('settlementYearFilter').value;
+      const years=(state.fiscalYears||[]).filter(y=>y.copro_id===coproId);
+      $('settlementYearFilter').innerHTML=years.map(y=>`<option value="${y.id}">${escapeHtml(y.label||'Exercice')}</option>`).join('');
+      if(oldYear && years.some(y=>y.id===oldYear)) $('settlementYearFilter').value=oldYear;
+      const yearId=selectedSettlementYearV17(coproId); const year=yearObjV17(yearId,coproId);
+      const owners=settlementOwnersV17();
+      if(!state.selectedSettlementOwnerId || !owners.some(o=>o.id===state.selectedSettlementOwnerId)) state.selectedSettlementOwnerId=owners[0]?.id||'';
+      const invs=invoicesForSettlementV17(coproId,year);
+      $('settlementSummary').innerHTML=`<div class="settlement-metric"><span>Exercice</span><strong>${escapeHtml(year?.label||'Non défini')}</strong></div><div class="settlement-metric"><span>Charges classe 6</span><strong>${money(invs.reduce((s,i)=>s+Number(i.amount_total||0),0))}</strong></div><div class="settlement-metric"><span>Copropriétaires</span><strong>${owners.length}</strong></div><div class="settlement-metric"><span>Mode</span><strong>${$('settlementMode')?.value==='lot'?'Lot par lot':'Global'}</strong></div>`;
+      $('settlementOwnerList').innerHTML=owners.map(o=>{ const lots=ownerLotsForSettlementV17(o.id,coproId,year); const calc=settlementForOwnerV17(o.id,coproId,yearId,$('settlementMode')?.value||'owner'); return `<div class="settlement-owner-row ${o.id===state.selectedSettlementOwnerId?'active':''}" data-settlement-owner="${o.id}"><input type="checkbox" data-settlement-select="${o.id}"><div><strong>${escapeHtml(o.display_name||'')}</strong><small>${escapeHtml(lots.map(l=>l.lot_number).join(', ')||'Aucun lot')}</small></div><span class="badge">${money(calc.totalOwner+calc.totalOccupant+calc.totalPrivateBalance)}</span></div>`; }).join('') || '<div class="notice">Aucun copropriétaire.</div>';
+      renderSettlementDetailV17();
+    }
+    function settlementChargesTableHtmlV17(calc){
+      const rows=[];
+      calc.groups.forEach(g=>{ rows.push(`<tr class="settlement-account-row"><td colspan="2">${escapeHtml(g.account)}</td><td class="amount">${money(g.building)}</td><td class="amount">${money(g.owner)}</td><td class="amount">${money(g.occupant)}</td></tr>`); rows.push(`<tr class="settlement-key-row"><td></td><td>Répartition : ${escapeHtml(g.key)}</td><td></td><td></td><td></td></tr>`); });
+      rows.push(`<tr class="settlement-total-line"><td colspan="3">Total charges propriétaire</td><td class="amount">${money(calc.totalOwner)}</td><td></td></tr>`);
+      rows.push(`<tr class="settlement-total-line"><td colspan="3">Total charges récupérables occupant</td><td></td><td class="amount">${money(calc.totalOccupant)}</td></tr>`);
+      if(calc.totalPrivateBalance) rows.push(`<tr class="settlement-total-line"><td colspan="3">Frais privatifs envoyés en balance copropriétaire</td><td class="amount">${money(calc.totalPrivateBalance)}</td><td></td></tr>`);
+      return `<table class="settlement-table"><thead><tr><th>Compte</th><th>Répartition</th><th class="amount">Part totale immeuble</th><th class="amount">Part propriétaire</th><th class="amount">Part occupant</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="5">Aucune charge.</td></tr>'}</tbody></table>`;
+    }
+    function renderSettlementDetailV17(){
+      if(!$('settlementDetail')) return;
+      const coproId=selectedSettlementCoproV17(); const yearId=selectedSettlementYearV17(coproId); const ownerId=state.selectedSettlementOwnerId;
+      if(!ownerId){ $('settlementDetail').innerHTML='<div class="notice">Aucun copropriétaire sélectionné.</div>'; return; }
+      const calc=settlementForOwnerV17(ownerId,coproId,yearId,$('settlementMode')?.value||'owner');
+      const lotsRows=calc.lots.map(l=>`<tr><td>${escapeHtml(l.lot_number||'')}</td><td class="amount">${Number(l.quotities||0).toLocaleString('fr-BE')}</td><td class="amount">${l._prorata.days}/${l._prorata.totalDays}</td><td class="amount">${Math.round(l._prorata.ratio*1000)/10}%</td></tr>`).join('');
+      const balance=calc.balanceRow?.balance||0; const final=balance + calc.totalOwner + calc.totalPrivateBalance;
+      $('settlementDetail').innerHTML=`<div class="toolbar"><div><h3>${escapeHtml(calc.owner.display_name||'')}</h3><p class="muted-note">${escapeHtml(calc.year?.label||'Exercice')} · ${escapeHtml(coproNameByIdV14(coproId))}</p></div><button class="btn secondary small" data-print-settlement-one="${ownerId}" type="button">PDF individuel</button></div><h3>Lots, quotités et jours</h3><table class="settlement-table"><thead><tr><th>Lot</th><th class="amount">Quotités</th><th class="amount">Jours</th><th class="amount">Prorata</th></tr></thead><tbody>${lotsRows||'<tr><td colspan="4">Aucun lot.</td></tr>'}</tbody></table><h3 style="margin-top:16px;">Charges de l’exercice</h3>${settlementChargesTableHtmlV17(calc)}<h3 style="margin-top:16px;">Situation de clôture</h3>${table(['Date','Libellé','Débit','Crédit'], (calc.balanceRow.details||[]).map(d=>[d.date||'',d.label||'',d.debit?money(d.debit):'',d.credit?money(d.credit):'']))}<div class="settlement-big-result ${final>=0?'positive':'negative'}"><div><strong>${final>=0?'Montant à payer':'Montant à recevoir'}</strong><div class="muted-note">Solde reporté + appels/paiements + charges réelles de l’exercice</div></div><strong>${money(Math.abs(final))}</strong></div>`;
+    }
+    function settlementPdfForOwnerV17(ownerId,coproId,yearId,opts={}){
+      const calc=settlementForOwnerV17(ownerId,coproId,yearId,$('settlementMode')?.value||'owner'); const copro=coproNameByIdV14(coproId); const owner=calc.owner||{}; const balance=calc.balanceRow?.balance||0; const final=balance+calc.totalOwner+calc.totalPrivateBalance;
+      const lotsRows=calc.lots.map(l=>`<tr><td>${escapeHtml(l.lot_number||'')}</td><td class="amount">${Number(l.quotities||0).toLocaleString('fr-BE')}</td><td class="amount">${l._prorata.days}/${l._prorata.totalDays}</td><td class="amount">${Math.round(l._prorata.ratio*1000)/10}%</td></tr>`).join('');
+      const chargesRows=calc.groups.map(g=>`<tr><td><strong>${escapeHtml(g.account)}</strong><br><span class="muted">${escapeHtml(g.key)}</span></td><td class="amount">${money(g.building)}</td><td class="amount">${money(g.owner)}</td><td class="amount">${money(g.occupant)}</td></tr>`).join('');
+      const balanceRows=(calc.balanceRow.details||[]).map(d=>`<tr><td>${escapeHtml(d.date||'')}</td><td>${escapeHtml(d.label||'')}</td><td class="amount">${d.debit?money(d.debit):''}</td><td class="amount">${d.credit?money(d.credit):''}</td></tr>`).join('');
+      return `<section class="page">${agPdfHeaderV15('Décompte individuel',copro)}${agWindowAddressV16(owner)}<div class="with-window-space"><div class="box"><h2>${escapeHtml(owner.display_name||'')}</h2><p><strong>Exercice :</strong> ${escapeHtml(calc.year?.label||'')}</p><p><strong>Lots :</strong> ${escapeHtml(calc.lots.map(l=>l.lot_number).join(', ')||'-')}</p></div><h2>Résumé des lots</h2><table><tr><th>Lot</th><th class="amount">Quotités</th><th class="amount">Jours</th><th class="amount">Prorata</th></tr>${lotsRows}</table><h2>Charges réelles</h2><table><tr><th>Compte / répartition</th><th class="amount">Total immeuble</th><th class="amount">Part propriétaire</th><th class="amount">Part occupant</th></tr>${chargesRows}<tr><th>Total</th><th></th><th class="amount">${money(calc.totalOwner)}</th><th class="amount">${money(calc.totalOccupant)}</th></tr></table></div>${agPdfFooterV15('Décompte - charges')}</section><section class="page">${agPdfHeaderV15('Situation de clôture',copro)}${agWindowAddressV16(owner)}<div class="with-window-space"><table><tr><th>Date</th><th>Libellé</th><th class="amount">Débit</th><th class="amount">Crédit</th></tr>${balanceRows}</table><div class="settlement-pay"><h2 class="${final>=0?'debit':'credit'}">${final>=0?'Montant à payer':'Montant à recevoir'} : ${money(Math.abs(final))}</h2><p>${final>=0?'Merci d’effectuer le paiement sur le compte bancaire de l’ACP avec la communication structurée indiquée dans l’appel ou la situation de compte.':'Ce montant est créditeur en votre faveur et sera traité selon les décisions de l’ACP.'}</p></div></div>${agPdfFooterV15('Décompte - situation')}</section>`;
+    }
+    function agOwnerStatementHtmlV16(ownerId,coproId,yearId,copro){ return settlementPdfForOwnerV17(ownerId,coproId,yearId,{forAnnex:true}); }
+    function printSettlementRowsV17(ownerIds){
+      const coproId=selectedSettlementCoproV17(); const yearId=selectedSettlementYearV17(coproId);
+      if(!ownerIds.length) return alert('Sélectionne au moins un copropriétaire.');
+      openPrintWindowV16('Décomptes', ownerIds.map(id=>settlementPdfForOwnerV17(id,coproId,yearId)).join(''));
+    }
+
+    const previousRenderAllV17 = renderAll;
+    renderAll = function(){ previousRenderAllV17(); renderStatementsV17(); };
+
+    ['settlementCoproFilter','settlementYearFilter','settlementMode','settlementSearch'].forEach((id)=>setTimeout(()=>{ if($(id)){ $(id).addEventListener('change', renderStatementsV17); $(id).addEventListener('input', renderStatementsV17); } },0));
+    document.addEventListener('click', async (e)=>{
+      const t=e.target.closest?.('button,div');
+      if(!t) return;
+      const ownerRow=e.target.closest?.('[data-settlement-owner]');
+      if(ownerRow && !e.target.matches('input')){ state.selectedSettlementOwnerId=ownerRow.dataset.settlementOwner; renderStatementsV17(); }
+      if(e.target?.id==='settlementSelectAllBtn') document.querySelectorAll('[data-settlement-select]').forEach(c=>c.checked=true);
+      if(e.target?.id==='settlementSelectNoneBtn') document.querySelectorAll('[data-settlement-select]').forEach(c=>c.checked=false);
+      if(e.target?.id==='settlementPreviewAllBtn') renderStatementsV17();
+      if(e.target?.dataset?.printSettlementOne) printSettlementRowsV17([e.target.dataset.printSettlementOne]);
+      if(e.target?.id==='settlementPrintSelectedBtn'){ const ids=[...document.querySelectorAll('[data-settlement-select]:checked')].map(x=>x.dataset.settlementSelect); printSettlementRowsV17(ids); }
+      if(e.target?.id==='settlementPrintAllBtn'){ const ids=settlementOwnersV17().map(o=>o.id); printSettlementRowsV17(ids); }
+    });
 
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
