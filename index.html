@@ -1402,6 +1402,33 @@
     .ocr-item * { pointer-events:none; }
     @media (max-width:1000px){ .ag-list-row,.resolution-row,.ag-detail-header,.ag-point-head{grid-template-columns:1fr; display:grid;} .ag-quorum-grid{grid-template-columns:1fr 1fr;} }
 
+
+    /* ---- V15 AG : ergonomie votes, PV et PDF ---- */
+    .ag-v15-workflow{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+    .ag-v15-step{border:1px solid var(--line);background:#fff;border-radius:18px;padding:14px;box-shadow:0 8px 24px rgba(15,23,42,.045)}
+    .ag-v15-step strong{display:block;color:var(--brand);font-size:16px;margin-bottom:5px}
+    .ag-v15-quorum{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin:14px 0 16px}
+    .ag-v15-quorum .metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f5fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .ag-v15-quorum .metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .ag-v15-quorum .metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .ag-v15-quorum .metric.ok strong{color:#157347}.ag-v15-quorum .metric.warn strong{color:#b45309}
+    .ag-v15-card{border:1px solid var(--line);border-radius:18px;background:#fff;margin-bottom:14px;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.04)}
+    .ag-v15-card-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:14px 16px;background:#f8fbfc;border-bottom:1px solid var(--line)}
+    .ag-v15-card-body{padding:14px 16px}.ag-v15-number{min-width:38px;height:38px;border-radius:14px;background:#eaf7fa;color:var(--brand);font-weight:900;display:inline-flex;align-items:center;justify-content:center;margin-right:10px}
+    .ag-v15-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ag-v15-editor-grid textarea{min-height:110px}
+    .ag-v15-vote-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff;max-height:72vh}
+    .ag-v15-vote-table{border-collapse:separate;border-spacing:0;min-width:980px;width:max-content;background:#fff}
+    .ag-v15-vote-table th,.ag-v15-vote-table td{border-bottom:1px solid #e6eef5;border-right:1px solid #edf2f7;padding:8px;vertical-align:middle;background:#fff}
+    .ag-v15-vote-table th{position:sticky;top:0;background:#f2f7fa;z-index:3;color:#14586a;font-size:12px}
+    .ag-v15-vote-table th:first-child,.ag-v15-vote-table td:first-child{position:sticky;left:0;z-index:2;background:#fff;min-width:280px;max-width:360px}
+    .ag-v15-vote-table th:first-child{z-index:4;background:#f2f7fa}.ag-v15-owner-head{min-width:150px;max-width:180px;white-space:normal;text-align:center;font-size:12px}.ag-v15-owner-head small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
+    .ag-v15-point-title{font-weight:900;color:#172033}.ag-v15-point-tools{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+    .ag-vote-cell{display:flex;gap:4px;justify-content:center;align-items:center}.ag-vote-choice{border:1px solid var(--line);background:#fff;color:#334155;border-radius:999px;padding:5px 7px;font-size:11px;font-weight:900;cursor:pointer;min-width:30px}.ag-vote-choice.active.yes{background:#dff7e8;color:#146c2e;border-color:#8ad4a0}.ag-vote-choice.active.no{background:#fde2e2;color:#991b1b;border-color:#f5a1a1}.ag-vote-choice.active.abstain{background:#fff4cf;color:#92400e;border-color:#f2cf72}.ag-vote-choice:hover{transform:translateY(-1px)}
+    .ag-v15-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}.ag-v15-toolbar-left,.ag-v15-toolbar-right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .ag-v15-smallset{font-size:11px;padding:5px 8px}.ag-v15-pv-savebar{position:sticky;bottom:0;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:18px;padding:12px;margin-top:14px;display:flex;justify-content:flex-end;gap:8px;box-shadow:0 -10px 24px rgba(15,23,42,.06)}
+    @media(max-width:1100px){.ag-v15-workflow,.ag-v15-quorum{grid-template-columns:1fr 1fr}.ag-v15-editor-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.ag-v15-workflow,.ag-v15-quorum{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -8097,6 +8124,158 @@
       if(t.dataset.deleteResolution) { if(confirm('Supprimer cette résolution du catalogue ?')) { const {error}=await supabaseClient.from('compta_ag_resolution_catalog').delete().eq('id', t.dataset.deleteResolution); if(error) return alert(error.message); await loadAgCatalog(); renderResolutionCatalogV14(); } }
       if(t.id==='seedAgCatalogBtn') seedAgCatalogV14();
     });
+
+
+    // ---- V15 - Ergonomie complète AG : préparation, vote tableau, rédaction PV, PDF propres ----
+    function agPercentV15(part,total){ return total ? Math.round((Number(part||0)/Number(total||0))*1000)/10 : 0; }
+    function agVoteLabelV15(v){ return v==='yes'?'Oui':v==='no'?'Non':v==='abstain'?'Abst.':'—'; }
+    function agVoteShortV15(v){ return v==='yes'?'OUI':v==='no'?'NON':v==='abstain'?'ABS':'—'; }
+    function agPresentAttendeesV15(meetingId){ return agMeetingAttendees(meetingId).filter(a=>['present','represented'].includes(a.status)); }
+    function agOwnerNameV15(ownerId){ return ownerDisplayNameById(ownerId) || state.owners.find(o=>o.id===ownerId)?.display_name || 'Copropriétaire'; }
+    function agVoteForV15(pointId, ownerId){ return state.agVotes.find(v=>v.point_id===pointId && v.owner_id===ownerId) || null; }
+    function agVoteNamesV15(point, vote){
+      const attendees = agPresentAttendeesV15(point.meeting_id);
+      return attendees.filter(a => (agVoteForV15(point.id,a.owner_id)?.vote || '') === vote).map(a => `${agOwnerNameV15(a.owner_id)} (${Number(a.quotities||0).toLocaleString('fr-BE')})`);
+    }
+    function agQuorumHtmlV15(q){
+      return `<div class="ag-v15-quorum">
+        <div class="metric"><span>Personnes présentes/représentées</span><strong>${q.presentOwners} / ${q.ownerTotal}</strong><div>${agPercentV15(q.presentOwners,q.ownerTotal)}%</div></div>
+        <div class="metric"><span>Quotités présentes/représentées</span><strong>${Number(q.presentQuotities).toLocaleString('fr-BE')} / ${Number(q.quotityTotal).toLocaleString('fr-BE')}</strong><div>${agPercentV15(q.presentQuotities,q.quotityTotal)}%</div></div>
+        <div class="metric ${q.ok?'ok':'warn'}"><span>Quorum indicatif</span><strong>${q.ok?'Atteint':'Non atteint'}</strong><div>½ personnes + ½ quotités</div></div>
+        <div class="metric"><span>Présents + procurations</span><strong>${q.presentOwners}</strong><div>copropriétaire(s) pris en compte</div></div>
+      </div>`;
+    }
+    function renderMeetingsV14(){
+      const root = $('agModuleRoot');
+      if (!root) return;
+      const selected = agMeeting();
+      if (selected) return renderAgDetailV14(selected);
+      const coproFilter = state.activeCoproId || '';
+      const rows = (state.agMeetings || []).filter(m=>!coproFilter || m.copro_id===coproFilter);
+      if (!state.agMeetings?.length && !state.agCatalog?.length) {
+        root.innerHTML = '<div class="notice danger">Module AG non initialisé. Exécute la migration SQL V14 dans Supabase, puis recharge la page.</div>';
+        return;
+      }
+      root.innerHTML = `
+        <div class="summary-line"><span class="badge">${rows.length} AG</span><span class="badge">Copropriété : ${escapeHtml(coproContextLabel())}</span><span class="badge">Fonctionnement : créer → ouvrir → préparer → convoquer → voter → PV</span></div>
+        <div>${rows.map(m=>`<div class="ag-list-row">
+          <div><strong>${escapeHtml(m.title || 'Assemblée générale')}</strong><div class="muted-note">${escapeHtml(m.compta_copros?.name || coproNameByIdV14(m.copro_id))}</div></div>
+          <div>${escapeHtml(formatDateV14(m.meeting_date))} ${escapeHtml(m.meeting_time || '')}</div>
+          <div>${escapeHtml(m.location || '-')}</div>
+          <div>${agStatusBadge(m.status)}</div>
+          <div class="actions-inline"><button class="btn secondary small" type="button" data-open-ag="${m.id}">Ouvrir</button><button class="btn danger small" type="button" data-delete-ag="${m.id}">Supprimer</button></div>
+        </div>`).join('') || '<div class="notice">Aucune AG créée pour cette copropriété.</div>'}</div>`;
+    }
+    function renderAgDetailV14(meeting){
+      const root = $('agModuleRoot');
+      const q = computeAgQuorum(meeting);
+      const points = agMeetingPoints(meeting.id);
+      root.innerHTML = `<div class="ag-detail-header">
+        <div><h2 class="ag-detail-title">${escapeHtml(meeting.title || 'Assemblée générale')}</h2><div class="muted-note">${escapeHtml(coproNameByIdV14(meeting.copro_id))} · ${formatDateV14(meeting.meeting_date)} ${escapeHtml(meeting.meeting_time || '')} · ${escapeHtml(meeting.location || '')}</div><div style="margin-top:8px;">${agStatusBadge(meeting.status)}</div></div>
+        <div class="ag-pdf-actions"><button class="btn secondary" type="button" data-edit-ag="${meeting.id}">Modifier AG</button><button class="btn secondary" type="button" data-print-convocation="${meeting.id}">PDF convocation</button><button class="btn secondary" type="button" data-print-pv="${meeting.id}">PDF PV</button><button class="btn" type="button" data-close-ag="${meeting.id}">Clôturer PV</button></div>
+      </div>
+      ${agQuorumHtmlV15(q)}
+      <div class="ag-tabs">${[['overview','Vue générale'],['attendees','Présences / quorum'],['agenda','Ordre du jour'],['votes','Votes'],['pv','Rédaction PV']].map(t=>`<button class="ag-tab ${state.agActiveTab===t[0]?'active':''}" data-ag-tab="${t[0]}" type="button">${t[1]}</button>`).join('')}</div>
+      <div class="ag-panel">${renderAgActivePanelV14(meeting, q, points)}</div>`;
+    }
+    function renderAgActivePanelV14(meeting, quorum, points){
+      if (state.agActiveTab === 'attendees') return renderAgAttendeesPanelV14(meeting, quorum);
+      if (state.agActiveTab === 'agenda') return renderAgAgendaPanelV14(meeting, points);
+      if (state.agActiveTab === 'votes') return renderAgVotesMatrixPanelV15(meeting, points);
+      if (state.agActiveTab === 'pv') return renderAgPvEditorPanelV15(meeting, points);
+      return `<div class="ag-v15-workflow">
+        <div class="ag-v15-step"><strong>1. Préparer</strong><span>Créer l’AG, synchroniser les copropriétaires, reprendre les points du catalogue.</span></div>
+        <div class="ag-v15-step"><strong>2. Convoquer</strong><span>Sortir un PDF propre : convocation, ordre du jour, procuration.</span></div>
+        <div class="ag-v15-step"><strong>3. Voter</strong><span>Encoder les votes dans un tableau global : points à gauche, copropriétaires en haut.</span></div>
+        <div class="ag-v15-step"><strong>4. PV</strong><span>Compléter les remarques et décisions point par point, puis imprimer le PV.</span></div>
+      </div>
+      <div class="notice">Les présences, les quotités et les majorités sont recalculées automatiquement. Les points informatifs ne génèrent pas de résultat de vote.</div>`;
+    }
+    function renderAgAgendaPanelV14(meeting, points){
+      return `<div class="top-actions" style="justify-content:flex-start;"><button class="btn" type="button" data-add-ag-point="${meeting.id}">+ Ajouter point</button><button class="btn secondary" type="button" data-import-catalog-ag="${meeting.id}">Reprendre catalogue</button></div>
+      <div style="margin-top:14px;">${points.map((p,idx)=>`<div class="ag-v15-card"><div class="ag-v15-card-head"><div><span class="ag-v15-number">${idx+1}</span><strong>${escapeHtml(p.title||'Point')}</strong><div class="muted-note">${escapeHtml(majorityLabel(p.majority_type||'simple'))}</div></div><div class="actions-inline"><button class="btn secondary small" type="button" data-edit-ag-point="${p.id}">Modifier</button><button class="btn danger small" type="button" data-delete-ag-point="${p.id}">Supprimer</button></div></div><div class="ag-v15-card-body"><div>${escapeHtml(p.description||'')}</div></div></div>`).join('') || '<div class="notice">Aucun point. Ajoute un point ou reprends des résolutions du catalogue.</div>'}</div>`;
+    }
+    function renderAgVotesMatrixPanelV15(meeting, points){
+      const attendees = agPresentAttendeesV15(meeting.id);
+      if (!points.length) return '<div class="notice">Ajoute d’abord les points à l’ordre du jour.</div>';
+      if (!attendees.length) return '<div class="notice danger">Aucun copropriétaire présent ou représenté. Va d’abord dans “Présences / quorum”.</div>';
+      const head = attendees.map(a=>`<th class="ag-v15-owner-head">${escapeHtml(agOwnerNameV15(a.owner_id))}<small>${escapeHtml(a.lots_label||'')} · ${Number(a.quotities||0).toLocaleString('fr-BE')} q.</small></th>`).join('');
+      const body = points.map((p,idx)=>{
+        if ((p.majority_type||'simple') === 'info') return `<tr><td><div class="ag-v15-point-title">${idx+1}. ${escapeHtml(p.title||'Point')}</div><div class="muted-note">Information / pas de vote</div></td>${attendees.map(()=>'<td class="muted-note" style="text-align:center;">Info</td>').join('')}</tr>`;
+        return `<tr data-ag-vote-row="${p.id}"><td><div class="ag-v15-point-title">${idx+1}. ${escapeHtml(p.title||'Point')}</div><div class="muted-note">${escapeHtml(majorityLabel(p.majority_type||'simple'))}</div><div class="ag-v15-point-tools"><button class="btn secondary ag-v15-smallset" type="button" data-ag-set-row="${p.id}" data-vote="yes">Oui pour tous</button><button class="btn secondary ag-v15-smallset" type="button" data-ag-set-row="${p.id}" data-vote="no">Non pour tous</button><button class="btn secondary ag-v15-smallset" type="button" data-ag-set-row="${p.id}" data-vote="abstain">Abst. pour tous</button></div></td>${attendees.map(a=>{ const v=agVoteForV15(p.id,a.owner_id)?.vote || ''; return `<td><div class="ag-vote-cell" data-ag-cell="${p.id}|${a.owner_id}">${['yes','no','abstain'].map(val=>`<button type="button" class="ag-vote-choice ${v===val?'active '+val:''}" data-ag-vote-choice="${val}" title="${agVoteLabelV15(val)}">${agVoteShortV15(val)}</button>`).join('')}</div></td>`; }).join('')}</tr>`;
+      }).join('');
+      return `<div class="ag-v15-toolbar"><div class="ag-v15-toolbar-left"><strong>Tableau des votes</strong><span class="badge">${points.length} point(s)</span><span class="badge">${attendees.length} votant(s)</span></div><div class="ag-v15-toolbar-right"><button class="btn secondary small" type="button" data-ag-set-all="yes">Oui partout</button><button class="btn secondary small" type="button" data-ag-set-all="no">Non partout</button><button class="btn secondary small" type="button" data-ag-set-all="abstain">Abstention partout</button><button class="btn" type="button" data-save-ag-vote-matrix="${meeting.id}">Enregistrer votes</button></div></div>
+      <div class="ag-v15-vote-wrap"><table class="ag-v15-vote-table"><thead><tr><th>Points / copropriétaires</th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+    }
+    function renderAgPvEditorPanelV15(meeting, points){
+      if (!points.length) return '<div class="notice">Ajoute d’abord les points à l’ordre du jour.</div>';
+      return `<div class="notice">Page de rédaction du PV : complète les décisions et remarques point par point. Les votes restent dans l’onglet “Votes”.</div>
+      ${points.map((p,idx)=>{ const r=computeAgVoteResult(p); return `<div class="ag-v15-card" data-pv-point="${p.id}"><div class="ag-v15-card-head"><div><span class="ag-v15-number">${idx+1}</span><strong>${escapeHtml(p.title||'Point')}</strong><div class="muted-note">${escapeHtml(majorityLabel(p.majority_type||'simple'))} · ${escapeHtml(r.label)}</div></div><div class="ag-vote-summary"><span class="ag-vote-chip ok">Oui ${Number(r.yes).toLocaleString('fr-BE')}</span><span class="ag-vote-chip no">Non ${Number(r.no).toLocaleString('fr-BE')}</span><span class="ag-vote-chip warn">Abs. ${Number(r.abstain).toLocaleString('fr-BE')}</span></div></div><div class="ag-v15-card-body"><div class="muted-note" style="margin-bottom:10px;">${escapeHtml(p.description||'')}</div><div class="ag-v15-editor-grid"><label>Décision reprise au PV<textarea data-ag-pv-field="decision_text">${escapeHtml(p.decision_text||'')}</textarea></label><label>Remarques / débats<textarea data-ag-pv-field="remarks">${escapeHtml(p.remarks||'')}</textarea></label></div></div></div>`; }).join('')}
+      <div class="ag-v15-pv-savebar"><button class="btn secondary" type="button" data-print-pv="${meeting.id}">PDF PV</button><button class="btn" type="button" data-save-ag-pv="${meeting.id}">Enregistrer rédaction PV</button></div>`;
+    }
+    function setVoteCellV15(cell, value){
+      if (!cell) return;
+      cell.querySelectorAll('[data-ag-vote-choice]').forEach(btn=>{ btn.classList.remove('active','yes','no','abstain'); if (btn.dataset.agVoteChoice===value) btn.classList.add('active', value); });
+    }
+    async function saveAgVoteMatrixV15(meetingId){
+      const cells = [...document.querySelectorAll('[data-ag-cell]')];
+      for (const cell of cells) {
+        const [pointId, ownerId] = cell.dataset.agCell.split('|');
+        const active = cell.querySelector('[data-ag-vote-choice].active');
+        if (!active) continue;
+        const attendee = state.agAttendees.find(a=>a.meeting_id===meetingId && a.owner_id===ownerId);
+        const existing = state.agVotes.find(v=>v.point_id===pointId && v.owner_id===ownerId);
+        const payload = { point_id:pointId, meeting_id:meetingId, owner_id:ownerId, vote:active.dataset.agVoteChoice, quotities:Number(attendee?.quotities||0), comment:null, created_by:currentUser.id };
+        const res = existing ? await supabaseClient.from('compta_ag_votes').update(payload).eq('id', existing.id) : await supabaseClient.from('compta_ag_votes').insert(payload);
+        if (res.error) return alert(res.error.message);
+      }
+      await loadAgModuleData(); renderMeetingsV14();
+    }
+    async function saveAgPvTextV15(meetingId){
+      const cards = [...document.querySelectorAll('[data-pv-point]')];
+      for (const card of cards) {
+        const id = card.dataset.pvPoint;
+        const decision = card.querySelector('[data-ag-pv-field="decision_text"]')?.value.trim() || null;
+        const remarks = card.querySelector('[data-ag-pv-field="remarks"]')?.value.trim() || null;
+        const res = await supabaseClient.from('compta_ag_points').update({ decision_text:decision, remarks }).eq('id', id);
+        if (res.error) return alert(res.error.message);
+      }
+      await loadAgModuleData(); renderMeetingsV14();
+    }
+    document.addEventListener('click', async (e)=>{
+      const choice = e.target.closest?.('[data-ag-vote-choice]');
+      if (choice) { e.preventDefault(); const cell=choice.closest('[data-ag-cell]'); setVoteCellV15(cell, choice.dataset.agVoteChoice); return; }
+      const btn = e.target.closest?.('button'); if (!btn) return;
+      if (btn.dataset.agSetAll) { document.querySelectorAll('[data-ag-cell]').forEach(cell=>setVoteCellV15(cell, btn.dataset.agSetAll)); }
+      if (btn.dataset.agSetRow) { document.querySelectorAll(`[data-ag-vote-row="${btn.dataset.agSetRow}"] [data-ag-cell]`).forEach(cell=>setVoteCellV15(cell, btn.dataset.vote)); }
+      if (btn.dataset.saveAgVoteMatrix) { await saveAgVoteMatrixV15(btn.dataset.saveAgVoteMatrix); }
+      if (btn.dataset.saveAgPv) { await saveAgPvTextV15(btn.dataset.saveAgPv); }
+    });
+    function pdfCssAgV14(){ return `@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:Century Gothic,Arial,sans-serif;margin:0;color:#172033;background:white}.page{min-height:267mm;padding:0;page-break-after:always;position:relative}.brandbar{height:8px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:22px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:18px;margin-bottom:22px}.logo{font-size:25px;color:#1f7a8c;font-weight:900;letter-spacing:.02em}.agency{font-size:12px;color:#475569;line-height:1.4}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:26px}.doc-title strong{display:block;margin-top:5px;color:#172033}.box{border:1px solid #d9e6ec;border-radius:14px;padding:16px;margin-top:16px;background:#fbfdfe}.intro{font-size:15px;line-height:1.65}.muted{color:#667085}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.meta{border:1px solid #d9e6ec;border-radius:14px;padding:12px;background:#fbfdfe}.meta span{display:block;color:#667085;font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.04em}.meta strong{display:block;margin-top:4px;font-size:15px}h1,h2,h3{color:#14586a}h2{font-size:20px;margin:0 0 12px}.agenda-list{counter-reset:item;margin:0;padding:0;list-style:none}.agenda-list li{counter-increment:item;border-bottom:1px solid #e6eef5;padding:11px 0}.agenda-list li:before{content:counter(item);display:inline-flex;width:28px;height:28px;border-radius:10px;background:#eaf7fa;color:#14586a;align-items:center;justify-content:center;font-weight:900;margin-right:10px}.agenda-title{font-weight:900}.agenda-desc{display:block;margin-left:42px;margin-top:4px;color:#475569;line-height:1.45}.proxy-box{border:2px solid #1f7a8c;border-radius:18px;padding:18px;margin-top:26px}.line{border-bottom:1px dotted #6b7280;height:28px;margin:8px 0}.sign{height:82px;border-bottom:1px solid #94a3b8;margin-top:26px}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:8px;color:#64748b;font-size:11px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}td,th{padding:8px;border-bottom:1px solid #e6eef5;text-align:left;vertical-align:top}th{background:#f2f7fa;color:#14586a}.vote-yes{color:#146c2e;font-weight:900}.vote-no{color:#991b1b;font-weight:900}.vote-abstain{color:#92400e;font-weight:900}.result{display:inline-block;border-radius:999px;padding:5px 10px;font-weight:900}.result.ok{background:#dff7e8;color:#146c2e}.result.no{background:#fde2e2;color:#991b1b}.quorum-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pill{border:1px solid #d9e6ec;border-radius:14px;padding:10px;background:#fbfdfe}.pill span{display:block;color:#667085;font-size:11px;text-transform:uppercase;font-weight:800}.pill strong{font-size:18px;color:#14586a}@media print{.page{page-break-after:always}}`; }
+    function agPdfHeaderV15(title, copro){ return `<div class="brandbar"></div><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div class="agency">Rue de Menin 400 · 7700 Mouscron<br>Boulevard du Roi Albert 42-44 · 7500 Tournai<br>info@wapi-syndik.be</div></div><div class="doc-title"><h1>${escapeHtml(title)}</h1><strong>${escapeHtml(copro)}</strong></div></div>`; }
+    function agPdfFooterV15(label){ return `<div class="footer"><span>${escapeHtml(label)}</span><span>WAPI-SYNDIK · document généré le ${new Date().toLocaleDateString('fr-BE')}</span></div>`; }
+    function printAgConvocationV14(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const owners=getCoproOwnersForAg(m.copro_id); const copro=coproNameByIdV14(m.copro_id);
+      const pages = owners.map(o=>`
+        <section class="page">${agPdfHeaderV15('Convocation AG',copro)}<div class="intro"><p>Madame, Monsieur,</p><p>Nous avons l’honneur de vous inviter à participer à l’assemblée générale de l’association des copropriétaires mentionnée ci-dessus.</p><p>Votre présence est importante. En cas d’impossibilité, nous vous invitons à compléter la procuration jointe afin de vous faire représenter valablement.</p></div><div class="meta-grid"><div class="meta"><span>Destinataire</span><strong>${escapeHtml(o.owner.display_name||'')}</strong><div>${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</div></div><div class="meta"><span>Date et heure</span><strong>${formatDateV14(m.meeting_date)} à ${escapeHtml(m.meeting_time||'')}</strong><div>${escapeHtml(m.location||'Lieu à préciser')}</div></div><div class="meta"><span>Type</span><strong>${escapeHtml(m.meeting_type==='extraordinary'?'Assemblée générale extraordinaire':m.meeting_type==='second'?'Seconde séance':'Assemblée générale ordinaire')}</strong></div><div class="meta"><span>Date convocation</span><strong>${formatDateV14(m.convocation_date)||new Date().toLocaleDateString('fr-BE')}</strong></div></div>${agPdfFooterV15('Convocation')}</section>
+        <section class="page">${agPdfHeaderV15('Ordre du jour',copro)}<ol class="agenda-list">${points.map(p=>`<li><span class="agenda-title">${escapeHtml(p.title||'Point')}</span><span class="agenda-desc">${escapeHtml(p.description||'')}</span><span class="agenda-desc"><em>${escapeHtml(majorityLabel(p.majority_type||'simple'))}</em></span></li>`).join('')}</ol>${agPdfFooterV15('Ordre du jour')}</section>
+        <section class="page">${agPdfHeaderV15('Procuration',copro)}<div class="proxy-box"><h2>Procuration</h2><p>Je soussigné(e) <strong>${escapeHtml(o.owner.display_name||'')}</strong>, propriétaire du/des lot(s) <strong>${escapeHtml(o.lots.map(l=>l.lot_number).join(', '))}</strong>, déclare donner procuration à :</p><div class="line"></div><p>afin de me représenter à l’assemblée générale du <strong>${formatDateV14(m.meeting_date)}</strong> et de voter en mon nom sur les points inscrits à l’ordre du jour.</p><p>Fait à : <span style="display:inline-block;width:180px;border-bottom:1px dotted #6b7280;"></span> le : <span style="display:inline-block;width:140px;border-bottom:1px dotted #6b7280;"></span></p><div class="sign"></div><p class="muted">Signature précédée de la mention “bon pour pouvoir”.</p></div>${agPdfFooterV15('Procuration')}</section>`).join('');
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>Convocations AG</title><style>${pdfCssAgV14()}</style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
+    }
+    function voteDetailRowsV15(point){
+      const attendees=agPresentAttendeesV15(point.meeting_id);
+      return attendees.map(a=>{ const v=agVoteForV15(point.id,a.owner_id)?.vote || ''; return `<tr><td>${escapeHtml(agOwnerNameV15(a.owner_id))}</td><td>${escapeHtml(a.lots_label||'')}</td><td>${Number(a.quotities||0).toLocaleString('fr-BE')}</td><td class="${v==='yes'?'vote-yes':v==='no'?'vote-no':v==='abstain'?'vote-abstain':''}">${escapeHtml(agVoteLabelV15(v))}</td></tr>`; }).join('');
+    }
+    function printAgPvV14(meetingId){
+      const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const attendees=agMeetingAttendees(meetingId); const q=computeAgQuorum(m); const copro=coproNameByIdV14(m.copro_id);
+      const cover=`<section class="page">${agPdfHeaderV15('Procès-verbal',copro)}<div class="intro"><p>Madame, Monsieur,</p><p>Vous trouverez en annexe le procès-verbal de l’assemblée générale de l’association des copropriétaires tenue le <strong>${formatDateV14(m.meeting_date)}</strong>${m.meeting_time?' à '+escapeHtml(m.meeting_time):''}.</p><p>Le présent document reprend les présences, le quorum, les votes exprimés, les décisions prises et les remarques reprises point par point.</p></div><div class="box"><h2>Informations de séance</h2><div class="meta-grid"><div class="meta"><span>Date</span><strong>${formatDateV14(m.meeting_date)}</strong></div><div class="meta"><span>Lieu</span><strong>${escapeHtml(m.location||'')}</strong></div><div class="meta"><span>Président</span><strong>${escapeHtml(m.president_name||'À compléter')}</strong></div><div class="meta"><span>Secrétaire</span><strong>${escapeHtml(m.secretary_name||'À compléter')}</strong></div></div></div>${agPdfFooterV15('Page de garde PV')}</section>`;
+      const presenceRows=attendees.map(a=>`<tr><td>${escapeHtml(a.compta_owners?.display_name || agOwnerNameV15(a.owner_id))}</td><td>${escapeHtml(a.lots_label||'')}</td><td>${Number(a.quotities||0).toLocaleString('fr-BE')}</td><td>${escapeHtml(a.status==='present'?'Présent':a.status==='represented'?'Représenté':'Absent')}</td><td>${escapeHtml(a.representative_name||'')}</td></tr>`).join('');
+      const presence=`<section class="page">${agPdfHeaderV15('Présences et quorum',copro)}<div class="quorum-pills"><div class="pill"><span>Personnes</span><strong>${q.presentOwners}/${q.ownerTotal}</strong><div>${agPercentV15(q.presentOwners,q.ownerTotal)}%</div></div><div class="pill"><span>Quotités</span><strong>${Number(q.presentQuotities).toLocaleString('fr-BE')}/${Number(q.quotityTotal).toLocaleString('fr-BE')}</strong><div>${agPercentV15(q.presentQuotities,q.quotityTotal)}%</div></div><div class="pill"><span>Quorum</span><strong>${q.ok?'Atteint':'Non atteint'}</strong></div></div><table><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Statut</th><th>Mandataire</th></tr>${presenceRows}</table>${agPdfFooterV15('Présences')}</section>`;
+      const pointPages=points.map((p,idx)=>{ const r=computeAgVoteResult(p); const yesNames=agVoteNamesV15(p,'yes').join('<br>')||'—'; const noNames=agVoteNamesV15(p,'no').join('<br>')||'—'; const abstNames=agVoteNamesV15(p,'abstain').join('<br>')||'—'; return `<section class="page">${agPdfHeaderV15(`Point ${idx+1}`,copro)}<h2>${escapeHtml(p.title||'Point')}</h2><p class="muted">${escapeHtml(p.description||'')}</p><div class="box"><p><strong>Majorité :</strong> ${escapeHtml(majorityLabel(p.majority_type||'simple'))}</p><p><strong>Résultat :</strong> <span class="result ${r.passed===true?'ok':r.passed===false?'no':''}">${escapeHtml(r.label)}</span> ${r.base?`— ${agPercentV15(r.yes,r.base)}% de voix favorables`:''}</p></div><table><tr><th></th><th>Quotités</th><th>% base</th><th>Copropriétaires</th></tr><tr><td class="vote-yes">Oui</td><td>${Number(r.yes).toLocaleString('fr-BE')}</td><td>${agPercentV15(r.yes,r.base)}%</td><td>${yesNames}</td></tr><tr><td class="vote-no">Non</td><td>${Number(r.no).toLocaleString('fr-BE')}</td><td>${agPercentV15(r.no,r.base)}%</td><td>${noNames}</td></tr><tr><td class="vote-abstain">Abstention</td><td>${Number(r.abstain).toLocaleString('fr-BE')}</td><td>${agPercentV15(r.abstain,r.base)}%</td><td>${abstNames}</td></tr></table><h3>Détail des votes</h3><table><tr><th>Copropriétaire</th><th>Lots</th><th>Quotités</th><th>Vote</th></tr>${voteDetailRowsV15(p)}</table><div class="box"><p><strong>Décision :</strong><br>${escapeHtml(p.decision_text||'')}</p><p><strong>Remarques :</strong><br>${escapeHtml(p.remarks||'')}</p></div>${agPdfFooterV15(`PV - point ${idx+1}`)}</section>`; }).join('');
+      const sign=`<section class="page">${agPdfHeaderV15('Signatures',copro)}<div class="box"><p>Président de séance :</p><div class="sign"></div><p>Secrétaire :</p><div class="sign"></div></div>${agPdfFooterV15('Signatures')}</section>`;
+      const win=window.open('','_blank'); win.document.write(`<!doctype html><html><head><title>PV AG</title><style>${pdfCssAgV14()}</style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
+    }
+
 
     const previousLoadAllV14 = loadAll;
     loadAll = async function(){ await previousLoadAllV14(); await loadAgModuleData(); renderAll(); };
