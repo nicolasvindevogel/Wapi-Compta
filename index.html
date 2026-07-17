@@ -1454,52 +1454,6 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
-
-
-    /* ---- Navigation V18 : sidebar courte, hubs, favoris et recherche ---- */
-    .nav-main-v18 { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-    .nav-main-v18 button[data-view] { min-height:46px; font-weight:800; }
-    .sidebar-search-block { margin:12px 12px 6px; }
-    .sidebar-search-block label { display:block; color:rgba(255,255,255,.7); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; }
-    .sidebar-command-mini { display:flex; gap:6px; }
-    .sidebar-command-mini input { min-width:0; flex:1; border-radius:12px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.08); color:#fff; padding:10px 11px; outline:none; }
-    .sidebar-command-mini input::placeholder { color:rgba(255,255,255,.58); }
-    .sidebar-mini-section { margin:14px 12px 0; padding:12px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.055); border-radius:16px; }
-    .sidebar-mini-title { color:rgba(255,255,255,.78); font-size:11px; text-transform:uppercase; font-weight:900; letter-spacing:.08em; margin-bottom:8px; }
-    .sidebar-mini-list { display:flex; flex-direction:column; gap:6px; }
-    .sidebar-mini-list button { width:100%; border:0; border-radius:12px; background:rgba(255,255,255,.08); color:#fff; padding:8px 9px; text-align:left; cursor:pointer; font-weight:750; font-size:12px; display:flex; align-items:center; gap:8px; }
-    .sidebar-mini-list button:hover { background:rgba(255,255,255,.15); }
-    .mini-empty { color:rgba(255,255,255,.55); font-size:12px; line-height:1.35; }
-    #appScreen.sidebar-collapsed .sidebar-search-block,
-    #appScreen.sidebar-collapsed .sidebar-mini-section { display:none; }
-    .command-search-v18 { position:relative; min-width:min(460px, 40vw); flex:1; max-width:620px; }
-    .command-search-v18 input { width:100%; border:1px solid var(--border); background:#fff; border-radius:999px; padding:10px 16px; outline:none; box-shadow:0 8px 22px rgba(15,35,52,.05); }
-    .command-search-v18 input:focus { border-color:rgba(30,122,126,.45); box-shadow:0 0 0 4px rgba(30,122,126,.10); }
-    .command-results-v18 { position:absolute; z-index:50; top:46px; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:0 18px 50px rgba(15,35,52,.16); padding:8px; max-height:380px; overflow:auto; }
-    .command-result-v18 { border:0; background:transparent; width:100%; text-align:left; border-radius:12px; padding:10px 12px; cursor:pointer; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
-    .command-result-v18:hover, .command-result-v18.active { background:#f3f7f7; }
-    .command-result-v18 strong { display:block; color:var(--text); }
-    .command-result-v18 small { display:block; color:var(--muted); margin-top:2px; }
-    .hub-hero-v18 { display:flex; justify-content:space-between; gap:22px; align-items:flex-start; padding:26px; border-radius:26px; background:linear-gradient(135deg, rgba(30,122,126,.12), rgba(227,199,115,.15)); border:1px solid rgba(30,122,126,.15); box-shadow:0 18px 45px rgba(15,35,52,.08); margin-bottom:18px; }
-    .hub-hero-v18 h2 { margin:4px 0 8px; font-size:26px; color:var(--text); }
-    .hub-hero-v18 p { margin:0; color:var(--muted); max-width:840px; line-height:1.55; }
-    .hub-kicker { color:var(--accent); text-transform:uppercase; letter-spacing:.10em; font-size:12px; font-weight:900; }
-    .hub-quick-v18 { white-space:nowrap; }
-    .hub-grid-v18 { display:grid; grid-template-columns:repeat(auto-fit,minmax(245px,1fr)); gap:14px; }
-    .hub-grid-v18.compact { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); margin-top:16px; }
-    .hub-card-v18 { border:1px solid var(--border); background:#fff; border-radius:20px; padding:18px; min-height:152px; box-shadow:0 10px 28px rgba(15,35,52,.06); display:flex; flex-direction:column; gap:12px; transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-    .hub-card-v18:hover { transform:translateY(-2px); box-shadow:0 16px 38px rgba(15,35,52,.10); border-color:rgba(30,122,126,.28); }
-    .hub-card-head-v18 { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-    .hub-icon-v18 { width:42px; height:42px; border-radius:15px; display:grid; place-items:center; background:#f0f6f6; font-size:22px; }
-    .hub-card-v18 h3 { margin:0; font-size:16px; color:var(--text); }
-    .hub-card-v18 p { margin:0; color:var(--muted); font-size:13px; line-height:1.45; flex:1; }
-    .hub-card-actions-v18 { display:flex; justify-content:space-between; align-items:center; gap:8px; }
-    .hub-card-actions-v18 .btn { padding:8px 12px; }
-    .favorite-star-v18 { border:0; background:#f7f1de; color:#8a6d1d; border-radius:999px; width:32px; height:32px; cursor:pointer; font-size:16px; display:grid; place-items:center; }
-    .favorite-star-v18.active { background:#e3c773; color:#102a43; }
-    .hub-count-v18 { color:var(--muted); font-size:12px; font-weight:800; }
-    .search-empty-v18 { padding:10px 12px; color:var(--muted); font-size:13px; }
-    @media (max-width: 900px){ .command-search-v18{ min-width:100%; order:3; max-width:none; } .topbar{ flex-wrap:wrap; } .hub-hero-v18{ flex-direction:column; } .hub-quick-v18{ white-space:normal; } }
   </style>
 </head>
 <body>
@@ -1568,33 +1522,109 @@
           <button class="mini-btn" id="clearActiveCoproBtn" type="button">Global</button>
         </div>
       </div>
-      <div class="sidebar-search-block">
-        <label>Recherche rapide</label>
-        <div class="sidebar-command-mini">
-          <input id="sidebarQuickSearch" type="search" placeholder="Module, copro, facture..." autocomplete="off" />
-          <button class="mini-btn" id="sidebarQuickSearchBtn" type="button">↵</button>
+      <nav class="nav">
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🧭</span><span class="menu-group__text">Pilotage</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="dashboard" data-title="Tableau de bord" class="active" title="Tableau de bord"><span class="nav__item"><span class="nav-icon">🏠</span><span class="nav-label">Tableau de bord</span></span></button>
+            <button data-view="processing" data-title="Centre de traitement" title="Centre de traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Centre de traitement</span></span></button>
+            <button data-view="invoiceOcr" data-title="Traitement factures OCR" title="Traitement factures OCR"><span class="nav__item"><span class="nav-icon">🔎</span><span class="nav-label">Traitement factures OCR</span></span></button>
+            <button data-view="payments" data-title="Paiement factures" title="Paiement factures"><span class="nav__item"><span class="nav-icon">💳</span><span class="nav-label">Paiement factures</span></span></button>
+            <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
+          </div>
         </div>
-      </div>
 
-      <nav class="nav nav-main-v18">
-        <button data-view="dashboard" data-title="Accueil" class="active" title="Accueil"><span class="nav__item"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></span></button>
-        <button data-view="coproHub" data-title="Coproprietes" title="Coproprietes"><span class="nav__item"><span class="nav-icon">🏢</span><span class="nav-label">Coproprietes</span></span></button>
-        <button data-view="processingHub" data-title="Traitement" title="Traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Traitement</span></span></button>
-        <button data-view="accountingHub" data-title="Comptabilite" title="Comptabilite"><span class="nav__item"><span class="nav-icon">📘</span><span class="nav-label">Comptabilite</span></span></button>
-        <button data-view="meetingsHub" data-title="Assemblees generales" title="Assemblees generales"><span class="nav__item"><span class="nav-icon">🗳️</span><span class="nav-label">Assemblees generales</span></span></button>
-        <button data-view="documentsHub" data-title="Documents & editions" title="Documents & editions"><span class="nav__item"><span class="nav-icon">🗂️</span><span class="nav-label">Documents</span></span></button>
-        <button data-view="configHub" data-title="Configuration" title="Configuration"><span class="nav__item"><span class="nav-icon">⚙️</span><span class="nav-label">Configuration</span></span></button>
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🏗️</span><span class="menu-group__text">Infrastructures</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="copros" data-title="Coproprietes" title="Coproprietes"><span class="nav__item"><span class="nav-icon">🏢</span><span class="nav-label">Coproprietes</span></span></button>
+            <button data-view="buildings" data-title="Batiments" title="Batiments"><span class="nav__item"><span class="nav-icon">🏬</span><span class="nav-label">Batiments</span></span></button>
+            <button data-view="lots" data-title="Lots" title="Lots"><span class="nav__item"><span class="nav-icon">🔢</span><span class="nav-label">Lots</span></span></button>
+            <button data-view="owners" data-title="Identites / Proprietaires" title="Identites / Proprietaires"><span class="nav__item"><span class="nav-icon">👤</span><span class="nav-label">Identites</span></span></button>
+            <button data-view="distribution" data-title="Repartition" title="Repartition"><span class="nav__item"><span class="nav-icon">🧩</span><span class="nav-label">Repartition</span></span></button>
+            <button data-view="works" data-title="Dossiers travaux" title="Dossiers travaux"><span class="nav__item"><span class="nav-icon">🛠️</span><span class="nav-label">Dossiers travaux</span></span></button>
+            <button data-view="articles" data-title="Base articles" title="Base articles"><span class="nav__item"><span class="nav-icon">📦</span><span class="nav-label">Base articles</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">📘</span><span class="menu-group__text">Comptabilite</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="exercises" data-title="Exercices comptables" title="Exercices comptables"><span class="nav__item"><span class="nav-icon">📅</span><span class="nav-label">Exercices comptables</span></span></button>
+            <button data-view="budgets" data-title="Budgets" title="Budgets"><span class="nav__item"><span class="nav-icon">💶</span><span class="nav-label">Budgets</span></span></button>
+            <button data-view="calls" data-title="Appels de fonds" title="Appels de fonds"><span class="nav__item"><span class="nav-icon">📣</span><span class="nav-label">Appels</span></span></button>
+            <button data-view="invoices" data-title="Factures fournisseurs" title="Factures fournisseurs"><span class="nav__item"><span class="nav-icon">📄</span><span class="nav-label">Factures fournisseurs</span></span></button>
+            <button data-view="syndicBilling" data-title="Facturation syndic" title="Facturation syndic"><span class="nav__item"><span class="nav-icon">🏷️</span><span class="nav-label">Facturation syndic</span></span></button>
+            <button data-view="electronicBilling" data-title="Facturation electronique" title="Facturation electronique"><span class="nav__item"><span class="nav-icon">🔌</span><span class="nav-label">Facturation electronique</span></span></button>
+            <button data-view="bank" data-title="Financier" title="Financier"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier</span></span></button>
+            <button data-view="od" data-title="Operations diverses" title="Operations diverses"><span class="nav__item"><span class="nav-icon">⚙️</span><span class="nav-label">Operations diverses</span></span></button>
+            <button data-view="planner" data-title="Planificateur" title="Planificateur"><span class="nav__item"><span class="nav-icon">🗓️</span><span class="nav-label">Planificateur</span></span></button>
+            <button data-view="simulation" data-title="Simulation repartition" title="Simulation repartition"><span class="nav__item"><span class="nav-icon">🧪</span><span class="nav-label">Simulation repartition</span></span></button>
+            <button data-view="statements" data-title="Decomptes" title="Decomptes"><span class="nav__item"><span class="nav-icon">📑</span><span class="nav-label">Decomptes</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">📊</span><span class="menu-group__text">Etats comptables</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="accounts" data-title="Comptes comptables" title="Comptes comptables"><span class="nav__item"><span class="nav-icon">📚</span><span class="nav-label">Comptes comptables</span></span></button>
+            <button data-view="ledger" data-title="Grand livre" title="Grand livre"><span class="nav__item"><span class="nav-icon">📖</span><span class="nav-label">Grand livre</span></span></button>
+            <button data-view="financialLedger" data-title="Grand livre financier" title="Grand livre financier"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Grand livre financier</span></span></button>
+            <button data-view="balance" data-title="Balance generale" title="Balance generale"><span class="nav__item"><span class="nav-icon">📈</span><span class="nav-label">Balance generale</span></span></button>
+            <button data-view="thirdBalance" data-title="Balance des tiers" title="Balance des tiers"><span class="nav__item"><span class="nav-icon">👥</span><span class="nav-label">Balance des tiers</span></span></button>
+            <button data-view="journals" data-title="Journaux comptables" title="Journaux comptables"><span class="nav__item"><span class="nav-icon">🗃️</span><span class="nav-label">Journaux comptables</span></span></button>
+            <button data-view="bilan" data-title="Bilan comptable" title="Bilan comptable"><span class="nav__item"><span class="nav-icon">🧮</span><span class="nav-label">Bilan comptable</span></span></button>
+            <button data-view="heldFunds" data-title="Fonds detenus" title="Fonds detenus"><span class="nav__item"><span class="nav-icon">💰</span><span class="nav-label">Fonds detenus</span></span></button>
+            <button data-view="expensesList" data-title="Liste des depenses" title="Liste des depenses"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Liste des depenses</span></span></button>
+            <button data-view="multicoproConsultation" data-title="Consultation multicopropriete" title="Consultation multicopropriete"><span class="nav__item"><span class="nav-icon">🔎</span><span class="nav-label">Consultation multicopropriete</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🗳️</span><span class="menu-group__text">Assemblees generales</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="meetings" data-title="Assemblees generales" title="Assemblees generales"><span class="nav__item"><span class="nav-icon">🗳️</span><span class="nav-label">Assemblees generales</span></span></button>
+            <button data-view="resolutions" data-title="Catalogue des resolutions" title="Catalogue des resolutions"><span class="nav__item"><span class="nav-icon">📋</span><span class="nav-label">Catalogue resolutions</span></span></button>
+          </div>
+        </div>
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">⚙️</span><span class="menu-group__text">Configuration</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="agency" data-title="Agence" title="Agence"><span class="nav__item"><span class="nav-icon">🏢</span><span class="nav-label">Agence</span></span></button>
+            <button data-view="users" data-title="Utilisateurs" title="Utilisateurs"><span class="nav__item"><span class="nav-icon">👥</span><span class="nav-label">Utilisateurs</span></span></button>
+            <button data-view="accessControl" data-title="Controle d'acces" title="Controle d'acces"><span class="nav__item"><span class="nav-icon">🔐</span><span class="nav-label">Controle d'acces</span></span></button>
+            <button data-view="bankInstitutions" data-title="Etablissements bancaires" title="Etablissements bancaires"><span class="nav__item"><span class="nav-icon">🏛️</span><span class="nav-label">Etablissements bancaires</span></span></button>
+            <button data-view="propertyTypes" data-title="Natures de biens" title="Natures de biens"><span class="nav__item"><span class="nav-icon">🏘️</span><span class="nav-label">Natures de biens</span></span></button>
+            <button data-view="vatCodes" data-title="Codes TVA" title="Codes TVA"><span class="nav__item"><span class="nav-icon">%</span><span class="nav-label">Codes TVA</span></span></button>
+            <button data-view="journalCodes" data-title="Codes journaux" title="Codes journaux"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Codes journaux</span></span></button>
+            <button data-view="defaultExpenseTypes" data-title="Natures de depense par defaut" title="Natures de depense par defaut"><span class="nav__item"><span class="nav-icon">📌</span><span class="nav-label">Natures depense defaut</span></span></button>
+            <button data-view="gdpr" data-title="GDPR" title="GDPR"><span class="nav__item"><span class="nav-icon">🛡️</span><span class="nav-label">GDPR</span></span></button>
+            <button data-view="importsConfig" data-title="Import" title="Import"><span class="nav__item"><span class="nav-icon">⬇️</span><span class="nav-label">Import</span></span></button>
+            <button data-view="templates" data-title="Modeles" title="Modeles"><span class="nav__item"><span class="nav-icon">🧱</span><span class="nav-label">Modeles</span></span></button>
+            <button data-view="auditTrail" data-title="Piste d'audit" title="Piste d'audit"><span class="nav__item"><span class="nav-icon">🧭</span><span class="nav-label">Piste d'audit</span></span></button>
+            <button data-view="isabel" data-title="Isabel Connect" title="Isabel Connect"><span class="nav__item"><span class="nav-icon">🔴</span><span class="nav-label">Isabel Connect</span></span></button>
+          </div>
+        </div>
       </nav>
-
-      <div class="sidebar-mini-section" id="favoritesSidebarSection">
-        <div class="sidebar-mini-title">Favoris</div>
-        <div id="sidebarFavorites" class="sidebar-mini-list"><div class="mini-empty">Ajoute des favoris depuis les tuiles.</div></div>
-      </div>
-
-      <div class="sidebar-mini-section" id="recentSidebarSection">
-        <div class="sidebar-mini-title">Recents</div>
-        <div id="sidebarRecent" class="sidebar-mini-list"><div class="mini-empty">Aucun module recent.</div></div>
-      </div>
     </aside>
 
     <main class="main">
@@ -1606,10 +1636,6 @@
             <h1 id="pageTitle" class="page-title">Tableau de bord</h1>
             <div id="pageSubtitle" class="page-subtitle">Interface optimisee pour une navigation plus simple, plus lisible et plus rapide.</div>
           </div>
-        </div>
-        <div class="command-search-v18">
-          <input id="globalCommandSearch" type="search" placeholder="Rechercher un module, une action, une copropriété..." autocomplete="off" />
-          <div id="globalCommandResults" class="command-results-v18 hidden"></div>
         </div>
         <div class="top-actions">
           <span id="userPill" class="user-pill"></span>
@@ -1651,86 +1677,12 @@
             </div>
           </div>
           <div class="card">
-            <h2>Poste de travail</h2>
+            <h2>Prochaine etape</h2>
             <p>
-              Les modules sont maintenant regroupés par univers. Utilise les tuiles ci-dessous, la recherche rapide ou les favoris pour aller directement au bon écran.
+              WAPI Compta fonctionne maintenant autour d'un centre de traitement multi-coproprietes :
+              import massif, reconnaissance automatique, correction humaine, validation puis creation des factures, extraits ou ecritures.
             </p>
-            <div id="dashboardActionGridV18" class="hub-grid-v18 compact"></div>
           </div>
-        </section>
-
-
-
-        <section id="coproHubView" class="view hidden">
-          <div class="hub-hero-v18">
-            <div>
-              <div class="hub-kicker">Univers copropriété</div>
-              <h2>Fiche, lots, propriétaires et paramètres de la copropriété</h2>
-              <p>Choisis ici tout ce qui structure la copropriété : lots, copropriétaires, clés de répartition, exercices et comptes bancaires.</p>
-            </div>
-            <div class="hub-quick-v18"><button class="btn" data-open-view="copros" data-title="Coproprietes" type="button">Ouvrir la liste des copropriétés</button></div>
-          </div>
-          <div class="hub-grid-v18" data-hub="copro"></div>
-        </section>
-
-        <section id="processingHubView" class="view hidden">
-          <div class="hub-hero-v18">
-            <div>
-              <div class="hub-kicker">Univers traitement</div>
-              <h2>Importer, reconnaître, contrôler et préparer les paiements</h2>
-              <p>Le centre de travail quotidien : OCR factures, import CODA, validation des documents et paiements multi-copropriétés.</p>
-            </div>
-            <div class="hub-quick-v18"><button class="btn" data-open-view="invoiceOcr" data-title="Traitement factures OCR" type="button">Traiter les factures OCR</button></div>
-          </div>
-          <div class="hub-grid-v18" data-hub="processing"></div>
-        </section>
-
-        <section id="accountingHubView" class="view hidden">
-          <div class="hub-hero-v18">
-            <div>
-              <div class="hub-kicker">Univers comptabilité</div>
-              <h2>Factures, financier, budgets, appels et décomptes</h2>
-              <p>Les modules comptables sont regroupés en tuiles lisibles plutôt qu’en longue liste dans la barre latérale.</p>
-            </div>
-            <div class="hub-quick-v18"><button class="btn" data-open-view="invoices" data-title="Factures fournisseurs" type="button">Ouvrir les factures</button></div>
-          </div>
-          <div class="hub-grid-v18" data-hub="accounting"></div>
-        </section>
-
-        <section id="meetingsHubView" class="view hidden">
-          <div class="hub-hero-v18">
-            <div>
-              <div class="hub-kicker">Univers assemblées générales</div>
-              <h2>Préparer les convocations, voter et éditer les PV</h2>
-              <p>Création d’AG, catalogue de résolutions, convocations nominatives, votes et procès-verbaux.</p>
-            </div>
-            <div class="hub-quick-v18"><button class="btn" data-open-view="meetings" data-title="Assemblees generales" type="button">Ouvrir les AG</button></div>
-          </div>
-          <div class="hub-grid-v18" data-hub="meetings"></div>
-        </section>
-
-        <section id="documentsHubView" class="view hidden">
-          <div class="hub-hero-v18">
-            <div>
-              <div class="hub-kicker">Univers documents</div>
-              <h2>Éditions, rapports, situations et documents imprimables</h2>
-              <p>Accès rapide aux documents destinés aux copropriétaires : appels, décomptes, situations, dépenses et états.</p>
-            </div>
-            <div class="hub-quick-v18"><button class="btn" data-open-view="statements" data-title="Decomptes" type="button">Préparer des décomptes</button></div>
-          </div>
-          <div class="hub-grid-v18" data-hub="documents"></div>
-        </section>
-
-        <section id="configHubView" class="view hidden">
-          <div class="hub-hero-v18">
-            <div>
-              <div class="hub-kicker">Univers configuration</div>
-              <h2>Paramètres, référentiels et sécurité</h2>
-              <p>Tout ce qui ne se traite pas tous les jours, mais qui structure le logiciel : plan comptable, utilisateurs, modèles, banques et imports.</p>
-            </div>
-            <div class="hub-quick-v18"><button class="btn" data-open-view="accounts" data-title="Comptes comptables" type="button">Ouvrir le plan comptable</button></div>
-          </div>
-          <div class="hub-grid-v18" data-hub="config"></div>
         </section>
 
         <section id="processingView" class="view hidden">
@@ -9113,170 +9065,393 @@
     });
 
 
-
-
-    /* ---- Navigation V18 : hubs, recherche globale, favoris et recents ---- */
-    const WAPI_NAV_V18_KEY_FAV = 'wapi-compta-v18-favorites';
-    const WAPI_NAV_V18_KEY_RECENT = 'wapi-compta-v18-recent';
-    const NAV_ITEMS_V18 = [
-      {view:'dashboard', title:'Accueil', icon:'🏠', hub:'home', desc:'Tableau de bord, indicateurs et accès rapides.'},
-      {view:'copros', title:'Copropriétés', icon:'🏢', hub:'copro', desc:'Créer, ouvrir et gérer les copropriétés.'},
-      {view:'buildings', title:'Bâtiments', icon:'🏬', hub:'copro', desc:'Organisation des bâtiments et blocs.'},
-      {view:'lots', title:'Lots', icon:'🔢', hub:'copro', desc:'Lots, quotités, propriétaires et mutations.'},
-      {view:'owners', title:'Identités / propriétaires', icon:'👤', hub:'copro', desc:'Copropriétaires, fournisseurs, occupants et contacts.'},
-      {view:'distribution', title:'Clés de répartition', icon:'🧩', hub:'copro', desc:'Liste et modification des clés de répartition.'},
-      {view:'exercises', title:'Exercices comptables', icon:'📅', hub:'copro', desc:'Création et suivi des exercices.'},
-      {view:'bank', title:'Financier / Banque', icon:'🏦', hub:'accounting', desc:'Extraits manuels, CODA, comptes bancaires et lignes financières.'},
-      {view:'processing', title:'Centre de traitement', icon:'📥', hub:'processing', desc:'Importer factures, CODA et documents divers.'},
-      {view:'invoiceOcr', title:'Traitement factures OCR', icon:'🔎', hub:'processing', desc:'PDF visible, champs OCR modifiables et validation.'},
-      {view:'payments', title:'Paiement factures', icon:'💳', hub:'processing', desc:'Préparer les paiements Isabel6 multi-copropriétés.'},
-      {view:'invoices', title:'Factures fournisseurs', icon:'📄', hub:'accounting', desc:'Encodage, statuts de paiement et PDF des factures.'},
-      {view:'budgets', title:'Budgets', icon:'💶', hub:'accounting', desc:'Budgets par clé de répartition et comptes classe 6.'},
-      {view:'calls', title:'Appels de fonds', icon:'📣', hub:'accounting', desc:'Appels en attente, comptabilisés et impressions.'},
-      {view:'statements', title:'Décomptes', icon:'📑', hub:'accounting', desc:'Décomptes annuels, lots, proratas et situations.'},
-      {view:'thirdBalance', title:'Balance des tiers', icon:'👥', hub:'accounting', desc:'Situations copropriétaires et fournisseurs.'},
-      {view:'expensesList', title:'Liste des dépenses', icon:'🧾', hub:'accounting', desc:'Dépenses groupées par compte comptable.'},
-      {view:'financialLedger', title:'Grand livre financier', icon:'🏦', hub:'accounting', desc:'Suivi détaillé des mouvements bancaires.'},
-      {view:'ledger', title:'Grand livre', icon:'📖', hub:'accounting', desc:'Écritures comptables et consultations.'},
-      {view:'balance', title:'Balance générale', icon:'📈', hub:'accounting', desc:'Balance comptable générale.'},
-      {view:'journals', title:'Journaux comptables', icon:'🗃️', hub:'accounting', desc:'Journaux et écritures par journal.'},
-      {view:'meetings', title:'Assemblées générales', icon:'🗳️', hub:'meetings', desc:'Créer les AG, présences, votes, convocations et PV.'},
-      {view:'resolutions', title:'Catalogue des résolutions', icon:'📋', hub:'meetings', desc:'Ordres du jour récurrents à reprendre dans les AG.'},
-      {view:'accounts', title:'Comptes comptables', icon:'📚', hub:'config', desc:'Plan comptable de la copropriété.'},
-      {view:'suppliers', title:'Fournisseurs', icon:'🚚', hub:'config', desc:'Gestion des fournisseurs et IBAN.'},
-      {view:'agency', title:'Agence', icon:'🏢', hub:'config', desc:'Paramètres agence et coordonnées.'},
-      {view:'users', title:'Utilisateurs', icon:'👥', hub:'config', desc:'Utilisateurs et accès.'},
-      {view:'templates', title:'Modèles', icon:'🧱', hub:'config', desc:'Modèles de documents et éditions.'},
-      {view:'isabel', title:'Isabel Connect', icon:'🔴', hub:'config', desc:'Paramètres liés aux paiements bancaires.'},
-      {view:'importsConfig', title:'Import', icon:'⬇️', hub:'config', desc:'Paramètres d’import et reconnaissance.'},
-      {view:'bilan', title:'Bilan comptable', icon:'🧮', hub:'documents', desc:'État de bilan comptable.'},
-      {view:'heldFunds', title:'Fonds détenus', icon:'💰', hub:'documents', desc:'Fonds détenus et synthèses.'},
-      {view:'multicoproConsultation', title:'Consultation multicopropriété', icon:'🔎', hub:'documents', desc:'Recherche et consultation transverse.'},
-      {view:'works', title:'Dossiers travaux', icon:'🛠️', hub:'documents', desc:'Suivi des dossiers travaux.'},
-      {view:'articles', title:'Base articles', icon:'📦', hub:'config', desc:'Articles et référentiels.'},
-      {view:'syndicBilling', title:'Facturation syndic', icon:'🏷️', hub:'accounting', desc:'Facturation des honoraires syndic.'},
-      {view:'electronicBilling', title:'Facturation électronique', icon:'🔌', hub:'accounting', desc:'Préparation future Peppol/e-facturation.'},
-      {view:'od', title:'Opérations diverses', icon:'⚙️', hub:'accounting', desc:'Écritures diverses et corrections.'},
-      {view:'planner', title:'Planificateur', icon:'🗓️', hub:'accounting', desc:'Planification comptable.'},
-      {view:'simulation', title:'Simulation répartition', icon:'🧪', hub:'accounting', desc:'Simuler des répartitions.'},
-      {view:'accessControl', title:'Contrôle d’accès', icon:'🔐', hub:'config', desc:'Paramètres d’accès.'},
-      {view:'bankInstitutions', title:'Établissements bancaires', icon:'🏛️', hub:'config', desc:'Banques et références.'},
-      {view:'propertyTypes', title:'Natures de biens', icon:'🏘️', hub:'config', desc:'Référentiel des natures de lots.'},
-      {view:'vatCodes', title:'Codes TVA', icon:'%', hub:'config', desc:'Codes TVA.'},
-      {view:'journalCodes', title:'Codes journaux', icon:'🧾', hub:'config', desc:'Journaux et codes.'},
-      {view:'defaultExpenseTypes', title:'Natures de dépense par défaut', icon:'📌', hub:'config', desc:'Référentiel des natures de dépense.'},
-      {view:'gdpr', title:'GDPR / RGPD', icon:'🛡️', hub:'config', desc:'Paramètres de confidentialité.'},
-      {view:'auditTrail', title:'Piste d’audit', icon:'🧭', hub:'config', desc:'Historique et traces.'}
-    ];
-
-    function navItemByViewV18(view){ return NAV_ITEMS_V18.find(i=>i.view===view) || {view,title:view,icon:'•',hub:'other',desc:''}; }
-    function getLocalListV18(key){ try{return JSON.parse(localStorage.getItem(key)||'[]')||[];}catch(e){return [];} }
-    function setLocalListV18(key,list){ localStorage.setItem(key, JSON.stringify(list.slice(0,12))); }
-    function favoriteViewsV18(){ return getLocalListV18(WAPI_NAV_V18_KEY_FAV); }
-    function recentViewsV18(){ return getLocalListV18(WAPI_NAV_V18_KEY_RECENT); }
-    function isFavoriteV18(view){ return favoriteViewsV18().includes(view); }
-    function toggleFavoriteV18(view){ const fav=favoriteViewsV18(); const next=fav.includes(view)?fav.filter(v=>v!==view):[view,...fav].slice(0,10); setLocalListV18(WAPI_NAV_V18_KEY_FAV,next); renderNavigationV18(); }
-    function addRecentV18(view){ if(!view || view.endsWith('Hub') || view==='dashboard') return; const rec=recentViewsV18().filter(v=>v!==view); rec.unshift(view); setLocalListV18(WAPI_NAV_V18_KEY_RECENT, rec); renderNavigationV18(); }
-    function moduleCountV18(view){
-      try {
-        if(view==='invoiceOcr') return (state.validationQueue||[]).filter(q=>q.target_type==='invoice' && q.status!=='validated' && q.status!=='rejected').length;
-        if(view==='processing') return (state.validationQueue||[]).filter(q=>q.status!=='validated' && q.status!=='rejected').length;
-        if(view==='payments') return (state.invoices||[]).filter(i=>invoicePaymentStatus(i)!=='paid' && !i.do_not_pay && !i.sent_to_payment).length;
-        if(view==='invoices') return (state.invoices||[]).length;
-        if(view==='budgets') return (state.budgetHeaders||[]).length || (state.budgetLines||[]).length;
-        if(view==='calls') return (state.callHeaders||[]).length || (state.ownerCalls||[]).length;
-        if(view==='lots') return (state.lots||[]).length;
-        if(view==='owners') return (state.owners||[]).length;
-        if(view==='copros') return (state.copros||[]).length;
-        if(view==='meetings') return (state.meetings||[]).length;
-      } catch(e) {}
-      return null;
+    // ---- V19 : retour navigation V17 + OCR factures renforcé ----
+    // Objectif : réduire les faux positifs sur montants et numéros de facture,
+    // et privilégier les fournisseurs déjà enregistrés dans la base.
+    function normalizeOcrV19(value) {
+      return String(value || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[|]/g, 'I')
+        .replace(/[“”]/g, '"')
+        .replace(/[’‘]/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
     }
-    function hubCardHtmlV18(item, compact=false){
-      const count=moduleCountV18(item.view);
-      return `<article class="hub-card-v18 ${compact?'compact-card':''}"><div class="hub-card-head-v18"><div class="hub-icon-v18">${item.icon}</div><button class="favorite-star-v18 ${isFavoriteV18(item.view)?'active':''}" data-favorite-view="${item.view}" title="Ajouter/retirer des favoris" type="button">★</button></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.desc||'')}</p><div class="hub-card-actions-v18"><button class="btn secondary small" data-open-view="${item.view}" data-title="${escapeHtml(item.title)}" type="button">Ouvrir</button>${count!==null?`<span class="hub-count-v18">${count}</span>`:''}</div></article>`;
+
+    function compactOcrV19(value) {
+      return normalizeOcrV19(value).toLowerCase().replace(/[^a-z0-9]/g, '');
     }
-    function renderHubV18(hub){ const el=document.querySelector(`[data-hub="${hub}"]`); if(!el) return; el.innerHTML=NAV_ITEMS_V18.filter(i=>i.hub===hub).map(i=>hubCardHtmlV18(i)).join('') || '<div class="notice">Aucun module dans cette rubrique.</div>'; }
-    function renderDashboardActionsV18(){ const el=$('dashboardActionGridV18'); if(!el) return; const preferred=['invoiceOcr','payments','processing','invoices','bank','budgets','calls','statements','meetings','thirdBalance']; el.innerHTML=preferred.map(v=>hubCardHtmlV18(navItemByViewV18(v), true)).join(''); }
-    function miniListHtmlV18(views, empty){ if(!views.length) return `<div class="mini-empty">${escapeHtml(empty)}</div>`; return views.map(v=>{ const item=navItemByViewV18(v); return `<button type="button" data-open-view="${item.view}" data-title="${escapeHtml(item.title)}"><span>${item.icon}</span><span>${escapeHtml(item.title)}</span></button>`; }).join(''); }
-    function renderNavigationV18(){
-      renderDashboardActionsV18();
-      ['copro','processing','accounting','meetings','documents','config'].forEach(renderHubV18);
-      if($('sidebarFavorites')) $('sidebarFavorites').innerHTML=miniListHtmlV18(favoriteViewsV18(), 'Ajoute des favoris depuis les tuiles.');
-      if($('sidebarRecent')) $('sidebarRecent').innerHTML=miniListHtmlV18(recentViewsV18(), 'Aucun module récent.');
+
+    function ocrLinesV19(text) {
+      return String(text || '')
+        .replace(/\u00a0/g, ' ')
+        .split(/\r?\n/)
+        .map((line) => line.replace(/[ \t]{2,}/g, ' ').trim())
+        .filter(Boolean);
     }
-    const oldUpdateTopbarContextV18 = updateTopbarContext;
-    updateTopbarContext = function(){
-      const view = state.currentViewName || document.querySelector('.nav [data-view].active')?.dataset?.view || 'dashboard';
-      const activeCoproName = state.activeCoproId ? (state.copros.find((c) => c.id === state.activeCoproId)?.name || 'Copropriété active') : 'Mode global';
-      const subtitles = {
-        dashboard:'Poste de travail et accès rapides.',
-        coproHub:'Tout ce qui structure la copropriété.',
-        processingHub:'Import, OCR, validation et paiements.',
-        accountingHub:'Factures, financier, budgets, appels et décomptes.',
-        meetingsHub:'Convocations, votes et PV.',
-        documentsHub:'Documents, situations et éditions.',
-        configHub:'Référentiels, paramètres et sécurité.'
-      };
-      const item = navItemByViewV18(view);
-      if($('pageSubtitle')) $('pageSubtitle').textContent = `${subtitles[view] || item.desc || 'Module prêt à l’emploi.'} • Contexte : ${activeCoproName}`;
+
+    function normalizeVatV19(value) {
+      return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^BE0?/, 'BE');
+    }
+
+    function looksLikeIbanV19(line) {
+      return /\b[A-Z]{2}\s*\d{2}(?:\s*[A-Z0-9]){10,30}\b/i.test(line || '');
+    }
+
+    function moneyTokenRegexV19() {
+      // Montants réalistes de facture : on privilégie les montants avec 2 décimales.
+      return /(?:^|[^0-9A-Z])([0-9]{1,3}(?:[ .’'\u00a0][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2})|[0-9]{2,7}(?:,[0-9]{2}|\.[0-9]{2}))(?:\s*(?:€|EUR|EURO))?/gi;
+    }
+
+    function amountContextScoreV19(line, index, totalLines, value) {
+      const n = normalizeTextForDetection(line || '');
+      let score = 0;
+      if (/net\s*a\s*payer|net\s*à\s*payer|montant\s*(a|à)\s*payer|total\s*(a|à)\s*payer|solde\s*(du|dû|a\s*payer|à\s*payer)|reste\s*(a|à)\s*payer/.test(n)) score += 135;
+      if (/total\s*(ttc|tvac)|ttc\s*(a|à)?\s*payer|tvac\s*(a|à)?\s*payer|total\s*facture|montant\s*total\s*(ttc|tvac)?/.test(n)) score += 115;
+      if (/total\s*general|total\s*général|total\s*general/.test(n)) score += 105;
+      if (/\btotal\b/.test(n)) score += 55;
+      if (/\bdu\b|\bdû\b|a\s*payer|à\s*payer/.test(n)) score += 35;
+      if (/€|eur|euro/i.test(line || '')) score += 12;
+      if (index > totalLines * 0.58) score += 10;
+      if (index > totalLines * 0.76) score += 8;
+      if (value >= 50) score += 4;
+      if (value >= 500) score += 5;
+      if (/htva|hors\s*tva|hors taxe|base\s*ht|base\s*tva|montant\s*ht|total\s*ht|sous[- ]?total|acompte|remise|ristourne|escompte/.test(n)) score -= 75;
+      if (/\btva\b|\bvat\b/.test(n) && !/ttc|tvac|total\s*ttc|total\s*tvac/.test(n)) score -= 65;
+      if (/iban|bic|compte\s*bancaire|communication|virement|banque|tel\.?|telephone|téléphone|gsm|bce|entreprise|client|n\s*client|numero\s*client|numéro\s*client|ref\s*client|réf\s*client|commande|bon\s*de\s*commande/.test(n)) score -= 85;
+      if (looksLikeIbanV19(line)) score -= 140;
+      if (/\d{2}[\/.-]\d{2}[\/.-]\d{2,4}/.test(line || '')) score -= 12;
+      return score;
+    }
+
+    function extractAmountCandidatesV19(text) {
+      const lines = ocrLinesV19(text);
+      const candidates = [];
+      const totalLines = Math.max(lines.length, 1);
+      lines.forEach((line, index) => {
+        const rx = moneyTokenRegexV19();
+        let m;
+        while ((m = rx.exec(line))) {
+          const value = parseMoneyV131 ? parseMoneyV131(m[1]) : parseMoneyV13(m[1]);
+          if (value === null || !Number.isFinite(value) || value <= 0 || value > 10000000) continue;
+          const score = amountContextScoreV19(line, index, totalLines, value);
+          candidates.push({ value, score, line, index, token:m[1] });
+        }
+      });
+      // Cas fréquent : libellé sur une ligne, montant sur la ligne suivante.
+      lines.forEach((line, index) => {
+        const n = normalizeTextForDetection(line);
+        const strongLabel = /net\s*a\s*payer|net\s*à\s*payer|total\s*(ttc|tvac)|montant\s*(a|à)\s*payer|total\s*(a|à)\s*payer|solde\s*(du|dû)/.test(n);
+        if (!strongLabel) return;
+        for (let offset = 1; offset <= 3; offset++) {
+          const next = lines[index + offset];
+          if (!next) continue;
+          const rx = moneyTokenRegexV19();
+          let m;
+          while ((m = rx.exec(next))) {
+            const value = parseMoneyV131 ? parseMoneyV131(m[1]) : parseMoneyV13(m[1]);
+            if (value === null || value <= 0 || value > 10000000) continue;
+            const score = 125 - (offset * 10) + amountContextScoreV19(next, index + offset, totalLines, value);
+            candidates.push({ value, score, line:line + ' / ' + next, index:index + offset, token:m[1] });
+          }
+        }
+      });
+      return candidates;
+    }
+
+    function detectAmountV19(text) {
+      const candidates = extractAmountCandidatesV19(text);
+      if (!candidates.length) return null;
+      candidates.sort((a, b) => (b.score - a.score) || (b.index - a.index) || (b.value - a.value));
+      const best = candidates[0];
+      if (best.score >= 55) return best.value;
+      // Fallback prudent : on prend le plus grand montant avec décimales dans le dernier tiers,
+      // mais seulement si le contexte n'est pas manifestement TVA/IBAN/client.
+      const safe = candidates
+        .filter((c) => c.score > -45 && c.index >= ocrLinesV19(text).length * 0.45)
+        .sort((a, b) => b.value - a.value)[0];
+      return safe ? safe.value : best.value;
+    }
+
+    detectAmountNearV13 = detectAmountV19;
+
+    function cleanReferenceCandidateV19(value) {
+      let ref = String(value || '').trim();
+      ref = ref.replace(/^[#:\-\s]+/, '').replace(/[.,;:\s]+$/, '');
+      ref = ref.replace(/^N[°O0]\s*/i, '').trim();
+      return ref;
+    }
+
+    function isBadInvoiceReferenceV19(ref, line = '') {
+      const r = cleanReferenceCandidateV19(ref);
+      const compact = r.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      const nLine = normalizeTextForDetection(line || '');
+      if (!r || compact.length < 3 || compact.length > 32) return true;
+      if (/^(FACTURE|INVOICE|NUMERO|NUMBER|DATE|TOTAL|TVA|VAT|CLIENT|REFERENCE|REF)$/i.test(r)) return true;
+      if (/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(r)) return true;
+      if (/^20\d{2}$/.test(r)) return true;
+      if (/^BE\d{9,10}$/i.test(compact)) return true;
+      if (/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/i.test(compact)) return true;
+      if (/^[0-9]+([,.][0-9]{2})$/.test(r)) return true;
+      if (/€|eur/i.test(line)) return true;
+      if (/iban|bic|bce|tva\s*[:]?\s*be|vat|tel|telephone|téléphone|gsm|compte|client|n\s*client|numero\s*client|numéro\s*client|commande|bon\s*de\s*commande|livraison|devis/.test(nLine) && !/facture|invoice/.test(nLine)) return true;
+      return false;
+    }
+
+    function referenceScoreV19(line, ref, index) {
+      const n = normalizeTextForDetection(line || '');
+      let score = 0;
+      if (/facture|invoice|rechn/.test(n)) score += 80;
+      if (/n\s*[°o0]|numero|numéro|num|nr|no\b|#|reference\s*facture|référence\s*facture|ref\s*facture/.test(n)) score += 35;
+      if (/date\s*facture/.test(n)) score -= 25;
+      if (/client|commande|devis|livraison|bon/.test(n) && !/facture|invoice/.test(n)) score -= 70;
+      if (/[A-Z]/.test(ref) && /\d/.test(ref)) score += 8;
+      if (/^\d{5,}$/.test(ref.replace(/[^0-9]/g, ''))) score += 4;
+      if (index < 18) score += 10;
+      return score;
+    }
+
+    function detectInvoiceReferenceV19(text, fileName = '') {
+      const lines = ocrLinesV19(`${fileName || ''}\n${text || ''}`);
+      const candidates = [];
+      const token = '([A-Z0-9][A-Z0-9_./\\-]{2,31})';
+      const strongPatterns = [
+        new RegExp('(?:facture|invoice|rechnung)[^\\n]{0,45}(?:n\\s*[°o0.]?|numero|numéro|num|nr|no\\.?|#|ref(?:erence)?|réf(?:érence)?)\\s*[:\\- ]{0,8}' + token, 'i'),
+        new RegExp('(?:n\\s*[°o0.]?|numero|numéro|num|nr|no\\.?|#)\\s*(?:de\\s*)?(?:facture|invoice)[^\\n]{0,25}[:\\- ]{0,8}' + token, 'i'),
+        new RegExp('(?:reference|référence|ref)\\s*(?:facture|invoice)[^\\n]{0,25}[:\\- ]{0,8}' + token, 'i')
+      ];
+      lines.forEach((line, index) => {
+        for (const rx of strongPatterns) {
+          const m = line.match(rx);
+          if (m) {
+            const ref = cleanReferenceCandidateV19(m[1]);
+            if (!isBadInvoiceReferenceV19(ref, line)) candidates.push({ ref, score:referenceScoreV19(line, ref, index) + 60, line, index });
+          }
+        }
+        const n = normalizeTextForDetection(line);
+        if (/facture|invoice/.test(n)) {
+          const genericRx = /\b([A-Z]{1,6}[-/.]?\d{2,}[-/.]?[A-Z0-9]{0,10}|20\d{2}[-/.]\d{2,8}|\d{4,}[-/.]\d{1,8})\b/gi;
+          let gm;
+          while ((gm = genericRx.exec(line))) {
+            const ref = cleanReferenceCandidateV19(gm[1]);
+            if (!isBadInvoiceReferenceV19(ref, line)) candidates.push({ ref, score:referenceScoreV19(line, ref, index), line, index });
+          }
+        }
+      });
+      candidates.sort((a, b) => (b.score - a.score) || (a.index - b.index));
+      if (candidates[0] && candidates[0].score >= 75) return candidates[0].ref;
+      // Fallback sur le nom de fichier uniquement s'il ressemble réellement à une facture.
+      const f = String(fileName || '').replace(/\.[a-z0-9]+$/i, '');
+      if (/fact|invoice|fac/i.test(f)) {
+        const m = f.match(/(?:facture|fact|invoice|fac)[_\- ]*([A-Z0-9][A-Z0-9_./\-]{2,31})/i);
+        if (m && !isBadInvoiceReferenceV19(m[1], f)) return cleanReferenceCandidateV19(m[1]);
+      }
+      return '';
+    }
+
+    function tokenSetV19(value) {
+      return normalizeTextForDetection(value || '')
+        .split(/[^a-z0-9]+/)
+        .filter((x) => x.length >= 3 && !['sprl','srl','sa','bv','nv','asbl','the','and','des','les','pour','rue','avenue','boulevard','chaussee','chaussée','facture','client'].includes(x));
+    }
+
+    function supplierMatchScoreV19(supplier, text) {
+      const raw = String(text || '');
+      const normalized = normalizeTextForDetection(raw);
+      const compact = compactOcrV19(raw);
+      const head = normalizeTextForDetection(ocrLinesV19(raw).slice(0, 35).join(' '));
+      const normalizedIban = normalizeIban(raw);
+      let score = 0;
+      const name = normalizeTextForDetection(supplier.name || '');
+      const compactName = compactOcrV19(supplier.name || '');
+      if (name && normalized.includes(name)) score = Math.max(score, 88);
+      if (compactName && compactName.length >= 5 && compact.includes(compactName)) score = Math.max(score, 86);
+      const supplierVat = normalizeVatV19(supplier.vat_number || '');
+      const textVat = normalizeVatV19(raw);
+      if (supplierVat && textVat.includes(supplierVat)) score = Math.max(score, 97);
+      const iban = normalizeIban(supplier.iban || '');
+      if (iban && normalizedIban.includes(iban)) score = Math.max(score, 98);
+      const email = normalizeTextForDetection(supplier.email || '');
+      if (email && normalized.includes(email)) score = Math.max(score, 94);
+      const tokens = tokenSetV19(supplier.name || '');
+      if (tokens.length) {
+        const foundAll = tokens.filter((tok) => normalized.includes(tok));
+        const foundHead = tokens.filter((tok) => head.includes(tok));
+        const ratio = foundAll.length / tokens.length;
+        if (tokens.length >= 2 && foundHead.length >= Math.min(2, tokens.length)) score = Math.max(score, 82 + Math.min(foundHead.length * 2, 8));
+        if (ratio >= 1 && tokens.length >= 2) score = Math.max(score, 84);
+        else if (ratio >= .66 && foundAll.length >= 2) score = Math.max(score, 76);
+        else if (foundAll.length === 1 && foundAll[0].length >= 7) score = Math.max(score, 60);
+      }
+      // Si le nom fournisseur apparait seulement dans une zone client/ACP, prudence.
+      if (/client|destinataire|copropriete|copropriété|immeuble/.test(head) && score < 90) score -= 8;
+      return Math.max(0, score);
+    }
+
+    detectSupplierFromText = function(text) {
+      const results = (state.suppliers || []).map((supplier) => ({ supplier, confidence:supplierMatchScoreV19(supplier, text) }))
+        .filter((r) => r.confidence > 0)
+        .sort((a, b) => b.confidence - a.confidence);
+      if (!results.length) return { supplier:null, confidence:0 };
+      const best = results[0];
+      const second = results[1];
+      if (best.confidence >= 90) return best;
+      if (best.confidence >= 72 && (!second || best.confidence - second.confidence >= 8)) return best;
+      if (best.confidence >= 62 && (!second || best.confidence - second.confidence >= 18)) return best;
+      return { supplier:null, confidence:best.confidence };
     };
-    function navigateToViewV18(viewName, title){
-      document.querySelectorAll('.view').forEach((view)=>view.classList.add('hidden'));
-      const target=$(viewName+'View');
-      if(!target){ alert('Module indisponible ou en cours de développement : '+(title||viewName)); return; }
-      target.classList.remove('hidden');
-      document.querySelectorAll('.nav [data-view]').forEach((b)=>b.classList.remove('active'));
-      const navBtn=document.querySelector(`.nav [data-view="${viewName}"]`);
-      if(navBtn) navBtn.classList.add('active');
-      state.currentViewName=viewName;
-      state.currentViewTitle=title || navItemByViewV18(viewName).title || viewName;
-      if($('pageTitle')) $('pageTitle').textContent=state.currentViewTitle;
-      addRecentV18(viewName);
-      updateTopbarContext();
-      hideCommandResultsV18();
-      window.scrollTo({top:0, behavior:'smooth'});
+
+    function extractInvoiceFieldsV19(text, fileName = '') {
+      const source = `${fileName || ''}\n${String(text || '')}`;
+      const flat = source.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+      const invoiceDate = detectDateNearV13(flat, ['date\\s*facture', 'facture\\s*du', 'émise\\s*le', 'emise\\s*le', 'date']);
+      const dueDate = detectDateNearV13(flat, ['échéance', 'echeance', 'date\\s*echeance', 'date\\s*échéance', 'à\\s*payer\\s*avant', 'a\\s*payer\\s*avant', 'payable\\s*avant']);
+      const reference = detectInvoiceReferenceV19(source, fileName);
+      const amount = detectAmountV19(source);
+      const vatRateMatch = flat.match(/(?:TVA|VAT)[^0-9]{0,20}([0-9]{1,2}(?:[,.][0-9]+)?)\s*%/i);
+      const vatRate = vatRateMatch ? parseMoneyV131(vatRateMatch[1]) : null;
+      const vatCandidates = extractAmountCandidatesV19(source).filter((c)=>/tva|vat/i.test(c.line) && !/ttc|tvac|total\s*ttc|total\s*tvac/i.test(c.line)).sort((a,b)=>b.score-a.score);
+      const vatAmount = vatCandidates[0] ? vatCandidates[0].value : null;
+      return {
+        date: invoiceDate || '',
+        due_date: dueDate || '',
+        reference: reference || '',
+        amount: amount !== null ? amount : '',
+        vat_rate: vatRate !== null ? vatRate : '',
+        vat_amount: vatAmount !== null ? vatAmount : '',
+        account_id: guessAccountFromTextV13(source)
+      };
     }
-    activateView = function(button){ navigateToViewV18(button.dataset.view, button.dataset.title || button.textContent.trim()); };
-    function searchItemsV18(query){
-      const q=String(query||'').trim().toLowerCase();
-      if(!q) return [];
-      const moduleResults=NAV_ITEMS_V18.filter(i=>[i.title,i.desc,i.hub,i.view].join(' ').toLowerCase().includes(q)).slice(0,8);
-      const coproResults=(state.copros||[]).filter(c=>[c.name,c.reference,c.address,c.city].join(' ').toLowerCase().includes(q)).slice(0,4).map(c=>({view:'copros',title:c.name||'Copropriété',icon:'🏢',desc:'Copropriété · '+[c.reference,c.address,c.city].filter(Boolean).join(' · '), coproId:c.id}));
-      const supplierResults=(state.suppliers||[]).filter(s=>[s.name,s.email,s.iban,s.vat_number].join(' ').toLowerCase().includes(q)).slice(0,4).map(s=>({view:'owners',title:s.name||'Fournisseur',icon:'🚚',desc:'Fournisseur · '+[s.email,s.iban].filter(Boolean).join(' · ')}));
-      return [...moduleResults,...coproResults,...supplierResults].slice(0,12);
-    }
-    function renderCommandResultsV18(query){
-      const box=$('globalCommandResults'); if(!box) return;
-      const results=searchItemsV18(query);
-      if(!String(query||'').trim()){ box.classList.add('hidden'); box.innerHTML=''; return; }
-      box.classList.remove('hidden');
-      box.innerHTML=results.length?results.map((r,idx)=>`<button class="command-result-v18 ${idx===0?'active':''}" type="button" data-command-view="${r.view}" data-command-title="${escapeHtml(r.title)}" ${r.coproId?`data-command-copro="${r.coproId}"`:''}><span>${r.icon||'•'}</span><span><strong>${escapeHtml(r.title)}</strong><small>${escapeHtml(r.desc||'')}</small></span><span>↵</span></button>`).join(''):'<div class="search-empty-v18">Aucun résultat. Essaie “budget”, “OCR”, “appel”, “Dupont”…</div>';
-    }
-    function hideCommandResultsV18(){ if($('globalCommandResults')) $('globalCommandResults').classList.add('hidden'); }
-    function openFirstCommandResultV18(){ const first=$('globalCommandResults')?.querySelector('[data-command-view]'); if(first) first.click(); }
-    document.addEventListener('input',(e)=>{
-      if(e.target?.id==='globalCommandSearch') renderCommandResultsV18(e.target.value);
-      if(e.target?.id==='sidebarQuickSearch') { if($('globalCommandSearch')) { $('globalCommandSearch').value=e.target.value; renderCommandResultsV18(e.target.value); $('globalCommandSearch').focus(); } }
-    });
-    document.addEventListener('keydown',(e)=>{
-      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); $('globalCommandSearch')?.focus(); $('globalCommandSearch')?.select(); }
-      if(e.key==='Enter' && document.activeElement?.id==='globalCommandSearch'){ e.preventDefault(); openFirstCommandResultV18(); }
-      if(e.key==='Escape') hideCommandResultsV18();
-    });
-    document.addEventListener('click',(e)=>{
-      const fav=e.target.closest?.('[data-favorite-view]');
-      if(fav){ e.preventDefault(); e.stopPropagation(); toggleFavoriteV18(fav.dataset.favoriteView); return; }
-      const open=e.target.closest?.('[data-open-view]');
-      if(open){ e.preventDefault(); navigateToViewV18(open.dataset.openView, open.dataset.title || navItemByViewV18(open.dataset.openView).title); return; }
-      const command=e.target.closest?.('[data-command-view]');
-      if(command){ e.preventDefault(); if(command.dataset.commandCopro){ state.activeCoproId=command.dataset.commandCopro; localStorage.setItem(ACTIVE_COPRO_KEY,state.activeCoproId); renderActiveCoproContext(); } navigateToViewV18(command.dataset.commandView, command.dataset.commandTitle); return; }
-      if(e.target?.id==='sidebarQuickSearchBtn'){ const v=$('sidebarQuickSearch')?.value||''; if($('globalCommandSearch')){ $('globalCommandSearch').value=v; renderCommandResultsV18(v); openFirstCommandResultV18(); } return; }
-      if(!e.target.closest?.('.command-search-v18')) hideCommandResultsV18();
-    });
-    const previousRenderAllV18 = renderAll;
-    renderAll = function(){ previousRenderAllV18(); renderNavigationV18(); updateTopbarContext(); };
-    renderNavigationV18();
+
+    extractInvoiceFieldsV13 = extractInvoiceFieldsV19;
+    extractSimpleFieldsFromText = function(text, fileName, importType) {
+      if (importType === 'invoice') return extractInvoiceFieldsV19(text, fileName);
+      return originalExtractSimpleFieldsFromTextV13(text, fileName, importType);
+    };
+
+    const previousImportFilesToQueueV19 = importFilesToQueue;
+    importFilesToQueue = async function() {
+      const files = Array.from($('importFiles').files || []);
+      const importType = $('importType').value;
+      const label = $('importBatchLabel').value.trim() || `${importTypeLabel(importType)} - ${new Date().toLocaleDateString('fr-BE')}`;
+      if (!files.length) return alert('Choisis au moins un fichier à importer.');
+      if (importType !== 'invoice') return previousImportFilesToQueueV19();
+      try {
+        const { data:batch, error:batchError } = await supabaseClient.from('compta_import_batches').insert({ import_type:importType, label, total_items:files.length, status:'imported', created_by:currentUser.id }).select('id').single();
+        if (batchError) throw batchError;
+        for (const file of files) {
+          const lower = file.name.toLowerCase();
+          const isPdf = lower.endsWith('.pdf') || (file.type || '').includes('pdf');
+          const isImage = (file.type || '').startsWith('image/') || /\.(png|jpe?g|webp|tiff?)$/i.test(file.name);
+          const isDocx = lower.endsWith('.docx');
+          const isDoc = lower.endsWith('.doc');
+          const isText = /\.(txt|csv)$/i.test(file.name) || (file.type || '').startsWith('text/');
+          const fileDataUrl = await readFileAsDataURL(file);
+          let rawText = '';
+          let ocrMode = 'none';
+          if (isText) { rawText = await readFileAsText(file); ocrMode = 'text'; }
+          else if (isPdf) { rawText = await extractPdfTextV132(file, { maxTextPages:5, maxOcrPages:4, scale:2.45 }); ocrMode = rawText ? 'pdf_text_or_scan_ocr_v19' : 'pdf_unread'; }
+          else if (isImage) { rawText = await extractImageTextV132(file); ocrMode = rawText ? 'image_ocr_v19' : 'image_unread'; }
+          else if (isDocx) { rawText = await extractDocxTextV131(file); ocrMode = rawText ? 'docx_text_v19' : 'docx_unread'; }
+          else if (isDoc) { rawText = await extractOfficeBinaryTextV131(file); ocrMode = rawText ? 'doc_binary_best_effort_v19' : 'doc_unread'; }
+          const detectionText = `${file.name}\n${rawText || ''}`;
+          const bankDetection = detectBankAccountFromText(detectionText);
+          const coproFromBank = bankDetection.account ? state.copros.find((c)=>c.id===bankDetection.account.copro_id) : null;
+          const coproDetection = coproFromBank ? { copro:coproFromBank, confidence:bankDetection.confidence } : detectCoproFromText(detectionText);
+          const supplierDetection = detectSupplierFromText(detectionText);
+          const extracted = extractInvoiceFieldsV19(rawText || '', file.name);
+          const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 8;
+          const confidence = Math.min(98, Math.max(coproDetection.confidence || 0, supplierDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + (rawText ? 8 : 0));
+          const itemStatus = extracted.amount && extracted.reference && supplierDetection.supplier && (coproDetection.copro || state.activeCoproId) ? 'to_validate' : 'to_verify';
+          const rawData = { file_name:file.name, file_size:file.size, mime_type:file.type || null, file_data_url:fileDataUrl, extracted, ocr_mode:ocrMode, ocr_text_length:(rawText || '').length, v19:true };
+          const { data:item, error:itemError } = await supabaseClient.from('compta_import_items').insert({
+            batch_id:batch.id, import_type:importType, file_name:file.name, file_size:file.size, mime_type:file.type || null,
+            raw_text:rawText || null, raw_data:rawData,
+            detected_copro_id:coproDetection.copro?.id || state.activeCoproId || null,
+            detected_supplier_id:supplierDetection.supplier?.id || null,
+            detected_bank_account_id:bankDetection.account?.id || null,
+            confidence, status:itemStatus, created_by:currentUser.id
+          }).select('id').single();
+          if (itemError) throw itemError;
+          const corrected = { copro_id:coproDetection.copro?.id || state.activeCoproId || null, supplier_id:supplierDetection.supplier?.id || null, bank_account_id:bankDetection.account?.id || null, ...extracted };
+          await supabaseClient.from('compta_validation_queue').insert({ item_id:item.id, target_type:importType, status:itemStatus, copro_id:corrected.copro_id || null, extracted_data:extracted, corrected_data:corrected, notes: confidence >= 75 ? 'Reconnaissance automatique renforcée à confirmer.' : 'Reconnaissance incomplète : vérifie les champs signalés.', created_by:currentUser.id });
+        }
+        $('importFiles').value = '';
+        $('importBatchLabel').value = '';
+        await loadAll();
+        switchToView('invoiceOcr');
+        alert(`${files.length} facture(s) importée(s).`);
+      } catch (error) {
+        alert(error.message || 'Erreur pendant l’import.');
+      }
+    };
+
+    rerunOcrForQueueV13 = async function(id) {
+      const q = state.validationQueue.find((x)=>x.id===id);
+      const item = state.importItems.find((i)=>i.id===q?.item_id);
+      if (!q || !item) return alert('Élément introuvable.');
+      const raw = item.raw_data || {};
+      const blob = raw.file_data_url ? dataUrlToBlobV131(raw.file_data_url) : null;
+      let text = item.raw_text || '';
+      let mode = raw.ocr_mode || 'rerun_v19';
+      try {
+        if (blob && (/\.pdf$/i.test(item.file_name || '') || (item.mime_type || raw.mime_type || '').includes('pdf'))) { text = await extractPdfTextV132(blob, { forceOcr:true, maxOcrPages:4, scale:2.55 }); mode = 'pdf_force_scan_ocr_v19'; }
+        else if (blob && ((item.mime_type || raw.mime_type || '').startsWith('image/') || /\.(png|jpe?g|webp|tiff?)$/i.test(item.file_name || ''))) { text = await extractImageTextV132(blob); mode = 'image_ocr_v19'; }
+        else if (blob && /\.docx$/i.test(item.file_name || '')) { text = await extractDocxTextV131(blob); mode = 'docx_text_v19'; }
+        else if (blob && /\.doc$/i.test(item.file_name || '')) { text = await extractOfficeBinaryTextV131(blob); mode = 'doc_binary_best_effort_v19'; }
+      } catch (error) { console.warn('Relance OCR V19 impossible', error); }
+      if (!text || text.trim().length < 8) return alert('Aucun texte exploitable reconnu. Il faudra importer un scan plus net ou corriger manuellement.');
+      const detectionText = `${item.file_name || ''}\n${text}`;
+      const bankDetection = detectBankAccountFromText(detectionText);
+      const coproFromBank = bankDetection.account ? state.copros.find((c)=>c.id===bankDetection.account.copro_id) : null;
+      const coproDetection = coproFromBank ? { copro:coproFromBank, confidence:bankDetection.confidence } : detectCoproFromText(detectionText);
+      const supplierDetection = detectSupplierFromText(detectionText);
+      const extracted = extractInvoiceFieldsV19(text, item.file_name || '');
+      const corrected = { ...(q.corrected_data || {}), ...extracted };
+      if (supplierDetection.supplier) corrected.supplier_id = supplierDetection.supplier.id;
+      if (coproDetection.copro) corrected.copro_id = coproDetection.copro.id;
+      if (!corrected.copro_id && state.activeCoproId) corrected.copro_id = state.activeCoproId;
+      if (bankDetection.account) corrected.bank_account_id = bankDetection.account.id;
+      const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 9;
+      const confidence = Math.min(98, Math.max(Number(item.confidence || 0), supplierDetection.confidence || 0, coproDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + 10);
+      const { error } = await supabaseClient.from('compta_import_items').update({
+        confidence, raw_text:text,
+        detected_supplier_id:supplierDetection.supplier?.id || null,
+        detected_copro_id:corrected.copro_id || null,
+        detected_bank_account_id:bankDetection.account?.id || null,
+        raw_data:{ ...raw, extracted, ocr_mode:mode, ocr_text_length:text.length, rerun_at:new Date().toISOString(), v19:true }
+      }).eq('id', item.id);
+      if (error) return alert(error.message);
+      await supabaseClient.from('compta_validation_queue').update({ extracted_data:extracted, corrected_data:corrected, copro_id:corrected.copro_id || null, status: corrected.copro_id && corrected.supplier_id && corrected.account_id && corrected.amount ? 'to_validate' : 'to_verify' }).eq('id', q.id);
+      await loadAll();
+      state.ocrSelectedQueueId = id;
+      renderInvoiceOcrV13();
+    };
+
+    const previousRenderInvoiceOcrV19 = renderInvoiceOcrV13;
+    renderInvoiceOcrV13 = function() {
+      previousRenderInvoiceOcrV19();
+      if (!$('invoiceOcrWorkbench')) return;
+      const q = state.validationQueue.find((x)=>x.id===state.ocrSelectedQueueId);
+      const item = state.importItems.find((i)=>i.id===q?.item_id);
+      const raw = item?.raw_data || {};
+      const corrected = q?.corrected_data || {};
+      const warnings = [];
+      if (q && !corrected.supplier_id) warnings.push('Fournisseur non reconnu avec certitude');
+      if (q && !corrected.reference) warnings.push('Numéro de facture non reconnu avec certitude');
+      if (q && !corrected.amount) warnings.push('Montant TVAC non reconnu avec certitude');
+      if (warnings.length && $('ocrFieldStatus')) {
+        const panel = $('ocrFieldStatus').closest('.ocr-fields');
+        if (panel && !panel.querySelector('.ocr-v19-warnings')) {
+          panel.insertAdjacentHTML('afterbegin', `<div class="notice ocr-v19-warnings"><strong>À vérifier :</strong> ${warnings.map(escapeHtml).join(' · ')}</div>`);
+        }
+      }
+      if (item && raw.v19) {
+        const head = document.querySelector('.ocr-preview__head');
+        if (head && !head.querySelector('.badge.v19')) head.insertAdjacentHTML('beforeend', '<span class="badge v19">OCR renforcé V19</span>');
+      }
+    };
 
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
