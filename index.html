@@ -1533,7 +1533,35 @@
     .syndic-status-draft { background:#fff7e6; color:#9a5b00; border:1px solid #ffd79a; }
     .syndic-status-issued { background:#e8f3f6; color:#14586a; border:1px solid #a5d6e2; }
     .syndic-status-credited { background:#fdecea; color:#b42318; border:1px solid #fecaca; }
-</style>
+
+
+    /* ---- V25 : ergonomie globale Apple-like + facturation mensuelle ---- */
+    :root{--v25-shadow:0 18px 45px rgba(15,23,42,.08);--v25-soft:#f8fafc;--v25-border:#e6edf3;--v25-focus:#1f7a8c;}
+    body{background:linear-gradient(180deg,#f7fafc 0%,#eef5f7 100%);}
+    .sidebar{background:linear-gradient(180deg,#11202d 0%,#172033 100%);box-shadow:18px 0 42px rgba(15,23,42,.12)}
+    .brand{padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .brand-mark{border-radius:16px;box-shadow:0 10px 26px rgba(31,122,140,.22)}
+    .active-copro-box{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);border-radius:18px;padding:14px}
+    .active-copro-box select,.active-copro-box input{border-radius:12px;background:#fff;color:#172033;border:0}
+    .menu-group{margin:7px 10px;border-radius:16px;overflow:hidden;border:1px solid transparent}
+    .menu-group:not(.collapsed){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08)}
+    .menu-group__header{border-radius:16px;margin:0;padding:11px 12px;font-size:13px;letter-spacing:.01em}
+    .menu-group__icon{filter:saturate(.9);opacity:.95}.menu-group__text{font-weight:850}
+    .menu-group__body{padding:4px 5px 9px}.nav button[data-view]{border-radius:13px;padding:9px 11px;margin:3px 0;min-height:40px}.nav button[data-view] .nav-label{font-weight:760;font-size:13px}.nav button[data-view].active{background:#fff;color:#123241;box-shadow:0 12px 25px rgba(0,0,0,.18)}
+    .topbar{backdrop-filter:blur(18px);background:rgba(247,250,252,.84);border-bottom:1px solid rgba(226,232,240,.82);position:sticky;top:0;z-index:50}.page-title{font-size:24px;letter-spacing:-.035em}.page-subtitle{font-size:12px;color:#64748b}
+    .content{padding:22px}.card,.stat,.v25-table-card,.v25-panel,.v25-month-card{border:1px solid var(--v25-border);border-radius:22px;background:rgba(255,255,255,.92);box-shadow:var(--v25-shadow)}
+    .card{padding:18px}.toolbar{align-items:center;border-bottom:0;margin-bottom:16px}.toolbar h2,.toolbar h3{letter-spacing:-.025em}.muted-note,small{color:#64748b}.notice{border-radius:16px;border:1px solid #dbeafe;background:#f8fbff}.notice.danger{border-color:#fecaca;background:#fff7f7;color:#991b1b}
+    .btn{border-radius:13px;min-height:38px;font-weight:850;box-shadow:0 9px 20px rgba(31,122,140,.13);transition:transform .12s ease,box-shadow .12s ease,background .12s ease}.btn:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(31,122,140,.18)}.btn.secondary{box-shadow:none;background:#fff;border:1px solid #dbe5ec;color:#183143}.btn.danger{background:#ef4444;color:#fff}.btn.small{min-height:30px;border-radius:10px;padding:6px 10px;font-size:12px}.v25-main-action{background:linear-gradient(135deg,#1f7a8c,#2aa0b8)!important;color:#fff!important;border:0!important}
+    input,select,textarea{border-radius:13px;border:1px solid #d8e3ea;background:#fff;min-height:38px}input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,122,140,.18);border-color:#1f7a8c}
+    table{border-collapse:separate;border-spacing:0;width:100%}th{font-size:11px;text-transform:uppercase;letter-spacing:.045em;color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}th,td{padding:12px 13px;border-bottom:1px solid #edf2f7;text-align:left;vertical-align:middle}tbody tr:hover{background:#f8fbfd}.table-wrap{border-radius:18px;overflow:auto;border:1px solid #e6edf3;background:#fff}
+    .list-filters{border:1px solid #e6edf3;border-radius:18px;background:#fbfdff;padding:12px;gap:10px;align-items:end}.list-filters label{font-weight:760;color:#415567}.actions-inline{gap:7px}
+    .v25-hero{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:20px;border-radius:24px;background:linear-gradient(135deg,#ffffff,#eef8fb);border:1px solid #dbeef3;box-shadow:var(--v25-shadow);margin-bottom:14px}.v25-hero h2{margin:0 0 5px;font-size:24px;letter-spacing:-.035em}.v25-hero p{margin:0;color:#64748b}.v25-hero-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .v25-actionbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px;border:1px solid #e6edf3;border-radius:18px;background:#fff;margin:12px 0}.v25-actionbar label{font-size:12px;font-weight:800;color:#475569;display:grid;gap:5px}.v25-filters label{min-width:150px}.v25-toolbar{padding-bottom:2px}.v25-toolbar>div:first-child p{margin:3px 0 0}.v25-table-card{overflow:hidden;margin-top:12px}.v25-table-card table{background:#fff}.v25-panel{padding:16px;margin-top:14px}.v25-panel h3{margin:0 0 7px}.v25-empty{color:#94a3b8;font-weight:700;font-size:13px;padding:14px;text-align:center;border:1px dashed #dbe5ec;border-radius:14px;background:#fbfdff}.v25-eyebrow{display:block;font-size:11px;color:#64748b;text-transform:uppercase;font-weight:900;letter-spacing:.08em;margin-bottom:4px}
+    .v25-month-card{display:flex;justify-content:space-between;gap:16px;padding:18px;margin:12px 0}.v25-month-card h3{margin:0 0 5px;font-size:22px}.v25-month-card p{margin:0;color:#64748b}.v25-metrics{display:grid;grid-template-columns:repeat(5,minmax(95px,1fr));gap:10px;min-width:420px}.v25-metrics>div{border:1px solid #e6edf3;border-radius:16px;background:#fff;padding:12px}.v25-metrics span{display:block;font-size:11px;text-transform:uppercase;font-weight:900;color:#64748b;letter-spacing:.04em}.v25-metrics strong{display:block;font-size:20px;margin-top:4px;letter-spacing:-.02em}.v25-metrics-large{min-width:0;margin:12px 0;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+    .v25-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}.v25-column{border:1px solid #e6edf3;border-radius:20px;background:#fff;padding:12px;box-shadow:0 10px 28px rgba(15,23,42,.055)}.v25-column-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.v25-column-head span{background:#f1f5f9;border-radius:999px;padding:4px 9px;font-weight:900;color:#475569}.v25-mini-invoice{display:flex;justify-content:space-between;gap:10px;border:1px solid #e6edf3;border-radius:14px;padding:10px;margin-bottom:8px;background:#fbfdff}.v25-mini-invoice strong{display:block}.v25-mini-invoice small{display:block;margin-top:3px}.v25-mini-invoice.v25-ok{border-left:4px solid #22c55e}.v25-mini-invoice.v25-warn{border-left:4px solid #f59e0b}.v25-mini-invoice.v25-danger{border-left:4px solid #ef4444}.v25-chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:#f1f5f9;color:#475569;font-weight:900;font-size:11px;border:1px solid #e2e8f0}.v25-chip.ok{background:#ecfdf5;color:#047857;border-color:#bbf7d0}.v25-chip.warn{background:#fffbeb;color:#92400e;border-color:#fde68a}.v25-chip.danger{background:#fef2f2;color:#b91c1c;border-color:#fecaca}.v25-muted-row{opacity:.62;background:#fbfdff}
+    @media(max-width:1100px){.v25-month-card,.v25-hero{display:block}.v25-metrics{min-width:0;grid-template-columns:repeat(2,1fr);margin-top:12px}.v25-hero-actions{justify-content:flex-start;margin-top:12px}}
+
+  </style>
 </head>
 <body>
   <section id="setupScreen" class="login-wrap hidden">
@@ -11319,8 +11347,457 @@
     });
     document.addEventListener('change',(e)=>{ if(e.target?.id==='syndicInvoiceStatusFilter'){ state.syndicInvoiceFilters.status=e.target.value; renderSyndicInvoicesV23(); } });
 
+    /* ============================================================
+       V25 - Ergonomie globale + cycle mensuel Facturation syndic
+       Objectifs : navigation plus claire, boutons prioritaires,
+       campagnes mensuelles, comptabilisation mensuelle, export Clearfact.
+       ============================================================ */
 
-    boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
+    (function(){
+      const V25_MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      const V25_EXPORT_STATUS = { not_exported:'Non exportée', exported:'Exportée Clearfact', reexported:'Réexportée' };
+
+      function v25Safe(v, fallback=''){ return (v === null || v === undefined) ? fallback : v; }
+      function v25Today(){ return new Date().toISOString().slice(0,10); }
+      function v25CurrentYear(){ return new Date().getFullYear(); }
+      function v25CurrentMonth(){ return new Date().getMonth()+1; }
+      function v25MonthLabel(year, month){ return `${V25_MONTHS[Math.max(0, Number(month||1)-1)]} ${year||v25CurrentYear()}`; }
+      function v25YM(inv){ return `${Number(inv.period_year || (inv.invoice_date||'').slice(0,4) || v25CurrentYear())}-${String(Number(inv.period_month || (inv.invoice_date||'').slice(5,7) || 1)).padStart(2,'0')}`; }
+      function v25StatusClass(status){ return status === 'issued' ? 'v25-ok' : status === 'draft' ? 'v25-warn' : status === 'credited' ? 'v25-danger' : 'v25-soft'; }
+      function v25ExportBadge(inv){
+        const st = inv.clearfact_export_status || (inv.clearfact_exported_at ? 'exported' : 'not_exported');
+        const cls = st === 'exported' ? 'ok' : st === 'reexported' ? 'warn' : '';
+        return `<span class="v25-chip ${cls}">${escapeHtml(V25_EXPORT_STATUS[st] || st)}</span>`;
+      }
+      function v25BillingTypeFolder(type){
+        return type === 'honoraires' ? 'Honoraires' : type === 'service' ? 'Prestations-complementaires' : type === 'mutation' ? 'Mutations-notaires' : type === 'credit_note' ? 'Notes-de-credit' : 'Autres';
+      }
+      function v25InvoiceTypeIcon(type){ return type==='honoraires'?'📆':type==='service'?'➕':type==='mutation'?'📝':type==='credit_note'?'↩️':'🧾'; }
+      function v25ContractModeLabel(mode){ return {manual:'Manuel',semi_auto:'Semi-auto',auto:'Automatique sécurisé'}[mode||'semi_auto'] || mode || 'Semi-auto'; }
+      function v25ContractModeBadge(mode){ const cls=mode==='auto'?'ok':mode==='manual'?'':'warn'; return `<span class="v25-chip ${cls}">${v25ContractModeLabel(mode)}</span>`; }
+      function v25IsSameId(a,b){ return String(a||'') === String(b||''); }
+
+      function v25NavButton(view, title, icon, label, extra=''){
+        return `<button data-view="${view}" data-title="${escapeHtml(title)}" ${extra} title="${escapeHtml(title)}"><span class="nav__item"><span class="nav-icon">${icon}</span><span class="nav-label">${escapeHtml(label)}</span></span></button>`;
+      }
+      function v25NavGroup(icon, label, buttons, open=false){
+        return `<div class="menu-group ${open?'':'collapsed'}" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">${icon}</span><span class="menu-group__text">${escapeHtml(label)}</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">${buttons.join('')}</div>
+        </div>`;
+      }
+      function ensureV25Navigation(){
+        const nav=document.querySelector('.nav');
+        if(!nav || nav.dataset.v25Ready==='1') return;
+        nav.dataset.v25Ready='1';
+        nav.innerHTML = [
+          v25NavGroup('🧭','Pilotage',[
+            v25NavButton('dashboard','Tableau de bord','🏠','Tableau de bord'),
+            v25NavButton('processing','Centre de traitement','📥','Centre de traitement'),
+            v25NavButton('invoiceOcr','Traitement factures OCR','🔎','OCR factures'),
+            v25NavButton('payments','Paiement factures','💳','Paiement factures'),
+            v25NavButton('callDispatch','Envoi appels de provisions','📨','Envoi appels'),
+            v25NavButton('inform','J’informe','📢','J’informe'),
+            v25NavButton('sendJournal','Envois / Journal','🧾','Journal envois')
+          ], true),
+          v25NavGroup('🏢','Copropriétés',[
+            v25NavButton('copros','Copropriétés','🏢','Copropriétés'),
+            v25NavButton('lots','Lots','🔢','Lots'),
+            v25NavButton('owners','Identités / propriétaires','👤','Copropriétaires'),
+            v25NavButton('distribution','Répartition','🧩','Clés de répartition'),
+            v25NavButton('buildings','Bâtiments','🏬','Bâtiments'),
+            v25NavButton('works','Dossiers travaux','🛠️','Dossiers travaux')
+          ]),
+          v25NavGroup('📘','Comptabilité copro',[
+            v25NavButton('invoices','Factures fournisseurs','📄','Factures fournisseurs'),
+            v25NavButton('bank','Financier / Banque','🏦','Financier / Banque'),
+            v25NavButton('budgets','Budgets','💶','Budgets'),
+            v25NavButton('calls','Appels de fonds','📣','Appels de fonds'),
+            v25NavButton('statements','Décomptes','📑','Décomptes'),
+            v25NavButton('thirdBalance','Balance des tiers','👥','Balance tiers'),
+            v25NavButton('expensesList','Liste des dépenses','🧾','Liste dépenses'),
+            v25NavButton('exercises','Exercices comptables','📅','Exercices')
+          ]),
+          v25NavGroup('🏷️','Facturation syndic',[
+            v25NavButton('syndicBilling','Tableau mensuel','🗓️','Tableau mensuel','data-v25-syndic-tab="campaigns"'),
+            v25NavButton('syndicBilling','Contrats honoraires','📆','Contrats','data-v25-syndic-tab="contracts"'),
+            v25NavButton('syndicBilling','Prestations / mutations','➕','Prestations','data-v25-syndic-tab="services"'),
+            v25NavButton('syndicBilling','Factures syndic','🧾','Factures','data-v25-syndic-tab="invoices"'),
+            v25NavButton('syndicBilling','Export Clearfact / Winbooks','📦','Export Clearfact','data-v25-syndic-tab="exports"'),
+            v25NavButton('syndicBilling','Réglages facturation','⚙️','Réglages','data-v25-syndic-tab="settings"')
+          ]),
+          v25NavGroup('📊','États comptables',[
+            v25NavButton('ledger','Grand livre','📖','Grand livre'),
+            v25NavButton('financialLedger','Grand livre financier','🏦','Grand livre financier'),
+            v25NavButton('balance','Balance générale','📈','Balance générale'),
+            v25NavButton('journals','Journaux comptables','🗃️','Journaux'),
+            v25NavButton('bilan','Bilan comptable','🧮','Bilan'),
+            v25NavButton('heldFunds','Fonds détenus','💰','Fonds détenus'),
+            v25NavButton('multicoproConsultation','Consultation multicopropriété','🔎','Consultation multi-copro')
+          ]),
+          v25NavGroup('🗳️','Assemblées générales',[
+            v25NavButton('meetings','Assemblées générales','🗳️','Assemblées générales'),
+            v25NavButton('resolutions','Catalogue des résolutions','📋','Catalogue résolutions')
+          ]),
+          v25NavGroup('⚙️','Configuration',[
+            v25NavButton('agency','Agence','🏢','Agence'),
+            v25NavButton('accounts','Comptes comptables','📚','Plan comptable'),
+            v25NavButton('templates','Modèles','🧱','Modèles'),
+            v25NavButton('bankInstitutions','Établissements bancaires','🏛️','Banques'),
+            v25NavButton('vatCodes','Codes TVA','%','Codes TVA'),
+            v25NavButton('journalCodes','Codes journaux','🧾','Codes journaux'),
+            v25NavButton('defaultExpenseTypes','Natures de dépense par défaut','📌','Natures dépenses'),
+            v25NavButton('users','Utilisateurs','👥','Utilisateurs'),
+            v25NavButton('accessControl','Contrôle d’accès','🔐','Contrôle d’accès'),
+            v25NavButton('auditTrail','Piste d’audit','🧭','Piste d’audit'),
+            v25NavButton('importsConfig','Import','⬇️','Import'),
+            v25NavButton('isabel','Isabel Connect','🔴','Isabel Connect')
+          ])
+        ].join('');
+        nav.querySelectorAll('.nav [data-view]').forEach(button=>{
+          button.addEventListener('click',()=>{
+            if(button.dataset.v25SyndicTab) state.syndicBillingTab = button.dataset.v25SyndicTab;
+            if(typeof activateView === 'function') activateView(button);
+            if(button.dataset.view === 'syndicBilling') setTimeout(renderSyndicBillingV23, 0);
+          });
+        });
+        nav.querySelectorAll('[data-group-toggle]').forEach(button=>{
+          button.addEventListener('click',()=>{
+            const group=button.closest('[data-group]');
+            if(!group || (typeof getSidebarMode === 'function' && getSidebarMode() !== 'expanded')) return;
+            group.classList.toggle('collapsed');
+            if(typeof persistSidebarGroups === 'function') persistSidebarGroups();
+          });
+        });
+      }
+
+      async function loadSyndicBillingV25(){
+        if(!supabaseClient) return;
+        try{
+          const [contractsRes, invoicesRes, settingsRes, campaignsRes, exportsRes, exportItemsRes] = await Promise.all([
+            supabaseClient.from('compta_syndic_billing_contracts').select('*, compta_copros(name,optipro_ref,address)').order('created_at',{ascending:false}),
+            supabaseClient.from('compta_syndic_invoices').select('*, compta_copros(name,optipro_ref,address)').order('invoice_date',{ascending:false}),
+            supabaseClient.from('compta_syndic_invoice_settings').select('*').order('created_at',{ascending:true}).limit(1),
+            supabaseClient.from('compta_syndic_billing_campaigns').select('*').order('year',{ascending:false}).order('month',{ascending:false}),
+            supabaseClient.from('compta_syndic_billing_exports').select('*').order('exported_at',{ascending:false}),
+            supabaseClient.from('compta_syndic_billing_export_items').select('*')
+          ]);
+          if(contractsRes.error) throw contractsRes.error;
+          if(invoicesRes.error) throw invoicesRes.error;
+          state.syndicContracts = contractsRes.data || [];
+          state.syndicInvoices = invoicesRes.data || [];
+          state.syndicInvoiceSettings = (settingsRes.data||[])[0] || {prefix:'WS', year:new Date().getFullYear(), next_number:1, vat_number:'BE0000.000.000', company_name:'WAPI-SYNDIK SPRL', company_address:'Rue de Menin 400 - Boulevard du Roi Albert 42-44\n7700 - 7500 Mouscron-Tournai', company_email:'info@wapi-syndik.be', company_phone:'056/85.00.85 - 069/64.69.60', iban:'', bic:''};
+          state.syndicCampaigns = campaignsRes.error ? [] : (campaignsRes.data || []);
+          state.syndicExports = exportsRes.error ? [] : (exportsRes.data || []);
+          state.syndicExportItems = exportItemsRes.error ? [] : (exportItemsRes.data || []);
+          state.syndicV25SqlReady = !campaignsRes.error && !exportsRes.error && !exportItemsRes.error;
+        }catch(err){
+          console.warn('Facturation syndic V25 non chargée. Migration V25 à vérifier.', err.message);
+          state.syndicContracts=state.syndicContracts||[]; state.syndicInvoices=state.syndicInvoices||[];
+          state.syndicCampaigns=[]; state.syndicExports=[]; state.syndicExportItems=[]; state.syndicV25SqlReady=false;
+        }
+      }
+      loadSyndicBillingV23 = loadSyndicBillingV25;
+
+      function ensureSyndicTabsV25(){
+        const tabs=document.querySelector('#syndicBillingView .syndic-tabs');
+        if(!tabs) return;
+        if(tabs.dataset.v25Tabs==='1') return;
+        tabs.dataset.v25Tabs='1';
+        tabs.innerHTML = `
+          <button class="tab-pill active" data-syndic-tab="campaigns" type="button">Tableau mensuel</button>
+          <button class="tab-pill" data-syndic-tab="contracts" type="button">Contrats</button>
+          <button class="tab-pill" data-syndic-tab="services" type="button">Prestations / mutations</button>
+          <button class="tab-pill" data-syndic-tab="invoices" type="button">Factures</button>
+          <button class="tab-pill" data-syndic-tab="exports" type="button">Export Clearfact</button>
+          <button class="tab-pill" data-syndic-tab="settings" type="button">Réglages</button>`;
+      }
+      function v25CampaignFor(year, month){ return (state.syndicCampaigns||[]).find(c=>Number(c.year)===Number(year)&&Number(c.month)===Number(month)); }
+      function v25InvoicesForCampaign(campaign){
+        if(!campaign) return [];
+        return (state.syndicInvoices||[]).filter(i=>v25IsSameId(i.campaign_id,campaign.id) || (Number(i.period_year)===Number(campaign.year)&&Number(i.period_month)===Number(campaign.month)));
+      }
+      function v25CampaignMetrics(campaign){
+        const rows=v25InvoicesForCampaign(campaign);
+        const drafts=rows.filter(i=>i.status==='draft').length;
+        const issued=rows.filter(i=>i.status==='issued').length;
+        const notExported=rows.filter(i=>i.status==='issued' && !(i.clearfact_exported_at || i.clearfact_export_status==='exported')).length;
+        const exported=rows.filter(i=>i.status==='issued' && (i.clearfact_exported_at || i.clearfact_export_status==='exported')).length;
+        const total=rows.filter(i=>i.status==='issued'||i.status==='draft').reduce((s,i)=>s+Number(i.amount_total||0),0);
+        return {rows,drafts,issued,notExported,exported,total};
+      }
+      function v25DefaultMonthFilters(){
+        state.syndicCampaignFilter = state.syndicCampaignFilter || {year:v25CurrentYear(), month:v25CurrentMonth()};
+        if(!state.syndicCampaignFilter.year) state.syndicCampaignFilter.year=v25CurrentYear();
+        if(!state.syndicCampaignFilter.month) state.syndicCampaignFilter.month=v25CurrentMonth();
+      }
+      function v25CampaignOptions(selected=''){
+        const rows=state.syndicCampaigns||[];
+        return `<option value="">Campagne...</option>`+rows.map(c=>`<option value="${c.id}" ${v25IsSameId(selected,c.id)?'selected':''}>${escapeHtml(c.label||v25MonthLabel(c.year,c.month))}</option>`).join('');
+      }
+      function v25YearOptions(selected){
+        const y0=v25CurrentYear(); const years=new Set([y0-1,y0,y0+1, ...(state.syndicCampaigns||[]).map(c=>Number(c.year)), ...(state.syndicInvoices||[]).map(i=>Number(i.period_year||0)).filter(Boolean)]);
+        return [...years].sort((a,b)=>b-a).map(y=>`<option value="${y}" ${Number(selected)===Number(y)?'selected':''}>${y}</option>`).join('');
+      }
+      function v25MonthOptions(selected){ return V25_MONTHS.map((m,i)=>`<option value="${i+1}" ${Number(selected)===i+1?'selected':''}>${m}</option>`).join(''); }
+
+      function renderSyndicBillingV25(){
+        if(!$('syndicBillingContent')) return;
+        ensureSyndicTabsV25();
+        state.syndicBillingTab = state.syndicBillingTab || 'campaigns';
+        document.querySelectorAll('[data-syndic-tab]').forEach(b=>b.classList.toggle('active', b.dataset.syndicTab===state.syndicBillingTab));
+        const drafts=(state.syndicInvoices||[]).filter(i=>i.status==='draft').length;
+        const issued=(state.syndicInvoices||[]).filter(i=>i.status==='issued').length;
+        const todoExport=(state.syndicInvoices||[]).filter(i=>i.status==='issued' && !(i.clearfact_exported_at || i.clearfact_export_status==='exported')).length;
+        const current=v25CampaignFor(v25CurrentYear(), v25CurrentMonth());
+        $('syndicBillingSummary').innerHTML = `
+          <div class="syndic-kpi"><span>Mois courant</span><strong>${v25MonthLabel(v25CurrentYear(),v25CurrentMonth())}</strong></div>
+          <div class="syndic-kpi"><span>Brouillons à contrôler</span><strong>${drafts}</strong></div>
+          <div class="syndic-kpi"><span>Factures officielles</span><strong>${issued}</strong></div>
+          <div class="syndic-kpi"><span>PDF non exportés</span><strong>${todoExport}</strong></div>`;
+        if(!state.syndicV25SqlReady){
+          $('syndicBillingContent').innerHTML = `<div class="notice danger"><strong>Migration V25 nécessaire.</strong><br>Exécute le fichier SQL V25 pour activer les campagnes mensuelles et le suivi Clearfact. Les anciennes fonctions restent disponibles après migration.</div>`;
+          return;
+        }
+        if(state.syndicBillingTab==='contracts') return renderSyndicContractsV25();
+        if(state.syndicBillingTab==='services') return renderSyndicServicesV25();
+        if(state.syndicBillingTab==='invoices') return renderSyndicInvoicesV25();
+        if(state.syndicBillingTab==='exports') return renderSyndicExportsV25();
+        if(state.syndicBillingTab==='settings') return renderSyndicSettingsV23();
+        return renderSyndicCampaignsV25();
+      }
+      renderSyndicBillingV23 = renderSyndicBillingV25;
+
+      function renderSyndicCampaignsV25(){
+        v25DefaultMonthFilters();
+        const f=state.syndicCampaignFilter;
+        const campaign=v25CampaignFor(f.year,f.month);
+        const metrics=v25CampaignMetrics(campaign);
+        const automaticContracts=(state.syndicContracts||[]).filter(c=>c.active!==false && (c.posting_mode||'semi_auto')==='auto').length;
+        const monthInvoices=campaign ? metrics.rows : [];
+        const grouped={honoraires:[],service:[],mutation:[],credit_note:[],other:[]};
+        monthInvoices.forEach(i=>{ (grouped[i.billing_type]||grouped.other).push(i); });
+        $('syndicBillingContent').innerHTML = `
+          <div class="v25-hero">
+            <div><h2>Cycle mensuel de facturation</h2><p>Préparer, contrôler, comptabiliser, exporter. Le logiciel te montre toujours ce qu’il reste à faire pour le mois.</p></div>
+            <div class="v25-hero-actions"><button class="btn v25-main-action" id="createSyndicCampaignBtn" type="button">Créer / ouvrir campagne</button><button class="btn secondary" id="runV25AutoPostingBtn" type="button">Auto sécurisé du mois</button></div>
+          </div>
+          <div class="v25-actionbar">
+            <label>Année <select id="v25CampaignYear">${v25YearOptions(f.year)}</select></label>
+            <label>Mois <select id="v25CampaignMonth">${v25MonthOptions(f.month)}</select></label>
+            <button class="btn secondary" id="refreshSyndicCampaignBtn" type="button">Actualiser</button>
+            ${campaign?`<button class="btn" id="generateCampaignDraftsBtn" data-campaign-id="${campaign.id}" type="button">Préparer honoraires du mois</button><button class="btn" id="postCampaignBtn" data-campaign-id="${campaign.id}" type="button">Comptabiliser prêts</button><button class="btn secondary" id="exportCampaignBtn" data-campaign-id="${campaign.id}" type="button">Exporter Clearfact</button>`:''}
+          </div>
+          ${campaign?`<div class="v25-month-card">
+            <div><span class="v25-eyebrow">Campagne active</span><h3>${escapeHtml(campaign.label||v25MonthLabel(campaign.year,campaign.month))}</h3><p>${escapeHtml(campaign.notes||'Honoraires récurrents, prestations complémentaires, mutations et notes de crédit du mois.')}</p></div>
+            <div class="v25-metrics"><div><span>Brouillons</span><strong>${metrics.drafts}</strong></div><div><span>Comptabilisées</span><strong>${metrics.issued}</strong></div><div><span>À exporter</span><strong>${metrics.notExported}</strong></div><div><span>Exportées</span><strong>${metrics.exported}</strong></div><div><span>Total</span><strong>${money(metrics.total)}</strong></div></div>
+          </div>`:`<div class="notice"><strong>Aucune campagne pour ${v25MonthLabel(f.year,f.month)}.</strong><br>Crée la campagne, puis prépare les honoraires du mois ou rattache les prestations ponctuelles.</div>`}
+          ${campaign?`<div class="v25-board">
+            ${v25CampaignColumn('Honoraires', grouped.honoraires, 'honoraires')}
+            ${v25CampaignColumn('Prestations complémentaires', grouped.service, 'service')}
+            ${v25CampaignColumn('Mutations / renseignements notaires', grouped.mutation, 'mutation')}
+            ${v25CampaignColumn('Notes de crédit', grouped.credit_note, 'credit_note')}
+          </div>`:''}
+          <div class="v25-panel"><h3>Contrats en automatisation</h3><p class="muted-note">${automaticContracts} contrat(s) en mode automatique sécurisé. L’automatisation ne crée pas de doublon et bloque les lignes en anomalie.</p></div>`;
+      }
+      function v25CampaignColumn(title, rows, type){
+        return `<div class="v25-column"><div class="v25-column-head"><strong>${escapeHtml(title)}</strong><span>${rows.length}</span></div>${rows.map(i=>v25InvoiceMiniRow(i)).join('') || '<div class="v25-empty">Aucune ligne</div>'}${type==='service'||type==='mutation'?`<button class="btn secondary small" data-open-oneoff-invoice="${type==='service'?'service':'mutation'}" type="button">+ Ajouter</button>`:''}</div>`;
+      }
+      function v25InvoiceMiniRow(i){
+        return `<div class="v25-mini-invoice ${v25StatusClass(i.status)}"><div><strong>${escapeHtml(v24DisplayInvoiceNumber ? v24DisplayInvoiceNumber(i) : (i.invoice_number||'Brouillon'))}</strong><small>${escapeHtml(i.compta_copros?.name||i.customer_name||'')} · ${escapeHtml(i.description||'')}</small></div><div><strong>${money(i.amount_total)}</strong><small>${i.status==='draft'?'Brouillon':i.status==='issued'?'Comptabilisée':i.status}</small></div></div>`;
+      }
+
+      function renderSyndicContractsV25(){
+        const rows=state.syndicContracts||[];
+        $('syndicBillingContent').innerHTML = `<div class="toolbar v25-toolbar"><div><h3>Contrats d’honoraires</h3><p class="muted-note">Un contrat annuel génère les factures prévues mois par mois. Tu choisis ensuite manuel, semi-auto ou automatique sécurisé.</p></div><div class="top-actions"><button class="btn v25-main-action" id="newSyndicContractBtn2" type="button">Nouveau contrat</button></div></div>
+        <div class="v25-table-card"><table><thead><tr><th>Copropriété / contrat</th><th>Montant mensuel</th><th>Période</th><th>Mode</th><th>Suivi</th><th></th></tr></thead><tbody>${rows.map(c=>{ const invs=(state.syndicInvoices||[]).filter(i=>v25IsSameId(i.contract_id,c.id)); const draft=invs.filter(i=>i.status==='draft').length; const issued=invs.filter(i=>i.status==='issued').length; return `<tr><td><strong>${escapeHtml(c.label||'Honoraires syndic')}</strong><br><small>${escapeHtml(c.compta_copros?.name||'')} · ${escapeHtml(c.year_label||'')}</small></td><td>${money(c.monthly_amount_htva)} HTVA<br><small>TVA ${Number(c.vat_rate||0)}%</small></td><td>${Number(c.start_month||1)} → ${Number(c.end_month||12)}</td><td>${v25ContractModeBadge(c.posting_mode)}</td><td><span class="v25-chip warn">${draft} brouillon(s)</span> <span class="v25-chip ok">${issued} compta.</span></td><td><div class="actions-inline"><button class="btn secondary small" data-edit-syndic-contract="${c.id}" type="button">Modifier</button><button class="btn small" data-generate-syndic-contract="${c.id}" type="button">Planifier 12 mois</button><button class="btn danger small" data-delete-syndic-contract="${c.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="6"><div class="notice">Aucun contrat.</div></td></tr>'}</tbody></table></div>`;
+      }
+
+      function renderSyndicServicesV25(){
+        const drafts=(state.syndicInvoices||[]).filter(i=>i.status==='draft' && (i.billing_type==='service'||i.billing_type==='mutation'));
+        $('syndicBillingContent').innerHTML = `<div class="toolbar v25-toolbar"><div><h3>Prestations complémentaires & mutations</h3><p class="muted-note">Encode les prestations ponctuelles en brouillon, puis rattache-les à la campagne du mois avant comptabilisation.</p></div><div class="top-actions"><button class="btn" data-open-oneoff-invoice="service" type="button">Nouvelle prestation</button><button class="btn secondary" data-open-oneoff-invoice="mutation" type="button">Nouvelle mutation</button></div></div>
+        <div class="v25-table-card"><table><thead><tr><th>Type</th><th>Copropriété</th><th>Libellé</th><th>Date</th><th>Montant</th><th>Campagne</th><th></th></tr></thead><tbody>${drafts.map(i=>`<tr><td>${v25InvoiceTypeIcon(i.billing_type)} ${v23BillingTypeLabel(i.billing_type)}</td><td>${escapeHtml(i.compta_copros?.name||i.customer_name||'')}</td><td>${escapeHtml(i.description||'')}</td><td>${v23Date(i.invoice_date)}</td><td><strong>${money(i.amount_total)}</strong></td><td>${escapeHtml((state.syndicCampaigns||[]).find(c=>v25IsSameId(c.id,i.campaign_id))?.label||'Non rattachée')}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-syndic-draft="${i.id}" type="button">Modifier</button><button class="btn small" data-attach-draft-to-campaign="${i.id}" type="button">Rattacher</button><button class="btn danger small" data-delete-syndic-draft="${i.id}" type="button">Supprimer</button></div></td></tr>`).join('') || '<tr><td colspan="7"><div class="notice">Aucun brouillon ponctuel.</div></td></tr>'}</tbody></table></div>`;
+      }
+
+      function renderSyndicInvoicesV25(){
+        state.syndicInvoiceFilters = state.syndicInvoiceFilters || {copro:'',type:'all',status:'all',export:'all',search:''};
+        const f=state.syndicInvoiceFilters;
+        const rows=(state.syndicInvoices||[]).filter(i=>(!f.copro||i.copro_id===f.copro)&&(f.type==='all'||i.billing_type===f.type)&&(f.status==='all'||i.status===f.status)&&(f.export==='all'||(f.export==='not_exported' ? (i.status==='issued' && !(i.clearfact_exported_at||i.clearfact_export_status==='exported')) : (i.clearfact_exported_at||i.clearfact_export_status==='exported')))&&(!f.search||[i.invoice_number,i.description,i.compta_copros?.name,i.customer_name].join(' ').toLowerCase().includes(f.search.toLowerCase())));
+        $('syndicBillingContent').innerHTML = `<div class="toolbar v25-toolbar"><div><h3>Factures syndic</h3><p class="muted-note">Les brouillons restent modifiables. Les factures comptabilisées entrent dans la compta de la copropriété et dans l’export Clearfact.</p></div><div class="top-actions"><button class="btn" id="postSyndicSelectedBtn" type="button">Comptabiliser sélection</button><button class="btn secondary" id="exportSyndicSelectedBtn" type="button">Exporter PDF sélection</button><button class="btn secondary" id="exportSyndicAllBtn" type="button">Exporter visibles</button></div></div>
+          <div class="list-filters v25-filters"><label>Copropriété <select id="syndicInvoiceCoproFilter"><option value="">Toutes</option>${(state.copros||[]).map(c=>`<option value="${c.id}" ${f.copro===c.id?'selected':''}>${escapeHtml(c.name||'')}</option>`).join('')}</select></label><label>Type <select id="syndicInvoiceTypeFilter"><option value="all" ${f.type==='all'?'selected':''}>Tout</option><option value="honoraires" ${f.type==='honoraires'?'selected':''}>Honoraires</option><option value="service" ${f.type==='service'?'selected':''}>Presta</option><option value="mutation" ${f.type==='mutation'?'selected':''}>Mutation</option><option value="credit_note" ${f.type==='credit_note'?'selected':''}>Notes de crédit</option></select></label><label>Statut <select id="syndicInvoiceStatusFilter"><option value="all" ${f.status==='all'?'selected':''}>Tout</option><option value="draft" ${f.status==='draft'?'selected':''}>Brouillons</option><option value="issued" ${f.status==='issued'?'selected':''}>Comptabilisées</option><option value="credited" ${f.status==='credited'?'selected':''}>Créditées</option></select></label><label>Export <select id="syndicInvoiceExportFilter"><option value="all" ${f.export==='all'?'selected':''}>Tout</option><option value="not_exported" ${f.export==='not_exported'?'selected':''}>Non exportées</option><option value="exported" ${f.export==='exported'?'selected':''}>Exportées</option></select></label><label>Recherche <input id="syndicInvoiceSearch" value="${escapeHtml(f.search||'')}" placeholder="N°, copropriété, libellé..."></label></div>
+          <div class="v25-table-card"><table><thead><tr><th><input id="v25SelectVisibleSyndicInvoices" type="checkbox"></th><th>Facture</th><th>Copropriété</th><th>Type</th><th>Date</th><th>Montant</th><th>Export</th><th></th></tr></thead><tbody>${rows.map(i=>`<tr><td><input type="checkbox" data-syndic-invoice-select="${i.id}"></td><td><strong>${escapeHtml(v24DisplayInvoiceNumber ? v24DisplayInvoiceNumber(i) : (i.invoice_number||''))}</strong><br><small>${escapeHtml(i.description||'')}</small></td><td>${escapeHtml(i.compta_copros?.name||i.customer_name||'')}</td><td>${v25InvoiceTypeIcon(i.billing_type)} ${v23BillingTypeLabel(i.billing_type)}</td><td>${v23Date(i.invoice_date)}</td><td><strong>${money(i.amount_total)}</strong><br>${v23InvoiceStatusBadge(i)}</td><td>${i.status==='issued'?v25ExportBadge(i):'<span class="v25-chip">Non concerné</span>'}</td><td><div class="actions-inline"><button class="btn secondary small" data-preview-syndic-invoice="${i.id}" type="button">PDF</button>${i.status==='draft'?`<button class="btn small" data-post-syndic-invoice="${i.id}" type="button">Comptabiliser</button><button class="btn secondary small" data-edit-syndic-draft="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-syndic-draft="${i.id}" type="button">Supprimer</button>`:(i.status!=='credited'&&i.billing_type!=='credit_note'?`<button class="btn danger small" data-credit-syndic-invoice="${i.id}" type="button">Annuler / NC</button>`:'')}</div></td></tr>`).join('') || '<tr><td colspan="8"><div class="notice">Aucune facture dans ce filtre.</div></td></tr>'}</tbody></table></div>`;
+      }
+
+      function renderSyndicExportsV25(){
+        state.syndicExportFilter = state.syndicExportFilter || {year:v25CurrentYear(), month:v25CurrentMonth()};
+        const f=state.syndicExportFilter;
+        const rows=(state.syndicInvoices||[]).filter(i=>i.status==='issued' && Number(i.period_year||String(i.invoice_date||'').slice(0,4))===Number(f.year) && Number(i.period_month||String(i.invoice_date||'').slice(5,7))===Number(f.month));
+        const non=rows.filter(i=>!(i.clearfact_exported_at||i.clearfact_export_status==='exported'));
+        const exp=rows.filter(i=>(i.clearfact_exported_at||i.clearfact_export_status==='exported'));
+        $('syndicBillingContent').innerHTML = `<div class="toolbar v25-toolbar"><div><h3>Export Clearfact / Winbooks</h3><p class="muted-note">Par défaut, on affiche les factures officielles du mois qui ne sont pas encore exportées. Plus besoin de rechercher le dernier export.</p></div><div class="top-actions"><button class="btn v25-main-action" id="exportV25NonExportedBtn" type="button">Exporter les non exportées</button><button class="btn secondary" id="exportV25SelectedBtn" type="button">Exporter sélection</button></div></div>
+        <div class="v25-actionbar"><label>Année <select id="v25ExportYear">${v25YearOptions(f.year)}</select></label><label>Mois <select id="v25ExportMonth">${v25MonthOptions(f.month)}</select></label><button class="btn secondary" id="refreshV25ExportBtn" type="button">Actualiser</button></div>
+        <div class="v25-metrics v25-metrics-large"><div><span>Non exportées</span><strong>${non.length}</strong></div><div><span>Déjà exportées</span><strong>${exp.length}</strong></div><div><span>Total non exporté</span><strong>${money(non.reduce((s,i)=>s+Number(i.amount_total||0),0))}</strong></div></div>
+        <div class="v25-table-card"><table><thead><tr><th><input id="v25SelectNonExported" type="checkbox"></th><th>Facture</th><th>Copropriété</th><th>Type</th><th>Montant</th><th>Statut export</th></tr></thead><tbody>${rows.map(i=>`<tr class="${(i.clearfact_exported_at||i.clearfact_export_status==='exported')?'v25-muted-row':''}"><td><input type="checkbox" data-v25-export-invoice="${i.id}" ${non.includes(i)?'':'disabled'}></td><td><strong>${escapeHtml(i.invoice_number||'')}</strong><br><small>${escapeHtml(i.description||'')}</small></td><td>${escapeHtml(i.compta_copros?.name||i.customer_name||'')}</td><td>${v25BillingTypeFolder(i.billing_type).replace(/-/g,' ')}</td><td>${money(i.amount_total)}</td><td>${v25ExportBadge(i)}</td></tr>`).join('') || '<tr><td colspan="6"><div class="notice">Aucune facture comptabilisée pour ce mois.</div></td></tr>'}</tbody></table></div>
+        <div class="v25-panel"><h3>Exports précédents</h3>${(state.syndicExports||[]).filter(x=>Number(x.period_year)===Number(f.year)&&Number(x.period_month)===Number(f.month)).map(x=>`<div class="history-item"><strong>${escapeHtml(x.label||'Export')}</strong><small>${v23Date(x.exported_at)} · ${Number(x.invoice_count||0)} facture(s) · ${money(x.total_amount||0)}</small><span class="v25-chip ok">Exporté</span></div>`).join('') || '<div class="muted-note">Aucun export pour ce mois.</div>'}</div>`;
+      }
+
+      async function openSyndicCampaignModalV25(){
+        v25DefaultMonthFilters(); const f=state.syndicCampaignFilter; const existing=v25CampaignFor(f.year,f.month);
+        const html=`<div class="popup-form"><div class="form-grid"><label>Année <input id="v25CampYear" type="number" value="${f.year}"></label><label>Mois <select id="v25CampMonth">${v25MonthOptions(f.month)}</select></label><label>Date facture <input id="v25CampInvoiceDate" type="date" value="${existing?.invoice_date||`${f.year}-${String(f.month).padStart(2,'0')}-01`}"></label><label>Date échéance <input id="v25CampDueDate" type="date" value="${existing?.due_date||`${f.year}-${String(f.month).padStart(2,'0')}-10`}"></label><label style="grid-column:1/-1;">Libellé <input id="v25CampLabel" value="${escapeHtml(existing?.label||`Facturation WAPI - ${v25MonthLabel(f.year,f.month)}`)}"></label><label style="grid-column:1/-1;">Notes <textarea id="v25CampNotes">${escapeHtml(existing?.notes||'')}</textarea></label></div><div class="notice">La campagne sert de point de contrôle mensuel : factures prévues, brouillons, comptabilisation et export Clearfact.</div></div>`;
+        openAppModal(existing?'Modifier campagne':'Créer campagne mensuelle', html, `<button class="btn secondary" data-modal-close type="button">Fermer</button><button class="btn" id="saveSyndicCampaignBtn" data-campaign-id="${existing?.id||''}" type="button">Enregistrer</button>`, {size:'wide'});
+      }
+      async function saveSyndicCampaignV25(id=''){
+        const year=Number($('v25CampYear').value), month=Number($('v25CampMonth').value);
+        const payload={year, month, label:$('v25CampLabel').value.trim()||`Facturation WAPI - ${v25MonthLabel(year,month)}`, invoice_date:$('v25CampInvoiceDate').value||`${year}-${String(month).padStart(2,'0')}-01`, due_date:$('v25CampDueDate').value||null, notes:$('v25CampNotes').value||null, updated_at:new Date().toISOString()};
+        let res;
+        if(id) res=await supabaseClient.from('compta_syndic_billing_campaigns').update(payload).eq('id',id);
+        else res=await supabaseClient.from('compta_syndic_billing_campaigns').insert(Object.assign(payload,{status:'draft',created_by:currentUser?.id||null}));
+        if(res.error) return alert(res.error.message);
+        closeAppModal(); state.syndicCampaignFilter={year,month}; await loadSyndicBillingV23(); renderSyndicBillingV23();
+      }
+      async function v25CreateOrGetCampaign(year, month){
+        let camp=v25CampaignFor(year,month);
+        if(camp) return camp;
+        const payload={year, month, label:`Facturation WAPI - ${v25MonthLabel(year,month)}`, invoice_date:`${year}-${String(month).padStart(2,'0')}-01`, due_date:`${year}-${String(month).padStart(2,'0')}-10`, status:'draft',created_by:currentUser?.id||null};
+        const {data,error}=await supabaseClient.from('compta_syndic_billing_campaigns').insert(payload).select('*').single();
+        if(error) throw error;
+        state.syndicCampaigns=state.syndicCampaigns||[]; state.syndicCampaigns.unshift(data);
+        return data;
+      }
+      async function generateCampaignDraftsV25(campaignId){
+        const camp=(state.syndicCampaigns||[]).find(c=>v25IsSameId(c.id,campaignId)); if(!camp) return;
+        const contracts=(state.syndicContracts||[]).filter(c=>c.active!==false && Number(c.start_month||1)<=Number(camp.month) && Number(c.end_month||12)>=Number(camp.month));
+        const payloads=[];
+        for(const c of contracts){
+          const exists=(state.syndicInvoices||[]).some(i=>v25IsSameId(i.contract_id,c.id)&&Number(i.period_year)===Number(camp.year)&&Number(i.period_month)===Number(camp.month));
+          if(exists) continue;
+          const totals=v23InvoiceTotals(c.monthly_amount_htva,c.vat_rate);
+          payloads.push({invoice_number:v24DraftRef(`DRAFT-HONO-${camp.year}-${String(camp.month).padStart(2,'0')}`),billing_type:'honoraires',contract_id:c.id,campaign_id:camp.id,copro_id:c.copro_id,customer_name:(state.copros||[]).find(x=>x.id===c.copro_id)?.name||'',invoice_date:camp.invoice_date,due_date:camp.due_date,period_year:Number(camp.year),period_month:Number(camp.month),description:`${c.label||'Honoraires syndic'} - ${v25MonthLabel(camp.year,camp.month)}`,account_id:c.account_id||null,account_code:c.account_code||null,amount_subtotal:totals.subtotal,vat_rate:Number(c.vat_rate||0),vat_amount:totals.vat,amount_total:totals.total,status:'draft',planned_status:'planned',clearfact_export_status:'not_exported',created_by:currentUser?.id||null});
+        }
+        const loose=(state.syndicInvoices||[]).filter(i=>i.status==='draft' && !i.campaign_id && Number(i.period_year||String(i.invoice_date||'').slice(0,4))===Number(camp.year) && Number(i.period_month||String(i.invoice_date||'').slice(5,7))===Number(camp.month));
+        if(payloads.length){ const {error}=await supabaseClient.from('compta_syndic_invoices').insert(payloads); if(error) return alert(error.message); }
+        if(loose.length){ await supabaseClient.from('compta_syndic_invoices').update({campaign_id:camp.id,updated_at:new Date().toISOString()}).in('id',loose.map(i=>i.id)); }
+        await loadSyndicBillingV23(); renderSyndicBillingV23(); alert(`${payloads.length} brouillon(s) d’honoraires préparé(s). ${loose.length} brouillon(s) existant(s) rattaché(s).`);
+      }
+      async function postCampaignInvoicesV25(campaignId){
+        const rows=(state.syndicInvoices||[]).filter(i=>v25IsSameId(i.campaign_id,campaignId)&&i.status==='draft');
+        if(!rows.length) return alert('Aucune facture en brouillon à comptabiliser dans cette campagne.');
+        const bad=rows.filter(i=>!i.copro_id||!i.description||!Number(i.amount_total||0)||!i.account_id);
+        if(bad.length) return alert(`${bad.length} facture(s) en anomalie : copropriété, libellé, compte et montant sont obligatoires.`);
+        if(!confirm(`Comptabiliser ${rows.length} facture(s) de la campagne ?`)) return;
+        for(const inv of rows){ await postSyndicInvoiceV24(inv.id, true); }
+        await loadSyndicBillingV23(); renderSyndicBillingV23();
+      }
+      async function runAutoPostingV25(){
+        const year=v25CurrentYear(), month=v25CurrentMonth();
+        const auto=(state.syndicContracts||[]).filter(c=>c.active!==false && (c.posting_mode||'semi_auto')==='auto' && Number(c.start_month||1)<=month && Number(c.end_month||12)>=month);
+        if(!auto.length) return alert('Aucun contrat en mode automatique sécurisé pour le mois courant.');
+        const camp=await v25CreateOrGetCampaign(year,month);
+        await generateCampaignDraftsV25(camp.id);
+        await loadSyndicBillingV23();
+        const rows=(state.syndicInvoices||[]).filter(i=>v25IsSameId(i.campaign_id,camp.id)&&i.status==='draft'&&auto.some(c=>v25IsSameId(c.id,i.contract_id)));
+        const bad=rows.filter(i=>!i.copro_id||!i.description||!Number(i.amount_total||0)||!i.account_id);
+        if(bad.length) return alert(`${bad.length} facture(s) restent en anomalie et ne seront pas comptabilisées automatiquement.`);
+        for(const inv of rows){ await postSyndicInvoiceV24(inv.id, true); }
+        await loadSyndicBillingV23(); renderSyndicBillingV23(); alert(`${rows.length} facture(s) comptabilisée(s) automatiquement pour ${v25MonthLabel(year,month)}.`);
+      }
+      async function attachDraftToCampaignV25(invoiceId){
+        const inv=(state.syndicInvoices||[]).find(i=>v25IsSameId(i.id,invoiceId)); if(!inv) return;
+        const year=Number(inv.period_year||String(inv.invoice_date||'').slice(0,4)||v25CurrentYear());
+        const month=Number(inv.period_month||String(inv.invoice_date||'').slice(5,7)||v25CurrentMonth());
+        const camp=await v25CreateOrGetCampaign(year,month);
+        const {error}=await supabaseClient.from('compta_syndic_invoices').update({campaign_id:camp.id,updated_at:new Date().toISOString()}).eq('id',invoiceId);
+        if(error) return alert(error.message);
+        await loadSyndicBillingV23(); renderSyndicBillingV23();
+      }
+
+      async function exportSyndicInvoicesClearfactV25(ids, label=''){
+        const rows=(state.syndicInvoices||[]).filter(i=>ids.includes(i.id) && i.status==='issued');
+        const exportable=rows.filter(i=>!(i.clearfact_exported_at||i.clearfact_export_status==='exported'));
+        if(!exportable.length) return alert('Aucune facture comptabilisée non exportée à exporter.');
+        if(!window.JSZip) return alert('JSZip non chargé.');
+        const periodYear=Number(exportable[0].period_year||String(exportable[0].invoice_date||'').slice(0,4)||v25CurrentYear());
+        const periodMonth=Number(exportable[0].period_month||String(exportable[0].invoice_date||'').slice(5,7)||v25CurrentMonth());
+        const exportLabel=label || `Export Clearfact - ${v25MonthLabel(periodYear,periodMonth)} - ${new Date().toISOString().slice(0,10)}`;
+        const total=exportable.reduce((s,i)=>s+Number(i.amount_total||0),0);
+        const ins=await supabaseClient.from('compta_syndic_billing_exports').insert({label:exportLabel,period_year:periodYear,period_month:periodMonth,invoice_count:exportable.length,total_amount:total,file_name:`${v23Slug(exportLabel)}.zip`,status:'exported',exported_by:currentUser?.id||null}).select('*').single();
+        if(ins.error) return alert(ins.error.message);
+        const exportId=ins.data.id;
+        const zip=new JSZip();
+        const csv=[['Numero','Date','Copropriete','Type','HTVA','TVA','TVAC','PDF'].join(';')];
+        for(const inv of exportable){
+          const blob=await syndicInvoicePdfBlobV23(inv);
+          const folder=v25BillingTypeFolder(inv.billing_type);
+          const file=`${folder}/${v23Slug(inv.invoice_number||inv.id)}_${v23Slug(inv.compta_copros?.name||inv.customer_name||'copro')}.pdf`;
+          zip.file(file, blob);
+          csv.push([inv.invoice_number||'', inv.invoice_date||'', (inv.compta_copros?.name||inv.customer_name||'').replace(/;/g,','), v23BillingTypeLabel(inv.billing_type), Number(inv.amount_subtotal||0).toFixed(2).replace('.',','), Number(inv.vat_amount||0).toFixed(2).replace('.',','), Number(inv.amount_total||0).toFixed(2).replace('.',','), file].map(x=>`"${String(x).replace(/"/g,'""')}"`).join(';'));
+        }
+        zip.file('export_resume.csv', csv.join('\n'));
+        const out=await zip.generateAsync({type:'blob'}); v23DownloadBlob(out, `${v23Slug(exportLabel)}.zip`);
+        await supabaseClient.from('compta_syndic_billing_export_items').insert(exportable.map(i=>({export_id:exportId,syndic_invoice_id:i.id})));
+        await supabaseClient.from('compta_syndic_invoices').update({clearfact_export_id:exportId,clearfact_exported_at:new Date().toISOString(),clearfact_export_status:'exported',updated_at:new Date().toISOString()}).in('id',exportable.map(i=>i.id));
+        await loadSyndicBillingV23(); renderSyndicBillingV23(); alert(`${exportable.length} PDF exporté(s) et marqué(s) comme exportés Clearfact.`);
+      }
+      async function exportCampaignV25(campaignId){
+        const rows=(state.syndicInvoices||[]).filter(i=>v25IsSameId(i.campaign_id,campaignId)&&i.status==='issued'&&!(i.clearfact_exported_at||i.clearfact_export_status==='exported'));
+        await exportSyndicInvoicesClearfactV25(rows.map(i=>i.id));
+      }
+
+      const previousOpenSyndicContractModalV23 = typeof openSyndicContractModalV23 === 'function' ? openSyndicContractModalV23 : null;
+      openSyndicContractModalV23 = function(id=''){
+        const c=(state.syndicContracts||[]).find(x=>String(x.id)===String(id)) || {label:'Honoraires syndic',year_label:new Date().getFullYear(),monthly_amount_htva:0,vat_rate:21,start_month:1,end_month:12,due_day:10,active:true,posting_mode:'semi_auto',auto_post_day:1};
+        const html=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="synContractCopro">${v23CoproOptions(c.copro_id||state.activeCoproId||'')}</select></label><label>Exercice / année <input id="synContractYear" value="${escapeHtml(c.year_label||new Date().getFullYear())}"></label><label>Libellé <input id="synContractLabel" value="${escapeHtml(c.label||'Honoraires syndic')}"></label><label>Montant mensuel HTVA <input id="synContractAmount" type="number" step="0.01" value="${Number(c.monthly_amount_htva||0)}"></label><label>TVA % <input id="synContractVat" type="number" step="0.01" value="${Number(c.vat_rate||0)}"></label><label>Jour échéance <input id="synContractDue" type="number" min="1" max="28" value="${Number(c.due_day||10)}"></label><label>Mois début <input id="synContractStart" type="number" min="1" max="12" value="${Number(c.start_month||1)}"></label><label>Mois fin <input id="synContractEnd" type="number" min="1" max="12" value="${Number(c.end_month||12)}"></label><label>Compte comptable <select id="synContractAccount">${v23AccountOptions(c.account_id||state.syndicInvoiceSettings?.default_account_id||'', true)}</select></label><label>Mode comptabilisation <select id="synContractPostingMode"><option value="manual">Manuel</option><option value="semi_auto">Semi-automatique</option><option value="auto">Automatique sécurisé</option></select></label><label>Jour auto <input id="synContractAutoDay" type="number" min="1" max="28" value="${Number(c.auto_post_day||1)}"></label><label>Actif <select id="synContractActive"><option value="true">Oui</option><option value="false">Non</option></select></label></div><div class="notice"><strong>Mode conseillé :</strong> semi-automatique. Les factures sont préparées chaque mois, tu valides en masse, puis tu exportes Clearfact.</div></div>`;
+        openAppModal(id?'Modifier contrat honoraires':'Nouveau contrat honoraires', html, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" id="saveSyndicContractBtn" data-contract-id="${id}" type="button">Enregistrer</button>`, {size:'wide'});
+        $('synContractActive').value=String(c.active!==false); $('synContractPostingMode').value=c.posting_mode||'semi_auto';
+      };
+      saveSyndicContractV23 = async function(id=''){
+        const account=$('synContractAccount'); const payload={copro_id:$('synContractCopro').value,year_label:$('synContractYear').value.trim(),label:$('synContractLabel').value.trim()||'Honoraires syndic',monthly_amount_htva:Number($('synContractAmount').value||0),vat_rate:Number($('synContractVat').value||0),due_day:Number($('synContractDue').value||10),start_month:Number($('synContractStart').value||1),end_month:Number($('synContractEnd').value||12),account_id:account.value||null,account_code:account.selectedOptions?.[0]?.dataset?.code||null,posting_mode:$('synContractPostingMode').value,auto_post_day:Number($('synContractAutoDay').value||1),active:$('synContractActive').value==='true',updated_at:new Date().toISOString()};
+        if(!payload.copro_id||!payload.year_label||!payload.monthly_amount_htva) return alert('Copropriété, exercice et montant mensuel sont obligatoires.');
+        let res; if(id) res=await supabaseClient.from('compta_syndic_billing_contracts').update(payload).eq('id',id); else res=await supabaseClient.from('compta_syndic_billing_contracts').insert(Object.assign(payload,{created_by:currentUser?.id||null}));
+        if(res.error) return alert(res.error.message);
+        closeAppModal(); await loadSyndicBillingV23(); state.syndicBillingTab='contracts'; renderSyndicBillingV23();
+      };
+
+      const previousRenderAllV25 = renderAll;
+      renderAll = function(){ previousRenderAllV25(); ensureV25Navigation(); if(!$('syndicBillingView')?.classList.contains('hidden')) renderSyndicBillingV23(); };
+
+      document.addEventListener('click', (e)=>{
+        const b=e.target.closest?.('button'); if(!b) return;
+        if(b.dataset.v25SyndicTab){ state.syndicBillingTab=b.dataset.v25SyndicTab; setTimeout(renderSyndicBillingV23,0); }
+        if(b.id==='createSyndicCampaignBtn') openSyndicCampaignModalV25();
+        if(b.id==='saveSyndicCampaignBtn') saveSyndicCampaignV25(b.dataset.campaignId||'');
+        if(b.id==='generateCampaignDraftsBtn') generateCampaignDraftsV25(b.dataset.campaignId);
+        if(b.id==='postCampaignBtn') postCampaignInvoicesV25(b.dataset.campaignId);
+        if(b.id==='exportCampaignBtn') exportCampaignV25(b.dataset.campaignId);
+        if(b.id==='runV25AutoPostingBtn') runAutoPostingV25();
+        if(b.dataset.attachDraftToCampaign) attachDraftToCampaignV25(b.dataset.attachDraftToCampaign);
+        if(b.id==='exportV25NonExportedBtn'){
+          const f=state.syndicExportFilter||{year:v25CurrentYear(),month:v25CurrentMonth()};
+          const ids=(state.syndicInvoices||[]).filter(i=>i.status==='issued' && Number(i.period_year||String(i.invoice_date||'').slice(0,4))===Number(f.year) && Number(i.period_month||String(i.invoice_date||'').slice(5,7))===Number(f.month) && !(i.clearfact_exported_at||i.clearfact_export_status==='exported')).map(i=>i.id);
+          exportSyndicInvoicesClearfactV25(ids);
+        }
+        if(b.id==='exportV25SelectedBtn') exportSyndicInvoicesClearfactV25([...document.querySelectorAll('[data-v25-export-invoice]:checked')].map(x=>x.dataset.v25ExportInvoice));
+      });
+      document.addEventListener('change', (e)=>{
+        const t=e.target; if(!t) return;
+        if(t.id==='v25CampaignYear'){ state.syndicCampaignFilter=state.syndicCampaignFilter||{}; state.syndicCampaignFilter.year=Number(t.value); renderSyndicBillingV23(); }
+        if(t.id==='v25CampaignMonth'){ state.syndicCampaignFilter=state.syndicCampaignFilter||{}; state.syndicCampaignFilter.month=Number(t.value); renderSyndicBillingV23(); }
+        if(t.id==='v25ExportYear'){ state.syndicExportFilter=state.syndicExportFilter||{}; state.syndicExportFilter.year=Number(t.value); renderSyndicBillingV23(); }
+        if(t.id==='v25ExportMonth'){ state.syndicExportFilter=state.syndicExportFilter||{}; state.syndicExportFilter.month=Number(t.value); renderSyndicBillingV23(); }
+        if(t.id==='syndicInvoiceExportFilter'){ state.syndicInvoiceFilters=state.syndicInvoiceFilters||{}; state.syndicInvoiceFilters.export=t.value; renderSyndicInvoicesV25(); }
+        if(t.id==='v25SelectVisibleSyndicInvoices') document.querySelectorAll('[data-syndic-invoice-select]').forEach(cb=>cb.checked=t.checked);
+        if(t.id==='v25SelectNonExported') document.querySelectorAll('[data-v25-export-invoice]:not(:disabled)').forEach(cb=>cb.checked=t.checked);
+      });
+
+      window.v25RunInitialUi = function(){ ensureV25Navigation(); v25DefaultMonthFilters(); };
+    })();
+
+
+
+    boot().then(() => { if (window.v25RunInitialUi) window.v25RunInitialUi(); updateTopbarContext(); updateSidebarButtons(); });
   </script>
 </body>
 </html>
