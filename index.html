@@ -1528,7 +1528,12 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style>
+  
+    /* ---- V24 : facture syndic brouillon/comptabilisation ---- */
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; border:1px solid #ffd79a; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; border:1px solid #a5d6e2; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; border:1px solid #fecaca; }
+</style>
 </head>
 <body>
   <section id="setupScreen" class="login-wrap hidden">
@@ -11078,6 +11083,242 @@
       if(e.target?.id==='syndicInvoiceTypeFilter'){ state.syndicInvoiceFilters.type=e.target.value; renderSyndicInvoicesV23(); }
     });
     document.addEventListener('input',(e)=>{ if(e.target?.id==='syndicInvoiceSearch'){ state.syndicInvoiceFilters.search=e.target.value; renderSyndicInvoicesV23(); } });
+
+    // ---- V24 : Facturation syndic en brouillons/comptabilisation + OCR montants plus strict ----
+    state.syndicInvoiceFilters = Object.assign({copro:'', type:'all', status:'all', search:''}, state.syndicInvoiceFilters || {});
+
+    function v24SyndicStatusLabel(status){
+      return {draft:'Brouillon', issued:'Comptabilisée', credited:'Créditée', cancelled:'Annulée'}[status||''] || status || '';
+    }
+    function v23InvoiceStatusBadge(inv){
+      const status=inv.status||'draft';
+      const label=v24SyndicStatusLabel(status);
+      const cls=status==='credited'?'syndic-status-credited':status==='draft'?'syndic-status-draft':'syndic-status-issued';
+      return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+    }
+    function v24DraftRef(prefix='DRAFT'){
+      return `${prefix}-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+    }
+    function v24DisplayInvoiceNumber(inv){ return inv.status==='draft' ? (inv.invoice_number||'Brouillon') : (inv.invoice_number||''); }
+
+    function renderSyndicBillingV23(){
+      if(!$('syndicBillingContent')) return;
+      document.querySelectorAll('[data-syndic-tab]').forEach(b=>b.classList.toggle('active', b.dataset.syndicTab===state.syndicBillingTab));
+      const drafts=(state.syndicInvoices||[]).filter(i=>i.status==='draft').length;
+      const issued=(state.syndicInvoices||[]).filter(i=>i.status==='issued');
+      const total=issued.reduce((s,i)=>s+Number(i.amount_total||0),0);
+      const credits=(state.syndicInvoices||[]).filter(i=>i.billing_type==='credit_note').reduce((s,i)=>s+Math.abs(Number(i.amount_total||0)),0);
+      $('syndicBillingSummary').innerHTML=`<div class="syndic-kpi"><span>Brouillons</span><strong>${drafts}</strong></div><div class="syndic-kpi"><span>Comptabilisées</span><strong>${issued.length}</strong></div><div class="syndic-kpi"><span>Total à exporter</span><strong>${money(total)}</strong></div><div class="syndic-kpi"><span>Notes de crédit</span><strong>${money(credits)}</strong></div>`;
+      if(state.syndicBillingTab==='contracts') return renderSyndicContractsV23();
+      if(state.syndicBillingTab==='services') return renderSyndicServicesV23();
+      if(state.syndicBillingTab==='settings') return renderSyndicSettingsV23();
+      return renderSyndicInvoicesV23();
+    }
+
+    function renderSyndicServicesV23(){
+      $('syndicBillingContent').innerHTML=`<div class="toolbar"><h3>Factures ponctuelles en brouillon</h3><div class="top-actions"><button class="btn" data-open-oneoff-invoice="service" type="button">Prestation complémentaire</button><button class="btn secondary" data-open-oneoff-invoice="mutation" type="button">Renseignement notaire / mutation</button></div></div><div class="notice">Les prestations complémentaires et mutations sont d’abord créées en <strong>brouillon</strong>. Elles n’entrent dans les factures fournisseurs de la copropriété et dans l’export Winbooks qu’au moment de la comptabilisation.</div><div class="syndic-grid"><div class="syndic-card"><h3>Prestations complémentaires</h3><p class="muted-note">AGE, suivi technique, dossier sinistre, prestation administrative, etc.</p><button class="btn" data-open-oneoff-invoice="service" type="button">Créer un brouillon</button></div><div class="syndic-card"><h3>Mutations / notaires</h3><p class="muted-note">Factures de renseignements notaires et frais administratifs liés aux ventes.</p><button class="btn secondary" data-open-oneoff-invoice="mutation" type="button">Créer un brouillon mutation</button></div></div>`;
+    }
+
+    function renderSyndicInvoicesV23(){
+      const f=Object.assign({copro:'',type:'all',status:'all',search:''}, state.syndicInvoiceFilters || {});
+      const rows=(state.syndicInvoices||[]).filter(i=>(!f.copro||i.copro_id===f.copro)&&(f.type==='all'||i.billing_type===f.type)&&(f.status==='all'||i.status===f.status)&&(!f.search||[i.invoice_number,i.description,i.compta_copros?.name,i.customer_name,v24SyndicStatusLabel(i.status)].join(' ').toLowerCase().includes(f.search.toLowerCase())));
+      $('syndicBillingContent').innerHTML=`<div class="toolbar"><h3>Factures syndic</h3><div class="top-actions"><button class="btn" id="postSyndicSelectedBtn" type="button">Comptabiliser sélection</button><button class="btn secondary" id="exportSyndicSelectedBtn" type="button">Exporter PDF sélection</button><button class="btn secondary" id="exportSyndicAllBtn" type="button">Exporter PDF visibles</button></div></div><div class="notice">Les factures en <strong>brouillon</strong> ne sont pas encore comptabilisées dans la copropriété. Au clic sur <strong>Comptabiliser</strong>, le numéro officiel est attribué, le PDF est généré et la facture apparaît dans les factures fournisseurs de la copropriété.</div><div class="list-filters"><label>Copropriété <select id="syndicInvoiceCoproFilter"><option value="">Toutes</option>${(state.copros||[]).map(c=>`<option value="${c.id}" ${f.copro===c.id?'selected':''}>${escapeHtml(c.name||'')}</option>`).join('')}</select></label><label>Type <select id="syndicInvoiceTypeFilter"><option value="all" ${f.type==='all'?'selected':''}>Tout</option><option value="honoraires" ${f.type==='honoraires'?'selected':''}>Honoraires</option><option value="service" ${f.type==='service'?'selected':''}>Presta complémentaire</option><option value="mutation" ${f.type==='mutation'?'selected':''}>Mutation</option><option value="credit_note" ${f.type==='credit_note'?'selected':''}>Notes de crédit</option></select></label><label>Statut <select id="syndicInvoiceStatusFilter"><option value="all" ${f.status==='all'?'selected':''}>Tout</option><option value="draft" ${f.status==='draft'?'selected':''}>Brouillons</option><option value="issued" ${f.status==='issued'?'selected':''}>Comptabilisées / export</option><option value="credited" ${f.status==='credited'?'selected':''}>Créditées</option></select></label><label>Recherche <input id="syndicInvoiceSearch" value="${escapeHtml(f.search||'')}" placeholder="N°, copropriété, libellé..."></label></div><div class="table-wrap"><div class="syndic-invoice-row" style="font-weight:800;background:#f8fafc;"><div></div><div>Facture</div><div>Copropriété</div><div>Type</div><div>Date</div><div>Montant</div><div>Actions</div></div>${rows.map(i=>`<div class="syndic-invoice-row"><input type="checkbox" data-syndic-invoice-select="${i.id}"><div><strong>${escapeHtml(v24DisplayInvoiceNumber(i))}</strong><div class="muted-note">${escapeHtml(i.description||'')}</div></div><div>${escapeHtml(i.compta_copros?.name||i.customer_name||'')}</div><div>${v23BillingTypeLabel(i.billing_type)}</div><div>${v23Date(i.invoice_date)}</div><div><strong>${money(i.amount_total)}</strong><br>${v23InvoiceStatusBadge(i)}</div><div class="actions-inline"><button class="btn secondary small" data-preview-syndic-invoice="${i.id}" type="button">PDF</button>${i.status==='draft'?`<button class="btn small" data-post-syndic-invoice="${i.id}" type="button">Comptabiliser</button><button class="btn secondary small" data-edit-syndic-draft="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-syndic-draft="${i.id}" type="button">Supprimer</button>`:(i.status!=='credited'&&i.billing_type!=='credit_note'?`<button class="btn danger small" data-credit-syndic-invoice="${i.id}" type="button">Annuler / NC</button>`:'')}</div></div>`).join('') || '<div class="notice">Aucune facture dans ce filtre.</div>'}</div>`;
+    }
+
+    function v24OneOffInvoiceModalHtml(inv=null, type='service'){
+      const label=type==='mutation'?'Renseignements notaire / mutation':'Prestation complémentaire';
+      const selectedType=inv?.billing_type || type;
+      const coproId=inv?.copro_id || state.activeCoproId || '';
+      return `<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="synInvCopro">${v23CoproOptions(coproId)}</select></label><label>Type <select id="synInvType"><option value="service">Prestation complémentaire</option><option value="mutation">Mutation / renseignements notaire</option></select></label><label>Date facture <input id="synInvDate" type="date" value="${escapeHtml(inv?.invoice_date || new Date().toISOString().slice(0,10))}"></label><label>Échéance <input id="synInvDue" type="date" value="${escapeHtml(inv?.due_date || '')}"></label><label>Libellé <input id="synInvDesc" value="${escapeHtml(inv?.description || label)}"></label><label>Montant HTVA <input id="synInvAmount" type="number" step="0.01" value="${Number(inv?.amount_subtotal || 0)}"></label><label>TVA % <input id="synInvVat" type="number" step="0.01" value="${Number(inv?.vat_rate ?? 21)}"></label><label>Compte comptable <select id="synInvAccount">${v23AccountOptions(inv?.account_id || state.syndicInvoiceSettings?.default_account_id || '', true)}</select></label><label style="grid-column:1/-1;">Note interne <textarea id="synInvNotes" placeholder="Détail prestation, référence dossier, notaire...">${escapeHtml(inv?.notes || '')}</textarea></label></div><div class="notice">Ce document restera en brouillon jusqu’à sa comptabilisation. Aucun numéro officiel n’est consommé à ce stade.</div></div><script>setTimeout(()=>{const t=document.getElementById('synInvType'); if(t) t.value='${selectedType}';},0);<\/script>`;
+    }
+    function openOneOffSyndicInvoiceV23(type='service'){
+      openAppModal('Nouveau brouillon facture syndic', v24OneOffInvoiceModalHtml(null,type), `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" id="saveOneOffSyndicInvoiceBtn" data-draft-id="" type="button">Enregistrer brouillon</button>`, {size:'wide'});
+    }
+    function openSyndicInvoiceDraftModalV24(id){
+      const inv=(state.syndicInvoices||[]).find(i=>String(i.id)===String(id)); if(!inv) return;
+      if(inv.status!=='draft') return alert('Seules les factures en brouillon peuvent être modifiées ici. Pour une facture comptabilisée, il faut créer une note de crédit.');
+      openAppModal('Modifier brouillon facture syndic', v24OneOffInvoiceModalHtml(inv, inv.billing_type), `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" id="saveOneOffSyndicInvoiceBtn" data-draft-id="${id}" type="button">Enregistrer brouillon</button>`, {size:'wide'});
+    }
+    async function saveOneOffSyndicInvoiceV23(){
+      const draftId=$('saveOneOffSyndicInvoiceBtn')?.dataset?.draftId || '';
+      const copro_id=$('synInvCopro').value, type=$('synInvType').value, desc=$('synInvDesc').value.trim();
+      if(!copro_id||!desc||!Number($('synInvAmount').value||0)) return alert('Copropriété, libellé et montant sont obligatoires.');
+      const totals=v23InvoiceTotals($('synInvAmount').value,$('synInvVat').value); const copro=(state.copros||[]).find(c=>c.id===copro_id);
+      const payload={invoice_number:draftId ? undefined : v24DraftRef(type==='mutation'?'DRAFT-MUT':'DRAFT-PREST'),billing_type:type,copro_id,customer_name:copro?.name||'',invoice_date:$('synInvDate').value||new Date().toISOString().slice(0,10),due_date:$('synInvDue').value||null,description:desc,notes:$('synInvNotes').value||null,account_id:$('synInvAccount').value||null,account_code:v23SelectedAccountCode('synInvAccount')||null,amount_subtotal:totals.subtotal,vat_rate:Number($('synInvVat').value||0),vat_amount:totals.vat,amount_total:totals.total,status:'draft',updated_at:new Date().toISOString()};
+      if(draftId) delete payload.invoice_number;
+      const req=draftId ? supabaseClient.from('compta_syndic_invoices').update(payload).eq('id',draftId) : supabaseClient.from('compta_syndic_invoices').insert(Object.assign(payload,{created_by:currentUser?.id||null}));
+      const {error}=await req; if(error) return alert(error.message);
+      closeAppModal(); state.syndicBillingTab='invoices'; state.syndicInvoiceFilters.status='draft'; await loadSyndicBillingV23(); renderSyndicBillingV23();
+    }
+    async function generateSyndicContractInvoicesV23(id){
+      const c=(state.syndicContracts||[]).find(x=>x.id===id); if(!c) return;
+      const months=[]; for(let m=Number(c.start_month||1); m<=Number(c.end_month||12); m++) months.push(m);
+      const existing=new Set((state.syndicInvoices||[]).filter(i=>i.contract_id===id).map(i=>Number(i.period_month)));
+      const todo=months.filter(m=>!existing.has(m));
+      if(!todo.length) return alert('Tous les brouillons de cette période existent déjà.');
+      if(!confirm(`Créer ${todo.length} brouillon(s) d’honoraires pour ce contrat ?`)) return;
+      const year=(c.year_label||new Date().getFullYear()).match(/\d{4}/)?.[0] || new Date().getFullYear();
+      const payloads=[];
+      for(const m of todo){
+        const totals=v23InvoiceTotals(c.monthly_amount_htva,c.vat_rate); const invoice_date=`${year}-${String(m).padStart(2,'0')}-01`; const dueDay=String(Math.min(Number(c.due_day||10),28)).padStart(2,'0');
+        payloads.push({invoice_number:v24DraftRef(`DRAFT-HONO-${year}-${String(m).padStart(2,'0')}`),billing_type:'honoraires',contract_id:id,copro_id:c.copro_id,customer_name:(state.copros||[]).find(x=>x.id===c.copro_id)?.name||'',invoice_date,due_date:`${year}-${String(m).padStart(2,'0')}-${dueDay}`,period_year:Number(year),period_month:m,description:`${c.label||'Honoraires syndic'} - ${String(m).padStart(2,'0')}/${year}`,account_id:c.account_id||null,account_code:c.account_code||null,amount_subtotal:totals.subtotal,vat_rate:Number(c.vat_rate||0),vat_amount:totals.vat,amount_total:totals.total,status:'draft',created_by:currentUser?.id||null});
+      }
+      const {error}=await supabaseClient.from('compta_syndic_invoices').insert(payloads); if(error) return alert(error.message);
+      state.syndicBillingTab='invoices'; state.syndicInvoiceFilters.status='draft'; await loadSyndicBillingV23(); renderSyndicBillingV23(); alert(`${payloads.length} brouillon(s) créé(s).`);
+    }
+
+    async function v24BlobToDataUrl(blob){
+      return await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(blob); });
+    }
+    async function v24EnsureWapiSupplier(){
+      const name=(state.syndicInvoiceSettings?.company_name || 'WAPI-SYNDIK SPRL').trim();
+      let res=await supabaseClient.from('compta_suppliers').select('*').ilike('name', `%${name.replace(/[%_]/g,'')}%`).limit(1);
+      if(!res.error && (res.data||[])[0]) return res.data[0];
+      res=await supabaseClient.from('compta_suppliers').select('*').ilike('name', '%WAPI%').limit(20);
+      const found=(res.data||[]).find(s=>normalizeTextForDetection(s.name||'').includes('wapi'));
+      if(found) return found;
+      const payload={name, email:state.syndicInvoiceSettings?.company_email||'info@wapi-syndik.be', phone:state.syndicInvoiceSettings?.company_phone||null, address:state.syndicInvoiceSettings?.company_address||null, iban:state.syndicInvoiceSettings?.iban||null, created_by:currentUser?.id||null};
+      const ins=await supabaseClient.from('compta_suppliers').insert(payload).select('*').single();
+      if(ins.error) throw ins.error;
+      state.suppliers=state.suppliers||[]; state.suppliers.push(ins.data);
+      return ins.data;
+    }
+    async function v24CreateSupplierInvoiceFromSyndic(inv, officialNumber){
+      const existing=await supabaseClient.from('compta_invoices').select('id').eq('invoice_number', officialNumber).eq('source','syndic_billing').limit(1);
+      if(!existing.error && (existing.data||[])[0]) return existing.data[0].id;
+      const supplier=await v24EnsureWapiSupplier();
+      const blob=await syndicInvoicePdfBlobV23(Object.assign({}, inv, {invoice_number:officialNumber,status:'issued'}));
+      const dataUrl=await v24BlobToDataUrl(blob);
+      const fileName=`${v23Slug(officialNumber)}_facture_wapi_syndik.pdf`;
+      const payload={copro_id:inv.copro_id,supplier_id:supplier.id,account_id:inv.account_id||state.syndicInvoiceSettings?.default_account_id||null,invoice_number:officialNumber,invoice_date:inv.invoice_date||new Date().toISOString().slice(0,10),amount_total:Number(inv.amount_total||0),status:'validated',payment_status:'unpaid',description:inv.description||'Facture WAPI-SYNDIK',source:'syndic_billing',file_name:fileName,file_data_url:dataUrl,pdf_mime_type:'application/pdf',created_by:currentUser?.id||null};
+      const res=await supabaseClient.from('compta_invoices').insert(payload).select('id').single();
+      if(res.error) throw res.error;
+      return res.data?.id || null;
+    }
+    async function postSyndicInvoiceV24(id, skipConfirm=false){
+      const inv=(state.syndicInvoices||[]).find(i=>String(i.id)===String(id)); if(!inv) return;
+      if(inv.status==='issued') return alert('Cette facture est déjà comptabilisée.');
+      if(inv.status!=='draft') return alert('Seules les factures en brouillon peuvent être comptabilisées.');
+      if(!inv.copro_id||!inv.description||!Number(inv.amount_total||0)||!inv.account_id) return alert('Copropriété, libellé, compte comptable et montant sont obligatoires avant comptabilisation.');
+      if(!skipConfirm && !confirm('Comptabiliser cette facture ? Elle recevra un numéro officiel, sera exportable Winbooks et sera créée dans les factures fournisseurs de la copropriété avec son PDF.')) return;
+      try{
+        const officialNumber=await v23NextInvoiceNumber();
+        const supplierInvoiceId=await v24CreateSupplierInvoiceFromSyndic(inv, officialNumber);
+        let payload={invoice_number:officialNumber,status:'issued',posted_at:new Date().toISOString(),supplier_invoice_id:supplierInvoiceId,updated_at:new Date().toISOString()};
+        let upd=await supabaseClient.from('compta_syndic_invoices').update(payload).eq('id',id);
+        if(upd.error && /supplier_invoice_id|posted_at/i.test(upd.error.message||'')){
+          payload={invoice_number:officialNumber,status:'issued',updated_at:new Date().toISOString()};
+          upd=await supabaseClient.from('compta_syndic_invoices').update(payload).eq('id',id);
+        }
+        if(upd.error) throw upd.error;
+        await loadAll(); state.syndicBillingTab='invoices'; state.syndicInvoiceFilters.status='issued'; renderSyndicBillingV23(); alert('Facture comptabilisée et créée dans les factures fournisseurs.');
+      }catch(err){ alert('Comptabilisation impossible : '+(err.message||err)); }
+    }
+    async function postSelectedSyndicInvoicesV24(){
+      const ids=[...document.querySelectorAll('[data-syndic-invoice-select]:checked')].map(x=>x.dataset.syndicInvoiceSelect);
+      const drafts=ids.map(id=>(state.syndicInvoices||[]).find(i=>String(i.id)===String(id))).filter(i=>i&&i.status==='draft');
+      if(!drafts.length) return alert('Sélectionne au moins une facture en brouillon à comptabiliser.');
+      if(!confirm(`Comptabiliser ${drafts.length} facture(s) en brouillon ?`)) return;
+      for(const inv of drafts){ await postSyndicInvoiceV24(inv.id, true); }
+    }
+    async function deleteSyndicDraftV24(id){
+      const inv=(state.syndicInvoices||[]).find(i=>String(i.id)===String(id)); if(!inv) return;
+      if(inv.status!=='draft') return alert('Seuls les brouillons peuvent être supprimés. Une facture comptabilisée doit être annulée par note de crédit.');
+      if(!confirm('Supprimer définitivement ce brouillon ?')) return;
+      const {error}=await supabaseClient.from('compta_syndic_invoices').delete().eq('id',id); if(error) return alert(error.message);
+      await loadSyndicBillingV23(); renderSyndicBillingV23();
+    }
+    async function exportSyndicInvoicesZipV23(ids){
+      const rows=(state.syndicInvoices||[]).filter(i=>ids.includes(i.id));
+      if(!rows.length) return alert('Aucune facture sélectionnée.');
+      const exportable=rows.filter(i=>i.status==='issued'||i.billing_type==='credit_note');
+      if(!exportable.length) return alert('Les brouillons ne sont pas exportables. Comptabilise d’abord les factures.');
+      if(exportable.length!==rows.length && !confirm('Les brouillons sélectionnés seront ignorés dans l’export. Continuer ?')) return;
+      if(!window.JSZip) return alert('JSZip non chargé.');
+      const zip=new JSZip();
+      for(const inv of exportable){ const blob=await syndicInvoicePdfBlobV23(inv); zip.file(`${v23Slug(inv.invoice_number||inv.id)}_${v23Slug(v23BillingTypeLabel(inv.billing_type))}.pdf`, blob); }
+      const out=await zip.generateAsync({type:'blob'}); v23DownloadBlob(out, `factures_wapi_syndik_${new Date().toISOString().slice(0,10)}.zip`);
+    }
+
+    // OCR V24 : score par contexte, exclut TVA/HTVA/acompte/coordonnées, et évite les faux numéros facture.
+    function v24LineCandidates(text){ return String(text||'').replace(/\u00a0/g,' ').split(/\r?\n/).map(l=>l.trim()).filter(Boolean); }
+    function v24MoneyCandidates(line){
+      const out=[]; const rx=/([0-9]{1,3}(?:[ .][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2})|[0-9]{1,7}(?:,[0-9]{2}|\.[0-9]{2}))(?:\s*(€|EUR))?/gi;
+      String(line||'').replace(rx,(full,value,currency,idx)=>{ const n=parseMoneyV13(value); if(n!==null && n>0 && n<10000000) out.push({value:n, raw:full, hasCurrency:!!currency, idx}); return full; });
+      return out;
+    }
+    function v24ScoreAmountLine(line, prev='', next=''){
+      const ctx=normalizeTextForDetection(`${prev} ${line} ${next}`);
+      let score=0;
+      if(/net\s*a\s*payer|netto\s*a\s*payer|a\s*payer|total\s*a\s*payer|solde\s*a\s*payer|montant\s*a\s*payer/.test(ctx)) score+=90;
+      if(/total\s*(tvac|ttc|facture|general|a payer)|montant\s*total|total\s*du/.test(ctx)) score+=75;
+      if(/reste\s*a\s*payer|balance\s*due/.test(ctx)) score+=70;
+      if(/tvac|ttc/.test(ctx)) score+=35;
+      if(/total/.test(ctx)) score+=30;
+      if(/facture/.test(ctx)) score+=10;
+      if(/tva\s*(%|[0-9])|vat|htva|hors\s*tva|base\s*imposable|subtotal|sous[- ]total|acompte|deja\s*paye|déjà\s*payé|remise|escompte|retenue|prix\s*unitaire|p\.?u\.?|quantite|quantité|qte|qté/.test(ctx)) score-=70;
+      if(/iban|bic|tva\s*be|btw|telephone|t[ée]l|gsm|client|commande|bon\s*de\s*commande/.test(ctx)) score-=40;
+      return score;
+    }
+    function detectAmountNearV13(text){
+      const lines=v24LineCandidates(text);
+      const candidates=[];
+      lines.forEach((line,i)=>{
+        const prev=lines[i-1]||'', next=lines[i+1]||''; const base=v24ScoreAmountLine(line,prev,next);
+        v24MoneyCandidates(line).forEach(c=>candidates.push({amount:c.value, score:base + (c.hasCurrency?12:0) + (i/Math.max(lines.length,1))*8, line}));
+        if(!v24MoneyCandidates(line).length && /total|payer|tvac|ttc/i.test(line)){
+          v24MoneyCandidates(next).forEach(c=>candidates.push({amount:c.value, score:base+45+(c.hasCurrency?12:0), line:`${line} ${next}`}));
+        }
+      });
+      const strong=candidates.filter(c=>c.score>=40).sort((a,b)=>b.score-a.score || b.amount-a.amount);
+      if(strong.length) return strong[0].amount;
+      const fallback=candidates.filter(c=>c.score>-30).sort((a,b)=>b.amount-a.amount);
+      return fallback[0]?.amount ?? null;
+    }
+    function v24ExtractReference(text, fileName=''){
+      const flat=`${fileName||''}\n${String(text||'')}`.replace(/\u00a0/g,' ').replace(/\s+/g,' ');
+      const bad=/client|customer|commande|order|bon\s*de\s*commande|devis|tva|vat|btw|iban|bic|telephone|t[ée]l|gsm|compte|bank|echeance|échéance|date/i;
+      const patterns=[
+        /(?:facture|invoice)\s*(?:n[°o.]?|num(?:é|e)ro|nr|#)?\s*[:\- ]{0,10}([A-Z0-9][A-Z0-9\/_\-.]{2,30})/i,
+        /(?:n[°o.]?\s*de\s*facture|num(?:é|e)ro\s*de\s*facture|invoice\s*number)\s*[:\- ]{0,10}([A-Z0-9][A-Z0-9\/_\-.]{2,30})/i,
+        /\b(FA|FAC|FACT|INV)[\s\-_:]*([A-Z0-9][A-Z0-9\/_\-.]{2,25})\b/i
+      ];
+      for(const rx of patterns){ const m=flat.match(rx); if(m){ let ref=(m[2]?m[1]+m[2]:m[1]).replace(/^[#:\-\s]+/,'').trim(); if(ref && !bad.test(ref) && !/^20\d{2}$/.test(ref)) return ref; } }
+      const lines=v24LineCandidates(text);
+      for(const line of lines){
+        if(/facture|invoice/i.test(line) && !bad.test(line.replace(/facture|invoice/ig,''))){
+          const m=line.match(/\b([A-Z]{1,6}[\-\/_]?[0-9][A-Z0-9\-\/_\.]{2,25}|20\d{2}[\-\/_][0-9]{2,8})\b/i);
+          if(m) return m[1];
+        }
+      }
+      return '';
+    }
+    function extractInvoiceFieldsV13(text, fileName = ''){
+      const source = `${fileName || ''}\n${String(text || '')}`;
+      const flat = source.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+      const invoiceDate = detectDateNearV13(flat, ['date\\s*facture', 'facture\\s*du', 'émise\\s*le', 'emise\\s*le', 'date']);
+      const dueDate = detectDateNearV13(flat, ['échéance', 'echeance', 'à\\s*payer\\s*avant', 'a\\s*payer\\s*avant']);
+      const amount = detectAmountNearV13(source);
+      const vatRateMatch = flat.match(/(?:TVA|VAT)[^0-9]{0,20}([0-9]{1,2}(?:[,.][0-9]+)?)\s*%/i);
+      const vatRate = vatRateMatch ? parseMoneyV13(vatRateMatch[1]) : null;
+      const vatAmountMatch = flat.match(/(?:montant\s*)?(?:TVA|VAT)(?!\s*BE)[^0-9]{0,35}([0-9]{1,3}(?:[ .][0-9]{3})*(?:,[0-9]{2}|\.[0-9]{2}))/i);
+      const vatAmount = vatAmountMatch ? parseMoneyV13(vatAmountMatch[1]) : null;
+      return {date: invoiceDate || '', due_date: dueDate || '', reference: v24ExtractReference(text,fileName), amount: amount !== null ? amount : '', vat_rate: vatRate !== null ? vatRate : '', vat_amount: vatAmount !== null ? vatAmount : '', account_id: guessAccountFromTextV13(source)};
+    }
+    extractSimpleFieldsFromText = function(text, fileName, importType){
+      if(importType==='invoice') return extractInvoiceFieldsV13(text,fileName);
+      return originalExtractSimpleFieldsFromTextV13 ? originalExtractSimpleFieldsFromTextV13(text,fileName,importType) : {};
+    };
+
+    document.addEventListener('click',(e)=>{
+      const b=e.target.closest?.('button'); if(!b) return;
+      if(b.dataset.postSyndicInvoice) postSyndicInvoiceV24(b.dataset.postSyndicInvoice);
+      if(b.id==='postSyndicSelectedBtn') postSelectedSyndicInvoicesV24();
+      if(b.dataset.editSyndicDraft) openSyndicInvoiceDraftModalV24(b.dataset.editSyndicDraft);
+      if(b.dataset.deleteSyndicDraft) deleteSyndicDraftV24(b.dataset.deleteSyndicDraft);
+    });
+    document.addEventListener('change',(e)=>{ if(e.target?.id==='syndicInvoiceStatusFilter'){ state.syndicInvoiceFilters.status=e.target.value; renderSyndicInvoicesV23(); } });
+
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
