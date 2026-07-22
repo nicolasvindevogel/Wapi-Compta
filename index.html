@@ -6,6 +6,7 @@
   <title>WAPI Compta</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1491,6 +1492,42 @@
     .inform-recipient-row:hover{background:#f8fcfd}.inform-recipient-row small{display:block;color:var(--muted)}
     @media(max-width:900px){.mail-composer-grid{grid-template-columns:1fr}.inform-recipient-row{grid-template-columns:28px 1fr}.inform-recipient-row > div:nth-child(n+3){grid-column:2}}
 
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
   </style>
 </head>
 <body>
@@ -1603,13 +1640,26 @@
             <button data-view="budgets" data-title="Budgets" title="Budgets"><span class="nav__item"><span class="nav-icon">💶</span><span class="nav-label">Budgets</span></span></button>
             <button data-view="calls" data-title="Appels de fonds" title="Appels de fonds"><span class="nav__item"><span class="nav-icon">📣</span><span class="nav-label">Appels</span></span></button>
             <button data-view="invoices" data-title="Factures fournisseurs" title="Factures fournisseurs"><span class="nav__item"><span class="nav-icon">📄</span><span class="nav-label">Factures fournisseurs</span></span></button>
-            <button data-view="syndicBilling" data-title="Facturation syndic" title="Facturation syndic"><span class="nav__item"><span class="nav-icon">🏷️</span><span class="nav-label">Facturation syndic</span></span></button>
             <button data-view="electronicBilling" data-title="Facturation electronique" title="Facturation electronique"><span class="nav__item"><span class="nav-icon">🔌</span><span class="nav-label">Facturation electronique</span></span></button>
             <button data-view="bank" data-title="Financier" title="Financier"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier</span></span></button>
             <button data-view="od" data-title="Operations diverses" title="Operations diverses"><span class="nav__item"><span class="nav-icon">⚙️</span><span class="nav-label">Operations diverses</span></span></button>
             <button data-view="planner" data-title="Planificateur" title="Planificateur"><span class="nav__item"><span class="nav-icon">🗓️</span><span class="nav-label">Planificateur</span></span></button>
             <button data-view="simulation" data-title="Simulation repartition" title="Simulation repartition"><span class="nav__item"><span class="nav-icon">🧪</span><span class="nav-label">Simulation repartition</span></span></button>
             <button data-view="statements" data-title="Decomptes" title="Decomptes"><span class="nav__item"><span class="nav-icon">📑</span><span class="nav-label">Decomptes</span></span></button>
+          </div>
+        </div>
+
+
+        <div class="menu-group" data-group>
+          <button class="menu-group__header" type="button" data-group-toggle>
+            <span class="menu-group__label"><span class="menu-group__icon">🏷️</span><span class="menu-group__text">Facturation syndic</span></span>
+            <span class="menu-group__caret">▾</span>
+          </button>
+          <div class="menu-group__body">
+            <button data-view="syndicBilling" data-title="Contrats honoraires" data-v23-syndic-tab="contracts" title="Contrats honoraires"><span class="nav__item"><span class="nav-icon">📆</span><span class="nav-label">Contrats honoraires</span></span></button>
+            <button data-view="syndicBilling" data-title="Prestations complémentaires" data-v23-syndic-tab="services" title="Prestations complémentaires"><span class="nav__item"><span class="nav-icon">➕</span><span class="nav-label">Prestations</span></span></button>
+            <button data-view="syndicBilling" data-title="Factures syndic" data-v23-syndic-tab="invoices" title="Factures syndic"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Factures créées</span></span></button>
+            <button data-view="syndicBilling" data-title="Réglages facturation" data-v23-syndic-tab="settings" title="Réglages facturation"><span class="nav__item"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></span></button>
           </div>
         </div>
 
@@ -2219,17 +2269,29 @@
         </section>
 
         <section id="syndicBillingView" class="view hidden">
-          <div class="card">
+          <div class="card syndic-billing-root">
             <div class="toolbar">
-              <h2>Facturation syndic</h2>
-              <span class="badge warn">Module a structurer</span>
+              <div>
+                <h2>Facturation syndic</h2>
+                <p class="muted-note">Honoraires récurrents, prestations complémentaires, renseignements notaires, factures éditées et notes de crédit.</p>
+              </div>
+              <div class="top-actions">
+                <button class="btn secondary" id="refreshSyndicBillingBtn" type="button">Rafraîchir</button>
+                <button class="btn" id="newSyndicContractBtn" type="button">Nouveau contrat</button>
+                <button class="btn" id="newSyndicInvoiceBtn" type="button">Nouvelle facture ponctuelle</button>
+              </div>
             </div>
             <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+              <span>Module multi-copropriété — les factures WAPI-SYNDIK sont préparées ici puis exportables pour Clearfact / Winbooks.</span>
             </div>
-            <p style="color:var(--muted); line-height:1.5;">Suivi des honoraires, frais de mutation, prestations complémentaires et frais administratifs.</p>
-            <div class="module-grid"><div class="module-card"><h3>Frais mutation</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Prestations complémentaires</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Factures syndic</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div class="syndic-tabs">
+              <button class="tab-pill active" data-syndic-tab="contracts" type="button">Contrats honoraires</button>
+              <button class="tab-pill" data-syndic-tab="services" type="button">Prestations / mutations</button>
+              <button class="tab-pill" data-syndic-tab="invoices" type="button">Factures créées</button>
+              <button class="tab-pill" data-syndic-tab="settings" type="button">Réglages</button>
+            </div>
+            <div id="syndicBillingSummary" class="send-log-dashboard"></div>
+            <div id="syndicBillingContent"></div>
           </div>
         </section>
 
@@ -5325,6 +5387,42 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
   </style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div><script>print();<\/script></body></html>`); win.document.close(); }
     function printAllCalls(){ state.ownerCalls.filter((c)=>!state.activeCoproId||c.copro_id===state.activeCoproId).slice(0,50).forEach((c)=>printOwnerCall(c.id)); }
 
@@ -5506,6 +5604,42 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
   </style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>${escapeHtml(header?.label||'Budget')}</h1><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>${Object.entries(groups).map(([keyId,arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="key"><h2>${escapeHtml(k?.name||'Sans clé')} - ${money(subtotal)}</h2><table><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr>${arr.map((l)=>{const a=l.compta_accounts||state.accounts.find(x=>x.id===l.account_id)||{}; return `<tr><td>${escapeHtml((a.code||'')+' - '+(a.label||''))}</td><td>${escapeHtml(l.label||'')}</td><td>${money(l.amount)}</td></tr>`}).join('')}</table></div>`}).join('')}<div class="total">TOTAL BUDGET : ${money(total)}</div><script>window.print();<\/script></body></html>`;
       const w=window.open('','_blank'); w.document.write(htmlBody); w.document.close();
     }
@@ -5622,6 +5756,42 @@
     .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
   </style></head><body><div class="head"><div class="logo">WAPI-SYNDIK</div><h1>Situation de compte / Balance des tiers</h1></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
     }
@@ -5911,6 +6081,42 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
   </style></head><body>${body}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
@@ -5991,6 +6197,42 @@
     .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
   </style></head><body>${content}<script>window.print();<\/script></body></html>`); win.document.close();
     }
@@ -8401,6 +8643,42 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
   </style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
     }
     function printAgPvV14(meetingId){
@@ -8432,6 +8710,42 @@
     .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
   </style></head><body>${html}<script>window.print();<\/script></body></html>`); win.document.close();
     }
@@ -8628,6 +8942,42 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
   </style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
     }
     function voteDetailRowsV15(point){
@@ -8665,6 +9015,42 @@
     .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
   </style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
     }
@@ -8785,6 +9171,42 @@
     .invoice-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;border:1px solid var(--line);border-radius:16px;background:#fbfdfe;padding:12px;margin-top:12px}
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
+
+  
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
   </style></head><body>${content}<script>window.print();<\/script></body></html>`);
       win.document.close();
@@ -8962,7 +9384,43 @@
     function openPrintWindowV16(title, content){
       const win=window.open('','_blank');
       const script=`<script>function go(){const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r;}))).then(()=>setTimeout(()=>window.print(),450));}window.addEventListener('load',go);<\/script>`;
-      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}</style></head><body>${content}${script}</body></html>`);
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
+  </style></head><body>${content}${script}</body></html>`);
       win.document.close();
     }
 
@@ -9648,7 +10106,43 @@
       if(!calls.length) return alert('Aucun copropriétaire sélectionné.');
       const pages=groupOwnerCallsForPdfV20(calls).map(callPageHtmlV20).join('');
       const win=window.open('','_blank');
-      win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>${callPdfCssV20()}</style></head><body>${pages}<script>window.print();<\/script></body></html>`);
+      win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>${callPdfCssV20()}
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
+  </style></head><body>${pages}<script>window.print();<\/script></body></html>`);
       win.document.close();
     }
 
@@ -9719,7 +10213,43 @@
       const csv=['copro;proprietaire;email;canal;date_echeance;libelle;montant'];
       calls.forEach(c=>{ const o=ownerForCallV20(c), copro=state.copros.find(x=>x.id===c.copro_id)||{}; const email=ownerEmailV20(o); csv.push([copro.name||'',ownerNameV20(o),email,email?'email':'courrier',c.due_date||'',c.label||'',String(c.amount_due||0).replace('.',',')].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')); });
       zip.file('liste_envoi_appels.csv', csv.join('\n'));
-      const grouped=groupOwnerCallsForPdfV20(calls); grouped.forEach((group)=>{ const first=group[0]; const owner=ownerForCallV20(first); zip.file(`appels_html/${sanitizeNameV20(ownerNameV20(owner))}_${sanitizeNameV20(first.period_label||first.label||'appel')}.html`, `<!doctype html><html><head><meta charset="utf-8"><style>${callPdfCssV20()}</style></head><body>${callPageHtmlV20(group)}</body></html>`); });
+      const grouped=groupOwnerCallsForPdfV20(calls); grouped.forEach((group)=>{ const first=group[0]; const owner=ownerForCallV20(first); zip.file(`appels_html/${sanitizeNameV20(ownerNameV20(owner))}_${sanitizeNameV20(first.period_label||first.label||'appel')}.html`, `<!doctype html><html><head><meta charset="utf-8"><style>${callPdfCssV20()}
+
+    /* ---- V23 : envois avec sélection/annexes + facturation syndic ---- */
+    .mail-attachments-box { border:1px dashed var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .mail-attachment-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#e8f3f6; color:#14586a; margin:4px 6px 0 0; font-size:12px; font-weight:700; }
+    .syndic-billing-root .syndic-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .syndic-tabs .tab-pill { border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 13px; border-radius:999px; cursor:pointer; font-weight:800; }
+    .syndic-tabs .tab-pill.active { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 8px 18px rgba(31,122,140,.18); }
+    .syndic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .syndic-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; box-shadow:0 8px 20px rgba(23,32,51,.06); }
+    .syndic-card h3 { margin:0 0 6px; }
+    .syndic-status-issued { background:#e8f3f6; color:#14586a; }
+    .syndic-status-credited { background:#fdecea; color:#b42318; }
+    .syndic-status-draft { background:#fff7e6; color:#9a5b00; }
+    .syndic-invoice-row { display:grid; grid-template-columns:34px 1.1fr .9fr .8fr .8fr .8fr auto; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:10px 8px; }
+    .syndic-invoice-row:hover { background:#f8fafc; }
+    .syndic-contract-row { display:grid; grid-template-columns:1.2fr .9fr .7fr .7fr auto; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+    .syndic-kpi { border:1px solid var(--line); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .syndic-kpi span { display:block; color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .syndic-kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .invoice-print-page { page-break-after:always; width:190mm; min-height:277mm; padding:16mm; background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-print-page:last-child { page-break-after:auto; }
+    .invoice-print-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid #1f7a8c; padding-bottom:12px; }
+    .invoice-print-logo { font-size:24px; font-weight:900; color:#1f7a8c; }
+    .invoice-print-title { text-align:right; }
+    .invoice-print-title h1 { margin:0; font-size:28px; color:#102a43; }
+    .invoice-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:28px 0; }
+    .invoice-box { border:1px solid #d7dee9; border-radius:10px; padding:14px; }
+    .invoice-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .invoice-table th { background:#102a43; color:#fff; text-align:left; padding:10px; }
+    .invoice-table td { border-bottom:1px solid #e5eaf2; padding:10px; vertical-align:top; }
+    .invoice-total-box { margin-left:auto; width:290px; margin-top:18px; border:1px solid #d7dee9; border-radius:10px; overflow:hidden; }
+    .invoice-total-line { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #edf1f6; }
+    .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
+    .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
+
+  </style></head><body>${callPageHtmlV20(group)}</body></html>`); });
       const blob=await zip.generateAsync({type:'blob'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${batch}_dossier_envoi_appels.zip`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
     function printPaperCallDispatchV20(){ const ids=dispatchSelectedCallsV20().filter(c=>!ownerEmailV20(ownerForCallV20(c))).map(c=>c.id); if(!ids.length) return alert('Aucun copropriétaire sans e-mail dans la sélection.'); printOwnerCallsV11(ids,'Appels courrier'); }
@@ -10267,6 +10797,287 @@
       if(b.dataset.v22SendAgMinutes) v22OpenAgSend(b.dataset.v22SendAgMinutes, 'ag_minutes');
     });
 
+
+
+
+    // ---- V23 : corrections envois sélectionnés, annexes, et module Facturation syndic ----
+    state.syndicBillingTab = state.syndicBillingTab || 'contracts';
+    state.syndicContracts = state.syndicContracts || [];
+    state.syndicInvoices = state.syndicInvoices || [];
+    state.syndicInvoiceSettings = state.syndicInvoiceSettings || null;
+    state.syndicInvoiceFilters = state.syndicInvoiceFilters || { copro:'', type:'all', search:'' };
+
+    function v23DownloadBlob(blob, filename){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1000); }
+    function v23Slug(value){ return String(value||'document').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80) || 'document'; }
+    function v23Date(value){ return value ? new Date(value).toLocaleDateString('fr-BE') : ''; }
+    function v23OwnerEmail(owner){ return typeof ownerEmailV21==='function' ? ownerEmailV21(owner||{}) : (owner?.email || ''); }
+    function v23OwnerName(owner){ return typeof v22OwnerDisplay==='function' ? v22OwnerDisplay(owner||{}) : (owner?.display_name || owner?._name || ''); }
+    function v23CoproOptions(selected=''){ return '<option value="">Choisir...</option>' + (state.copros||[]).map(c=>`<option value="${c.id}" ${String(selected)===String(c.id)?'selected':''}>${escapeHtml(c.name||'')}</option>`).join(''); }
+    function v23FiscalYearOptions(selected='', coproId=''){ return '<option value="">Exercice...</option>' + (state.fiscalYears||[]).filter(y=>!coproId||y.copro_id===coproId).map(y=>`<option value="${y.id}" ${String(selected)===String(y.id)?'selected':''}>${escapeHtml(y.label||`${y.starts_on||''} - ${y.ends_on||''}`)}</option>`).join(''); }
+    function v23AccountOptions(selected='', onlyCharges=false){ const rows=(state.accounts||[]).filter(a=>!onlyCharges || String(a.code||'').startsWith('6')); return '<option value="">Choisir...</option>' + rows.map(a=>`<option value="${a.id}" data-code="${escapeHtml(a.code||'')}" ${String(selected)===String(a.id)?'selected':''}>${escapeHtml((a.code||'')+' - '+(a.label||''))}</option>`).join(''); }
+    function v23SelectedAccountCode(selectId){ const opt=$(selectId)?.selectedOptions?.[0]; return opt?.dataset?.code || ''; }
+
+    async function loadSyndicBillingV23(){
+      if(!supabaseClient) return;
+      try{
+        const [contractsRes, invoicesRes, settingsRes] = await Promise.all([
+          supabaseClient.from('compta_syndic_billing_contracts').select('*, compta_copros(name,optipro_ref,address)').order('created_at',{ascending:false}),
+          supabaseClient.from('compta_syndic_invoices').select('*, compta_copros(name,optipro_ref,address)').order('invoice_date',{ascending:false}),
+          supabaseClient.from('compta_syndic_invoice_settings').select('*').order('created_at',{ascending:true}).limit(1)
+        ]);
+        if(contractsRes.error) throw contractsRes.error;
+        if(invoicesRes.error) throw invoicesRes.error;
+        state.syndicContracts = contractsRes.data || [];
+        state.syndicInvoices = invoicesRes.data || [];
+        state.syndicInvoiceSettings = (settingsRes.data||[])[0] || {prefix:'WS', year:new Date().getFullYear(), next_number:1, vat_number:'BE0000.000.000', company_name:'WAPI-SYNDIK SPRL', company_address:'Rue de Menin 400 - Boulevard du Roi Albert 42-44\n7700 - 7500 Mouscron-Tournai', company_email:'info@wapi-syndik.be', company_phone:'056/85.00.85 - 069/64.69.60', iban:'', bic:''};
+      }catch(err){ console.warn('Module facturation syndic non chargé. Migration V23 nécessaire ?', err.message); state.syndicContracts=[]; state.syndicInvoices=[]; }
+    }
+    const previousLoadAllV23 = loadAll;
+    loadAll = async function(){ await previousLoadAllV23(); await loadSyndicBillingV23(); renderAll(); };
+
+    function v23InvoiceStatusBadge(inv){
+      const status=inv.status||'issued';
+      const label=status==='credited'?'Note de crédit créée':status==='cancelled'?'Annulée':status==='draft'?'Brouillon':'Éditée';
+      const cls=status==='credited'?'syndic-status-credited':status==='draft'?'syndic-status-draft':'syndic-status-issued';
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+    function v23BillingTypeLabel(type){ return {honoraires:'Honoraires', service:'Prestation complémentaire', mutation:'Mutation / notaire', credit_note:'Note de crédit'}[type] || type || ''; }
+    function v23FormatInvoiceNumber(seq, year, prefix){ return `${prefix||'WS'}-${year||new Date().getFullYear()}-${String(seq||1).padStart(5,'0')}`; }
+    function v23InvoiceNumberPreview(){ const s=state.syndicInvoiceSettings||{}; return v23FormatInvoiceNumber(s.next_number||1, s.year||new Date().getFullYear(), s.prefix||'WS'); }
+    function v23InvoiceTotals(amount, vatRate){ const ht=Number(amount||0); const vat=+(ht*Number(vatRate||0)/100).toFixed(2); return {subtotal:ht, vat, total:+(ht+vat).toFixed(2)}; }
+    async function v23NextInvoiceNumber(){
+      let s=state.syndicInvoiceSettings || {}; const prefix=s.prefix||'WS', year=s.year||new Date().getFullYear(), seq=Number(s.next_number||1);
+      const number=v23FormatInvoiceNumber(seq, year, prefix);
+      const payload={prefix, year, next_number:seq+1, company_name:s.company_name||'WAPI-SYNDIK SPRL', company_address:s.company_address||'', company_email:s.company_email||'', company_phone:s.company_phone||'', vat_number:s.vat_number||'', iban:s.iban||'', bic:s.bic||'', updated_at:new Date().toISOString()};
+      if(s.id) await supabaseClient.from('compta_syndic_invoice_settings').update(payload).eq('id',s.id);
+      else await supabaseClient.from('compta_syndic_invoice_settings').insert(payload);
+      await loadSyndicBillingV23();
+      return number;
+    }
+
+    function renderSyndicBillingV23(){
+      if(!$('syndicBillingContent')) return;
+      document.querySelectorAll('[data-syndic-tab]').forEach(b=>b.classList.toggle('active', b.dataset.syndicTab===state.syndicBillingTab));
+      const issued=(state.syndicInvoices||[]).filter(i=>i.status!=='credited'&&i.billing_type!=='credit_note');
+      const total=issued.reduce((s,i)=>s+Number(i.amount_total||0),0);
+      const credits=(state.syndicInvoices||[]).filter(i=>i.billing_type==='credit_note').reduce((s,i)=>s+Math.abs(Number(i.amount_total||0)),0);
+      $('syndicBillingSummary').innerHTML=`<div class="syndic-kpi"><span>Contrats actifs</span><strong>${(state.syndicContracts||[]).filter(c=>c.active!==false).length}</strong></div><div class="syndic-kpi"><span>Factures éditées</span><strong>${issued.length}</strong></div><div class="syndic-kpi"><span>Total facturé</span><strong>${money(total)}</strong></div><div class="syndic-kpi"><span>Notes de crédit</span><strong>${money(credits)}</strong></div>`;
+      if(state.syndicBillingTab==='contracts') return renderSyndicContractsV23();
+      if(state.syndicBillingTab==='services') return renderSyndicServicesV23();
+      if(state.syndicBillingTab==='settings') return renderSyndicSettingsV23();
+      return renderSyndicInvoicesV23();
+    }
+    function renderSyndicContractsV23(){
+      const rows=state.syndicContracts||[];
+      $('syndicBillingContent').innerHTML=`<div class="toolbar"><h3>Contrats d’honoraires récurrents</h3><div class="top-actions"><button class="btn" id="newSyndicContractBtn2" type="button">Nouveau contrat</button></div></div><div class="notice">Crée un contrat une fois par exercice, puis génère automatiquement les 12 factures mensuelles dans le module. Les duplicatas par mois sont bloqués.</div>${rows.map(c=>{ const invs=(state.syndicInvoices||[]).filter(i=>i.contract_id===c.id && i.billing_type==='honoraires'); return `<div class="syndic-contract-row"><div><strong>${escapeHtml(c.label||'Honoraires syndic')}</strong><div class="muted-note">${escapeHtml(c.compta_copros?.name||'')} · ${escapeHtml(c.year_label||'')}</div></div><div>${money(c.monthly_amount_htva)} HTVA / mois<br><span class="muted-note">TVA ${Number(c.vat_rate||0)}%</span></div><div>${Number(c.start_month||1)} → ${Number(c.end_month||12)}</div><div>${c.active!==false?'<span class="badge ok">Actif</span>':'<span class="badge">Inactif</span>'}<br><span class="muted-note">${invs.length} facture(s)</span></div><div class="actions-inline"><button class="btn secondary small" data-edit-syndic-contract="${c.id}" type="button">Modifier</button><button class="btn small" data-generate-syndic-contract="${c.id}" type="button">Générer factures</button><button class="btn danger small" data-delete-syndic-contract="${c.id}" type="button">Supprimer</button></div></div>`; }).join('') || '<div class="notice">Aucun contrat d’honoraires créé.</div>'}`;
+    }
+    function renderSyndicServicesV23(){
+      $('syndicBillingContent').innerHTML=`<div class="toolbar"><h3>Factures ponctuelles</h3><div class="top-actions"><button class="btn" data-open-oneoff-invoice="service" type="button">Prestation complémentaire</button><button class="btn secondary" data-open-oneoff-invoice="mutation" type="button">Renseignement notaire / mutation</button></div></div><div class="syndic-grid"><div class="syndic-card"><h3>Prestations complémentaires</h3><p class="muted-note">Encodage ponctuel : assemblée extraordinaire, suivi technique, dossier sinistre, prestation administrative, etc.</p><button class="btn" data-open-oneoff-invoice="service" type="button">Créer une facture</button></div><div class="syndic-card"><h3>Mutations / notaires</h3><p class="muted-note">Factures de renseignements notaires et frais administratifs liés aux ventes.</p><button class="btn secondary" data-open-oneoff-invoice="mutation" type="button">Créer une facture mutation</button></div></div>`;
+    }
+    function renderSyndicInvoicesV23(){
+      const f=state.syndicInvoiceFilters || {copro:'',type:'all',search:''};
+      const rows=(state.syndicInvoices||[]).filter(i=>(!f.copro||i.copro_id===f.copro)&&(f.type==='all'||i.billing_type===f.type)&&(!f.search||[i.invoice_number,i.description,i.compta_copros?.name,i.customer_name].join(' ').toLowerCase().includes(f.search.toLowerCase())));
+      $('syndicBillingContent').innerHTML=`<div class="toolbar"><h3>Factures éditées</h3><div class="top-actions"><button class="btn secondary" id="exportSyndicSelectedBtn" type="button">Exporter PDF sélection</button><button class="btn" id="exportSyndicAllBtn" type="button">Exporter PDF visibles</button></div></div><div class="list-filters"><label>Copropriété <select id="syndicInvoiceCoproFilter"><option value="">Toutes</option>${(state.copros||[]).map(c=>`<option value="${c.id}" ${f.copro===c.id?'selected':''}>${escapeHtml(c.name||'')}</option>`).join('')}</select></label><label>Type <select id="syndicInvoiceTypeFilter"><option value="all">Tout</option><option value="honoraires">Honoraires</option><option value="service">Presta complémentaire</option><option value="mutation">Mutation</option><option value="credit_note">Notes de crédit</option></select></label><label>Recherche <input id="syndicInvoiceSearch" value="${escapeHtml(f.search||'')}" placeholder="N°, copropriété, libellé..."></label></div><div class="table-wrap"><div class="syndic-invoice-row" style="font-weight:800;background:#f8fafc;"><div></div><div>Facture</div><div>Copropriété</div><div>Type</div><div>Date</div><div>Montant</div><div>Actions</div></div>${rows.map(i=>`<div class="syndic-invoice-row"><input type="checkbox" data-syndic-invoice-select="${i.id}"><div><strong>${escapeHtml(i.invoice_number||'')}</strong><div class="muted-note">${escapeHtml(i.description||'')}</div></div><div>${escapeHtml(i.compta_copros?.name||i.customer_name||'')}</div><div>${v23BillingTypeLabel(i.billing_type)}</div><div>${v23Date(i.invoice_date)}</div><div><strong>${money(i.amount_total)}</strong><br>${v23InvoiceStatusBadge(i)}</div><div class="actions-inline"><button class="btn secondary small" data-preview-syndic-invoice="${i.id}" type="button">PDF</button>${i.status!=='credited'&&i.billing_type!=='credit_note'?`<button class="btn danger small" data-credit-syndic-invoice="${i.id}" type="button">Annuler / NC</button>`:''}</div></div>`).join('') || '<div class="notice">Aucune facture dans ce filtre.</div>'}</div>`;
+      const typeSelect=$('syndicInvoiceTypeFilter'); if(typeSelect) typeSelect.value=f.type||'all';
+    }
+    function renderSyndicSettingsV23(){
+      const s=state.syndicInvoiceSettings||{};
+      $('syndicBillingContent').innerHTML=`<div class="toolbar"><h3>Réglages facturation WAPI-SYNDIK</h3><button class="btn" id="saveSyndicSettingsBtn" type="button">Enregistrer réglages</button></div><div class="form-grid"><label>Nom société <input id="synSetCompany" value="${escapeHtml(s.company_name||'WAPI-SYNDIK SPRL')}"></label><label>N° TVA <input id="synSetVat" value="${escapeHtml(s.vat_number||'')}"></label><label>Téléphone <input id="synSetPhone" value="${escapeHtml(s.company_phone||'')}"></label><label>E-mail <input id="synSetEmail" value="${escapeHtml(s.company_email||'info@wapi-syndik.be')}"></label><label style="grid-column:1/-1;">Adresse <textarea id="synSetAddress">${escapeHtml(s.company_address||'')}</textarea></label><label>IBAN <input id="synSetIban" value="${escapeHtml(s.iban||'')}"></label><label>BIC <input id="synSetBic" value="${escapeHtml(s.bic||'')}"></label><label>Préfixe facture <input id="synSetPrefix" value="${escapeHtml(s.prefix||'WS')}"></label><label>Année numérotation <input id="synSetYear" type="number" value="${Number(s.year||new Date().getFullYear())}"></label><label>Prochain numéro <input id="synSetNext" type="number" min="1" value="${Number(s.next_number||1)}"></label><label>Compte par défaut honoraires <select id="synSetAccount">${v23AccountOptions(s.default_account_id||'', true)}</select></label></div><div class="notice">Prochaine facture : <strong>${escapeHtml(v23InvoiceNumberPreview())}</strong>. La numérotation est protégée : l’annulation d’une facture crée une note de crédit au lieu de supprimer la facture.</div>`;
+    }
+
+    function openSyndicContractModalV23(id=''){
+      const c=(state.syndicContracts||[]).find(x=>String(x.id)===String(id)) || {copro_id:state.activeCoproId||'', label:'Honoraires syndic', monthly_amount_htva:0, vat_rate:21, start_month:1, end_month:12, due_day:10, active:true, account_id:state.syndicInvoiceSettings?.default_account_id||''};
+      const html=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="synContractCopro">${v23CoproOptions(c.copro_id)}</select></label><label>Exercice <select id="synContractYear">${v23FiscalYearOptions(c.fiscal_year_id||'', c.copro_id)}</select></label><label>Libellé <input id="synContractLabel" value="${escapeHtml(c.label||'')}"></label><label>Montant mensuel HTVA <input id="synContractAmount" type="number" step="0.01" value="${Number(c.monthly_amount_htva||0)}"></label><label>TVA % <input id="synContractVat" type="number" step="0.01" value="${Number(c.vat_rate||0)}"></label><label>Compte comptable <select id="synContractAccount">${v23AccountOptions(c.account_id||'', true)}</select></label><label>Mois début <input id="synContractStart" type="number" min="1" max="12" value="${Number(c.start_month||1)}"></label><label>Mois fin <input id="synContractEnd" type="number" min="1" max="12" value="${Number(c.end_month||12)}"></label><label>Jour échéance <input id="synContractDueDay" type="number" min="1" max="28" value="${Number(c.due_day||10)}"></label><label>Actif <select id="synContractActive"><option value="true">Oui</option><option value="false">Non</option></select></label></div></div>`;
+      openAppModal(id?'Modifier contrat honoraires':'Nouveau contrat honoraires', html, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" id="saveSyndicContractBtn" data-contract-id="${id}" type="button">Enregistrer</button>`, {size:'wide'});
+      if($('synContractActive')) $('synContractActive').value=String(c.active!==false);
+      $('synContractCopro')?.addEventListener('change',()=>{ $('synContractYear').innerHTML=v23FiscalYearOptions('', $('synContractCopro').value); });
+    }
+    async function saveSyndicContractV23(id=''){
+      const copro_id=$('synContractCopro').value, fiscal_year_id=$('synContractYear').value || null, label=$('synContractLabel').value.trim();
+      if(!copro_id||!label) return alert('Copropriété et libellé sont obligatoires.');
+      const payload={copro_id,fiscal_year_id,label,year_label:$('synContractYear')?.selectedOptions?.[0]?.textContent||'', monthly_amount_htva:Number($('synContractAmount').value||0), vat_rate:Number($('synContractVat').value||0), account_id:$('synContractAccount').value||null, account_code:v23SelectedAccountCode('synContractAccount')||null, start_month:Number($('synContractStart').value||1), end_month:Number($('synContractEnd').value||12), due_day:Number($('synContractDueDay').value||10), active:$('synContractActive').value==='true', updated_at:new Date().toISOString()};
+      if(!payload.monthly_amount_htva) return alert('Indique un montant mensuel.');
+      const req=id ? supabaseClient.from('compta_syndic_billing_contracts').update(payload).eq('id',id) : supabaseClient.from('compta_syndic_billing_contracts').insert(Object.assign(payload,{created_by:currentUser?.id||null}));
+      const {error}=await req; if(error) return alert(error.message);
+      closeAppModal(); await loadSyndicBillingV23(); renderSyndicBillingV23();
+    }
+    async function deleteSyndicContractV23(id){
+      const linked=(state.syndicInvoices||[]).some(i=>i.contract_id===id);
+      if(linked) return alert('Ce contrat a déjà généré des factures. Désactive-le plutôt ou crée des notes de crédit sur les factures concernées.');
+      if(!confirm('Supprimer ce contrat ?')) return;
+      const {error}=await supabaseClient.from('compta_syndic_billing_contracts').delete().eq('id',id); if(error) return alert(error.message); await loadSyndicBillingV23(); renderSyndicBillingV23();
+    }
+    async function generateSyndicContractInvoicesV23(id){
+      const c=(state.syndicContracts||[]).find(x=>x.id===id); if(!c) return;
+      const months=[]; for(let m=Number(c.start_month||1); m<=Number(c.end_month||12); m++) months.push(m);
+      const existing=new Set((state.syndicInvoices||[]).filter(i=>i.contract_id===id).map(i=>Number(i.period_month)));
+      const todo=months.filter(m=>!existing.has(m));
+      if(!todo.length) return alert('Toutes les factures de cette période existent déjà.');
+      if(!confirm(`Générer ${todo.length} facture(s) d’honoraires pour ce contrat ?`)) return;
+      const year=(c.year_label||new Date().getFullYear()).match(/\d{4}/)?.[0] || new Date().getFullYear();
+      const payloads=[];
+      for(const m of todo){
+        const number=await v23NextInvoiceNumber(); const totals=v23InvoiceTotals(c.monthly_amount_htva,c.vat_rate);
+        const invoice_date=`${year}-${String(m).padStart(2,'0')}-01`; const dueDay=String(Math.min(Number(c.due_day||10),28)).padStart(2,'0');
+        payloads.push({invoice_number:number,billing_type:'honoraires',contract_id:id,copro_id:c.copro_id,customer_name:(state.copros||[]).find(x=>x.id===c.copro_id)?.name||'',invoice_date,due_date:`${year}-${String(m).padStart(2,'0')}-${dueDay}`,period_year:Number(year),period_month:m,description:`${c.label||'Honoraires syndic'} - ${String(m).padStart(2,'0')}/${year}`,account_id:c.account_id||null,account_code:c.account_code||null,amount_subtotal:totals.subtotal,vat_rate:Number(c.vat_rate||0),vat_amount:totals.vat,amount_total:totals.total,status:'issued',created_by:currentUser?.id||null});
+      }
+      const {error}=await supabaseClient.from('compta_syndic_invoices').insert(payloads); if(error) return alert(error.message);
+      await loadSyndicBillingV23(); renderSyndicBillingV23(); alert(`${payloads.length} facture(s) créée(s).`);
+    }
+
+    function openOneOffSyndicInvoiceV23(type='service'){
+      const label=type==='mutation'?'Renseignements notaire / mutation':'Prestation complémentaire';
+      const html=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="synInvCopro">${v23CoproOptions(state.activeCoproId||'')}</select></label><label>Type <select id="synInvType"><option value="service">Prestation complémentaire</option><option value="mutation">Mutation / renseignements notaire</option></select></label><label>Date facture <input id="synInvDate" type="date" value="${new Date().toISOString().slice(0,10)}"></label><label>Échéance <input id="synInvDue" type="date"></label><label>Libellé <input id="synInvDesc" value="${escapeHtml(label)}"></label><label>Montant HTVA <input id="synInvAmount" type="number" step="0.01" value="0"></label><label>TVA % <input id="synInvVat" type="number" step="0.01" value="21"></label><label>Compte comptable <select id="synInvAccount">${v23AccountOptions(state.syndicInvoiceSettings?.default_account_id||'', true)}</select></label><label style="grid-column:1/-1;">Note interne <textarea id="synInvNotes" placeholder="Détail prestation, référence dossier, notaire..."></textarea></label></div></div>`;
+      openAppModal('Nouvelle facture syndic ponctuelle', html, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" id="saveOneOffSyndicInvoiceBtn" type="button">Créer facture</button>`, {size:'wide'});
+      $('synInvType').value=type;
+    }
+    async function saveOneOffSyndicInvoiceV23(){
+      const copro_id=$('synInvCopro').value, type=$('synInvType').value, desc=$('synInvDesc').value.trim();
+      if(!copro_id||!desc||!Number($('synInvAmount').value||0)) return alert('Copropriété, libellé et montant sont obligatoires.');
+      const number=await v23NextInvoiceNumber(); const totals=v23InvoiceTotals($('synInvAmount').value,$('synInvVat').value); const copro=(state.copros||[]).find(c=>c.id===copro_id);
+      const payload={invoice_number:number,billing_type:type,copro_id,customer_name:copro?.name||'',invoice_date:$('synInvDate').value||new Date().toISOString().slice(0,10),due_date:$('synInvDue').value||null,description:desc,notes:$('synInvNotes').value||null,account_id:$('synInvAccount').value||null,account_code:v23SelectedAccountCode('synInvAccount')||null,amount_subtotal:totals.subtotal,vat_rate:Number($('synInvVat').value||0),vat_amount:totals.vat,amount_total:totals.total,status:'issued',created_by:currentUser?.id||null};
+      const {error}=await supabaseClient.from('compta_syndic_invoices').insert(payload); if(error) return alert(error.message);
+      closeAppModal(); state.syndicBillingTab='invoices'; await loadSyndicBillingV23(); renderSyndicBillingV23();
+    }
+    async function saveSyndicSettingsV23(){
+      const payload={company_name:$('synSetCompany').value.trim(),vat_number:$('synSetVat').value.trim(),company_phone:$('synSetPhone').value.trim(),company_email:$('synSetEmail').value.trim(),company_address:$('synSetAddress').value,iban:$('synSetIban').value.trim(),bic:$('synSetBic').value.trim(),prefix:$('synSetPrefix').value.trim()||'WS',year:Number($('synSetYear').value||new Date().getFullYear()),next_number:Number($('synSetNext').value||1),default_account_id:$('synSetAccount').value||null,updated_at:new Date().toISOString()};
+      let res=state.syndicInvoiceSettings?.id ? await supabaseClient.from('compta_syndic_invoice_settings').update(payload).eq('id',state.syndicInvoiceSettings.id) : await supabaseClient.from('compta_syndic_invoice_settings').insert(Object.assign(payload,{created_by:currentUser?.id||null}));
+      if(res.error) return alert(res.error.message); await loadSyndicBillingV23(); renderSyndicBillingV23(); alert('Réglages enregistrés.');
+    }
+
+    function syndicInvoiceHtmlV23(inv){
+      const s=state.syndicInvoiceSettings||{}; const copro=inv.compta_copros || (state.copros||[]).find(c=>c.id===inv.copro_id) || {};
+      const isCredit=inv.billing_type==='credit_note' || Number(inv.amount_total)<0;
+      return `<section class="invoice-print-page"><div class="invoice-print-head"><div><div class="invoice-print-logo">WAPI-SYNDIK</div><div>${escapeHtml(s.company_name||'WAPI-SYNDIK SPRL')}</div><div style="white-space:pre-line;color:#667085;">${escapeHtml(s.company_address||'Rue de Menin 400 - Boulevard du Roi Albert 42-44\n7700 - 7500 Mouscron-Tournai')}</div><div>${escapeHtml(s.company_phone||'')} · ${escapeHtml(s.company_email||'info@wapi-syndik.be')}</div><div>${escapeHtml(s.vat_number||'')}</div></div><div class="invoice-print-title"><h1>${isCredit?'NOTE DE CRÉDIT':'FACTURE'}</h1><strong>${escapeHtml(inv.invoice_number||'')}</strong><div>Date : ${v23Date(inv.invoice_date)}</div><div>Échéance : ${v23Date(inv.due_date)}</div></div></div><div class="invoice-address-grid"><div class="invoice-box"><strong>Facturé à</strong><br>${escapeHtml(copro.name||inv.customer_name||'Association des copropriétaires')}<br><span style="white-space:pre-line;">${escapeHtml(copro.address||'')}</span><br>${escapeHtml(copro.optipro_ref||'')}</div><div class="invoice-box"><strong>Informations</strong><br>Type : ${escapeHtml(v23BillingTypeLabel(inv.billing_type))}<br>Compte : ${escapeHtml(inv.account_code||'')}<br>Référence Clearfact/Winbooks : ${escapeHtml(inv.invoice_number||'')}</div></div><table class="invoice-table"><thead><tr><th>Description</th><th style="width:90px;">Qté</th><th style="width:120px;">Prix HTVA</th><th style="width:90px;">TVA</th><th style="width:120px;">Total HTVA</th></tr></thead><tbody><tr><td>${escapeHtml(inv.description||'Facturation syndic')}<div style="color:#667085;white-space:pre-line;">${escapeHtml(inv.notes||'')}</div></td><td>1</td><td>${money(Math.abs(Number(inv.amount_subtotal||0)))}</td><td>${Number(inv.vat_rate||0)}%</td><td>${money(Math.abs(Number(inv.amount_subtotal||0)))}</td></tr></tbody></table><div class="invoice-total-box"><div class="invoice-total-line"><span>Total HTVA</span><strong>${money(inv.amount_subtotal)}</strong></div><div class="invoice-total-line"><span>TVA</span><strong>${money(inv.vat_amount)}</strong></div><div class="invoice-total-line total"><span>Total TVAC</span><strong>${money(inv.amount_total)}</strong></div></div><div class="invoice-ocr-note"><strong>Informations de paiement</strong><br>IBAN : ${escapeHtml(s.iban||'')} ${s.bic?' · BIC : '+escapeHtml(s.bic):''}<br>Communication : ${escapeHtml(inv.invoice_number||'')}</div></section>`;
+    }
+    function previewSyndicInvoiceV23(id){ const inv=(state.syndicInvoices||[]).find(i=>String(i.id)===String(id)); if(!inv) return; openPrintWindowV16('Facture '+(inv.invoice_number||''), syndicInvoiceHtmlV23(inv)); }
+    function drawPdfTextLinesV23(doc, text, x, y, maxWidth, lineHeight){ const lines=doc.splitTextToSize(String(text||''), maxWidth); doc.text(lines, x, y); return y + lines.length*lineHeight; }
+    async function syndicInvoicePdfBlobV23(inv){
+      if(!window.jspdf?.jsPDF) throw new Error('jsPDF non chargé. Recharge la page.');
+      const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'}); const s=state.syndicInvoiceSettings||{}; const copro=inv.compta_copros || (state.copros||[]).find(c=>c.id===inv.copro_id) || {}; const isCredit=inv.billing_type==='credit_note'||Number(inv.amount_total)<0;
+      doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(31,122,140); doc.text('WAPI-SYNDIK',14,18);
+      doc.setFontSize(9); doc.setTextColor(80); doc.setFont('helvetica','normal'); let y=25; y=drawPdfTextLinesV23(doc, `${s.company_name||'WAPI-SYNDIK SPRL'}\n${s.company_address||''}\n${s.company_phone||''} · ${s.company_email||'info@wapi-syndik.be'}\n${s.vat_number||''}`,14,y,88,4);
+      doc.setTextColor(16,42,67); doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.text(isCredit?'NOTE DE CRÉDIT':'FACTURE',196,18,{align:'right'}); doc.setFontSize(11); doc.text(inv.invoice_number||'',196,27,{align:'right'}); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(`Date : ${v23Date(inv.invoice_date)}`,196,34,{align:'right'}); doc.text(`Échéance : ${v23Date(inv.due_date)}`,196,40,{align:'right'});
+      doc.setDrawColor(31,122,140); doc.setLineWidth(1); doc.line(14,48,196,48);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Facturé à',14,60); doc.text('Informations',112,60);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); drawPdfTextLinesV23(doc, `${copro.name||inv.customer_name||''}\n${copro.address||''}\n${copro.optipro_ref||''}`,14,66,78,4); drawPdfTextLinesV23(doc, `Type : ${v23BillingTypeLabel(inv.billing_type)}\nCompte : ${inv.account_code||''}\nRéférence : ${inv.invoice_number||''}`,112,66,78,4);
+      let ty=92; doc.setFillColor(16,42,67); doc.rect(14,ty,182,8,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.text('Description',17,ty+5.5); doc.text('Qté',132,ty+5.5); doc.text('HTVA',148,ty+5.5); doc.text('TVA',170,ty+5.5); ty+=12;
+      doc.setTextColor(23,32,51); doc.setFont('helvetica','normal'); ty=drawPdfTextLinesV23(doc, `${inv.description||'Facturation syndic'}${inv.notes?'\n'+inv.notes:''}`,17,ty,105,4); doc.text('1',134,104); doc.text(money(Math.abs(inv.amount_subtotal||0)).replace(' EUR',' €'),148,104); doc.text(`${Number(inv.vat_rate||0)}%`,170,104); doc.line(14,ty+2,196,ty+2);
+      let sy=ty+14; doc.setFont('helvetica','bold'); doc.text('Total HTVA',130,sy); doc.text(money(inv.amount_subtotal).replace(' EUR',' €'),196,sy,{align:'right'}); sy+=7; doc.text('TVA',130,sy); doc.text(money(inv.vat_amount).replace(' EUR',' €'),196,sy,{align:'right'}); sy+=7; doc.setFillColor(31,122,140); doc.rect(126,sy-5,70,9,'F'); doc.setTextColor(255); doc.text('Total TVAC',130,sy+1); doc.text(money(inv.amount_total).replace(' EUR',' €'),194,sy+1,{align:'right'});
+      doc.setTextColor(23,32,51); doc.setFont('helvetica','normal'); doc.setFontSize(9); drawPdfTextLinesV23(doc, `Paiement : ${s.iban||''} ${s.bic?' - '+s.bic:''}\nCommunication : ${inv.invoice_number||''}\nDocument optimisé OCR Clearfact / Winbooks.`,14,260,175,4);
+      return doc.output('blob');
+    }
+    async function exportSyndicInvoicesZipV23(ids){
+      const rows=(state.syndicInvoices||[]).filter(i=>ids.includes(i.id)); if(!rows.length) return alert('Aucune facture sélectionnée.'); if(!window.JSZip) return alert('JSZip non chargé.');
+      const zip=new JSZip();
+      for(const inv of rows){ const blob=await syndicInvoicePdfBlobV23(inv); zip.file(`${v23Slug(inv.invoice_number||inv.id)}_${v23Slug(v23BillingTypeLabel(inv.billing_type))}.pdf`, blob); }
+      const out=await zip.generateAsync({type:'blob'}); v23DownloadBlob(out, `factures_wapi_syndik_${new Date().toISOString().slice(0,10)}.zip`);
+    }
+    async function creditSyndicInvoiceV23(id){
+      const inv=(state.syndicInvoices||[]).find(i=>String(i.id)===String(id)); if(!inv) return; if(inv.billing_type==='credit_note'||inv.status==='credited') return alert('Cette facture est déjà annulée/créditée.');
+      if(!confirm('Une facture éditée ne sera pas supprimée. Une note de crédit va être créée pour annuler cette facture. Continuer ?')) return;
+      const number=await v23NextInvoiceNumber();
+      const payload={invoice_number:number,billing_type:'credit_note',related_invoice_id:inv.id,copro_id:inv.copro_id,customer_name:inv.customer_name,invoice_date:new Date().toISOString().slice(0,10),description:`Note de crédit sur ${inv.invoice_number||''} - ${inv.description||''}`,account_id:inv.account_id,account_code:inv.account_code,amount_subtotal:-Math.abs(Number(inv.amount_subtotal||0)),vat_rate:Number(inv.vat_rate||0),vat_amount:-Math.abs(Number(inv.vat_amount||0)),amount_total:-Math.abs(Number(inv.amount_total||0)),status:'issued',created_by:currentUser?.id||null};
+      const {error}=await supabaseClient.from('compta_syndic_invoices').insert(payload); if(error) return alert(error.message);
+      await supabaseClient.from('compta_syndic_invoices').update({status:'credited',credited_at:new Date().toISOString()}).eq('id',inv.id);
+      await loadSyndicBillingV23(); renderSyndicBillingV23(); alert('Note de crédit créée.');
+    }
+
+    // Envois V23 : la popup respecte strictement la sélection et permet des annexes dans tous les envois.
+    function v23SelectedCallRows(){
+      const ownerIds=new Set([...document.querySelectorAll('[data-owner-call-select]:checked')].map(x=>x.dataset.ownerCallSelect));
+      const groupKeys=[...document.querySelectorAll('[data-call-select]:checked')].map(x=>x.dataset.callSelect);
+      if(groupKeys.length){ (state.ownerCalls||[]).forEach(c=>{ if(groupKeys.includes(String(c.call_id||'')) || groupKeys.includes(String(c.call_id||c.id)) || groupKeys.includes(String(c.id))) ownerIds.add(c.id); }); }
+      return [...ownerIds].map(id=>(state.ownerCalls||[]).find(c=>String(c.id)===String(id))).filter(Boolean);
+    }
+    function v22CurrentCallRecipients(){
+      const calls=v23SelectedCallRows();
+      if(!calls.length) return [];
+      return calls.map(c=>({ owner:ownerForCallV20(c), owner_id:c.owner_id, copro:v22CoproById(c.copro_id), copro_id:c.copro_id, document_type:'owner_call', document_label:c.period_label||c.label||'Appel de provisions', period_label:c.period_label||c.label||'', amount:c.amount_due, due_date:c.due_date, source_type:'owner_call', source_id:c.id, metadata:{call_id:c.call_id, lot_id:c.lot_id} }));
+    }
+    function v22SettlementRecipients(selectedOnly=true){
+      const coproId=selectedSettlementCoproV17(); const yearId=selectedSettlementYearV17(coproId); let ownerIds=[];
+      ownerIds=[...document.querySelectorAll('[data-settlement-select]:checked')].map(x=>x.dataset.settlementSelect);
+      if(!ownerIds.length) return [];
+      const year=(state.fiscalYears||[]).find(y=>y.id===yearId);
+      return ownerIds.map(id=>({ owner:v22OwnerById(id), owner_id:id, copro:v22CoproById(coproId), copro_id:coproId, fiscal_year_id:yearId, document_type:'settlement', document_label:`Décompte ${year?.label||''}`, period_label:year?.label||'', source_type:'settlement', source_id:null }));
+    }
+    function v22ThirdBalanceRecipients(){
+      const rows = typeof rowsForCurrentThirdBalanceV11 === 'function' ? rowsForCurrentThirdBalanceV11() : thirdRowsFor($('thirdBalanceTypeFilter')?.value||'owners', scopedCoproId('thirdBalanceCoproFilter'), $('thirdBalanceYearFilter')?.value||'');
+      const selected=new Set([...document.querySelectorAll('[data-third-select]:checked')].map(x=>x.dataset.thirdSelect));
+      if(!selected.size) return [];
+      return rows.filter(r=>r.type==='owner' && selected.has(`${r.type}|${r.id}`)).map(r=>({ owner:v22OwnerById(r.id), owner_id:r.id, copro:v22CoproById(scopedCoproId('thirdBalanceCoproFilter') || v22OwnerById(r.id).copro_id), copro_id:scopedCoproId('thirdBalanceCoproFilter') || v22OwnerById(r.id).copro_id, document_type:'account_statement', document_label:'Situation de compte', source_type:'account_statement', source_id:null, third_row:r, amount:Math.abs(r.balance||0), metadata:{balance:r.balance} }));
+    }
+    function v22OpenSettlementSend(){ const rows=v22SettlementRecipients(true); if(!rows.length) return alert('Coche au moins un copropriétaire pour préparer l’envoi du décompte.'); v22OpenComposer({ title:'Préparer l’envoi des décomptes', documentType:'settlement', documentLabel:'Décompte', recipients:rows, allowAttachments:true }); }
+    function v22OpenCallsSend(){ const rows=v22CurrentCallRecipients(); if(!rows.length) return alert('Coche au moins un appel ou un copropriétaire pour préparer l’envoi.'); v22OpenComposer({ title:'Préparer l’envoi des appels', documentType:'owner_call', documentLabel:'Appel de provisions', recipients:rows, allowAttachments:true, onConfirm: async (rows)=>{ const now=v22Now(); for(const r of rows.filter(x=>x.source_id)){ await supabaseClient.from('compta_owner_calls').update({delivery_status:r.channel==='email'?'sent':'paper_ready', delivery_channel:r.channel, sent_at:r.channel==='email'?now:null}).eq('id', r.source_id); } }}); }
+    function v22OpenThirdBalanceSend(){ const rows=v22ThirdBalanceRecipients(); if(!rows.length) return alert('Coche au moins un copropriétaire dans la balance pour préparer l’envoi.'); v22OpenComposer({ title:'Préparer l’envoi des situations de compte', documentType:'account_statement', documentLabel:'Situation de compte', recipients:rows, allowAttachments:true }); }
+
+    const previousV22OpenComposerForV23 = v22OpenComposer;
+    v22OpenComposer = function(opts={}){
+      opts.allowAttachments = true;
+      previousV22OpenComposerForV23(opts);
+      setTimeout(()=>{
+        if(!$('v22ComposerFiles') && $('v22ComposerBody')){
+          const label=document.createElement('label'); label.style.gridColumn='1/-1'; label.className='mail-attachments-box'; label.innerHTML='Pièces jointes complémentaires <input id="v22ComposerFiles" type="file" multiple><div id="v23AttachmentList" class="muted-note">Aucune annexe ajoutée.</div>';
+          $('v22ComposerBody').closest('.form-grid')?.appendChild(label);
+        } else if($('v22ComposerFiles') && !$('v23AttachmentList')) {
+          $('v22ComposerFiles').insertAdjacentHTML('afterend','<div id="v23AttachmentList" class="muted-note">Aucune annexe ajoutée.</div>');
+        }
+        $('v22ComposerFiles')?.addEventListener('change',()=>{ const files=[...$('v22ComposerFiles').files]; $('v23AttachmentList').innerHTML=files.length ? files.map(f=>`<span class="mail-attachment-chip">📎 ${escapeHtml(f.name)}</span>`).join('') : 'Aucune annexe ajoutée.'; });
+      },0);
+    };
+    const previousV22CreateDeliveryLogsForV23 = v22CreateDeliveryLogs;
+    v22CreateDeliveryLogs = async function(rows, composer, modeOverride=''){
+      const files=[...($('v22ComposerFiles')?.files||[])].map(f=>({name:f.name,size:f.size,type:f.type||''}));
+      rows.forEach(r=>{ r.metadata=Object.assign({}, r.metadata||{}, {attachments:files}); });
+      return previousV22CreateDeliveryLogsForV23(rows, composer, modeOverride);
+    };
+    const previousV22PrintPaperFromComposerForV23 = v22PrintPaperFromComposer;
+    v22PrintPaperFromComposer = function(){
+      const files=[...($('v22ComposerFiles')?.files||[])];
+      if(files.length){ alert('Les annexes sont enregistrées dans la préparation d’envoi. L’intégration physique des pièces jointes au PDF courrier sera finalisée avec l’envoi réel/API ou le module serveur PDF.'); }
+      return previousV22PrintPaperFromComposerForV23();
+    };
+
+    async function deleteBudgetHeaderV23(id){
+      const b=(state.budgetHeaders||[]).find(x=>String(x.id)===String(id));
+      if(!b) return;
+      if(b.status==='validated') return alert('Budget validé : suppression refusée. Il faut créer une révision ou l’archiver pour conserver la cohérence des appels.');
+      if(hasCallsForBudgetContext?.(id)) return alert('Ce budget est lié à des appels. Suppression refusée.');
+      if(!confirm('Supprimer définitivement ce budget non validé ?')) return;
+      await supabaseClient.from('compta_budget_lines').delete().eq('budget_id', id);
+      const {error}=await supabaseClient.from('compta_budgets').delete().eq('id', id); if(error) return alert(error.message);
+      await loadAll();
+    }
+    const previousDeleteBudgetHeaderV113 = typeof deleteBudgetHeaderV113==='function' ? deleteBudgetHeaderV113 : null;
+    deleteBudgetHeaderV113 = deleteBudgetHeaderV23;
+
+    const previousRenderAllV23 = renderAll;
+    renderAll = function(){ previousRenderAllV23(); renderSyndicBillingV23(); };
+    document.addEventListener('click',(e)=>{
+      const b=e.target.closest?.('button'); if(!b) return;
+      if(b.dataset.v23SyndicTab){ state.syndicBillingTab=b.dataset.v23SyndicTab; setTimeout(renderSyndicBillingV23,0); }
+      if(b.dataset.syndicTab){ state.syndicBillingTab=b.dataset.syndicTab; renderSyndicBillingV23(); }
+      if(b.id==='refreshSyndicBillingBtn') loadSyndicBillingV23().then(renderSyndicBillingV23);
+      if(b.id==='newSyndicContractBtn'||b.id==='newSyndicContractBtn2') openSyndicContractModalV23();
+      if(b.id==='newSyndicInvoiceBtn') openOneOffSyndicInvoiceV23('service');
+      if(b.dataset.openOneoffInvoice) openOneOffSyndicInvoiceV23(b.dataset.openOneoffInvoice);
+      if(b.dataset.editSyndicContract) openSyndicContractModalV23(b.dataset.editSyndicContract);
+      if(b.id==='saveSyndicContractBtn') saveSyndicContractV23(b.dataset.contractId||'');
+      if(b.dataset.deleteSyndicContract) deleteSyndicContractV23(b.dataset.deleteSyndicContract);
+      if(b.dataset.generateSyndicContract) generateSyndicContractInvoicesV23(b.dataset.generateSyndicContract);
+      if(b.id==='saveOneOffSyndicInvoiceBtn') saveOneOffSyndicInvoiceV23();
+      if(b.id==='saveSyndicSettingsBtn') saveSyndicSettingsV23();
+      if(b.dataset.previewSyndicInvoice) previewSyndicInvoiceV23(b.dataset.previewSyndicInvoice);
+      if(b.dataset.creditSyndicInvoice) creditSyndicInvoiceV23(b.dataset.creditSyndicInvoice);
+      if(b.id==='exportSyndicSelectedBtn'){ const ids=[...document.querySelectorAll('[data-syndic-invoice-select]:checked')].map(x=>x.dataset.syndicInvoiceSelect); exportSyndicInvoicesZipV23(ids); }
+      if(b.id==='exportSyndicAllBtn'){ const ids=[...document.querySelectorAll('[data-syndic-invoice-select]')].map(x=>x.dataset.syndicInvoiceSelect); exportSyndicInvoicesZipV23(ids); }
+    });
+    document.addEventListener('change',(e)=>{
+      if(e.target?.id==='syndicInvoiceCoproFilter'){ state.syndicInvoiceFilters.copro=e.target.value; renderSyndicInvoicesV23(); }
+      if(e.target?.id==='syndicInvoiceTypeFilter'){ state.syndicInvoiceFilters.type=e.target.value; renderSyndicInvoicesV23(); }
+    });
+    document.addEventListener('input',(e)=>{ if(e.target?.id==='syndicInvoiceSearch'){ state.syndicInvoiceFilters.search=e.target.value; renderSyndicInvoicesV23(); } });
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
   </script>
