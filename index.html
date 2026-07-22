@@ -1454,6 +1454,18 @@
     @media(max-width:1100px){.settlement-layout{grid-template-columns:1fr}.settlement-dashboard{grid-template-columns:1fr 1fr}.invoice-extra-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
+
+    /* ---- V20 : envoi appels multi-copro + PDF plus professionnels ---- */
+    .dispatch-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .dispatch-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
+    .dispatch-metric span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800}.dispatch-metric strong{display:block;color:var(--brand);font-size:22px;margin-top:5px}
+    .dispatch-group{border:1px solid var(--line);border-radius:18px;background:#fff;margin:14px 0;overflow:hidden;box-shadow:0 12px 28px rgba(15,23,42,.04)}
+    .dispatch-group-head{display:grid;grid-template-columns:34px 1.5fr .8fr .8fr .8fr auto;gap:12px;align-items:center;padding:14px 16px;background:linear-gradient(135deg,#f4fbfd,#fff);border-bottom:1px solid #e6eef5}
+    .dispatch-group-head h3{margin:0;color:var(--brand-dark);font-size:16px}.dispatch-group-head small{display:block;color:var(--muted);margin-top:3px}
+    .dispatch-details{display:none;padding:0 16px 16px}.dispatch-group.open .dispatch-details{display:block}.dispatch-recipient-row--mail{background:#fbfffc}.dispatch-recipient-row--paper{background:#fffaf5}.dispatch-recipient-row--sent{opacity:.68;background:#f8fafc}.dispatch-channel-mail{color:#157347;font-weight:900}.dispatch-channel-paper{color:#b45309;font-weight:900}.dispatch-warning{color:#b42318;font-weight:800}.dispatch-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}.dispatch-package-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px}.dispatch-package-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fbfdfe}.dispatch-package-card strong{display:block;font-size:20px;color:var(--brand)}
+    @media(max-width:1050px){.dispatch-group-head{grid-template-columns:34px 1fr;align-items:start}.dispatch-actions{justify-content:flex-start}.dispatch-dashboard,.dispatch-package-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:700px){.dispatch-dashboard,.dispatch-package-grid{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -1533,6 +1545,7 @@
             <button data-view="processing" data-title="Centre de traitement" title="Centre de traitement"><span class="nav__item"><span class="nav-icon">📥</span><span class="nav-label">Centre de traitement</span></span></button>
             <button data-view="invoiceOcr" data-title="Traitement factures OCR" title="Traitement factures OCR"><span class="nav__item"><span class="nav-icon">🔎</span><span class="nav-label">Traitement factures OCR</span></span></button>
             <button data-view="payments" data-title="Paiement factures" title="Paiement factures"><span class="nav__item"><span class="nav-icon">💳</span><span class="nav-label">Paiement factures</span></span></button>
+            <button data-view="callDispatch" data-title="Envoi appels de provisions" title="Envoi appels de provisions"><span class="nav__item"><span class="nav-icon">📨</span><span class="nav-label">Envoi appels</span></span></button>
             <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
           </div>
         </div>
@@ -1759,6 +1772,34 @@
             </div>
             <div class="summary-line" id="paymentSummary"></div>
             <div id="paymentsTable"></div>
+          </div>
+        </section>
+
+
+        <section id="callDispatchView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <div>
+                <h2>Envoi appels de provisions</h2>
+                <p class="muted-note">Pilotage multi-copropriété des appels comptabilisés : sélection, préparation e-mail et PDF courrier pour les copropriétaires sans adresse e-mail.</p>
+              </div>
+              <div class="top-actions">
+                <button class="btn secondary" id="refreshCallDispatchBtn" type="button">Rafraîchir</button>
+                <button class="btn secondary" id="selectAllVisibleCallDispatchBtn" type="button">Tout cocher visible</button>
+                <button class="btn" id="prepareCallDispatchBtn" type="button">Préparer l’envoi</button>
+              </div>
+            </div>
+            <div class="notice">Ce module reprend uniquement les appels comptabilisés. Les copropriétaires avec e-mail sont préparés pour l’envoi électronique. Ceux sans e-mail basculent automatiquement en PDF courrier.</div>
+            <div class="list-filters">
+              <label>Copropriété <select id="callDispatchCoproFilter"></select></label>
+              <label>Type <select id="callDispatchTypeFilter"><option value="provisions">Provisions sur charges</option><option value="all">Tous les appels</option><option value="reserve">Fonds de réserve</option><option value="working_fund">Fonds de roulement</option><option value="extraordinary">Extraordinaire</option></select></label>
+              <label>Du <input id="callDispatchFrom" type="date"></label>
+              <label>Au <input id="callDispatchTo" type="date"></label>
+              <label>Statut envoi <select id="callDispatchStatusFilter"><option value="to_send">À envoyer</option><option value="sent">Envoyés</option><option value="all">Tous</option></select></label>
+              <label>Recherche <input id="callDispatchSearch" placeholder="Copropriété, copropriétaire, période..."></label>
+            </div>
+            <div id="callDispatchSummary" class="dispatch-dashboard"></div>
+            <div id="callDispatchTable"></div>
           </div>
         </section>
 
@@ -9452,6 +9493,181 @@
         if (head && !head.querySelector('.badge.v19')) head.insertAdjacentHTML('beforeend', '<span class="badge v19">OCR renforcé V19</span>');
       }
     };
+
+
+    // ---- V20 : suppression budgets brouillons + module envoi appels multi-copro + PDF pros ----
+    state.callDispatchSelectedIds = state.callDispatchSelectedIds || new Set();
+    state.callDispatchFilters = state.callDispatchFilters || { copro:'', type:'provisions', from:'', to:'', status:'to_send', search:'' };
+
+    function ownerEmailV20(owner){ return String(owner?.email || owner?.mail || owner?.primary_email || '').trim(); }
+    function ownerForCallV20(call){ return state.owners.find((o)=>o.id===call.owner_id) || call.compta_owners || { display_name:'' }; }
+    function ownerNameV20(owner){ return owner?.display_name || owner?.name || 'Copropriétaire'; }
+    function callDeliveryStatusV20(call){ return call.delivery_status || call.send_status || call.email_status || 'to_send'; }
+    function callDeliveryChannelV20(call){ const owner=ownerForCallV20(call); return ownerEmailV20(owner) ? 'email' : 'paper'; }
+    function ownerFullAddressLinesV20(owner){
+      const lines=[];
+      if(ownerNameV20(owner)) lines.push(ownerNameV20(owner));
+      const addr = owner?.address || owner?.street || owner?.postal_address || owner?.billing_address || '';
+      if(addr) lines.push(addr);
+      const zipCity=[owner?.postal_code || owner?.zip || '', owner?.city || ''].filter(Boolean).join(' ');
+      if(zipCity) lines.push(zipCity);
+      if(!addr && !zipCity) lines.push('Adresse à compléter');
+      return lines;
+    }
+    function addressBlockHtmlV20(owner){ return ownerFullAddressLinesV20(owner).map(escapeHtml).join('<br>'); }
+    function formatDateV20(v){ if(!v) return ''; try{return new Date(String(v).slice(0,10)+'T00:00:00').toLocaleDateString('fr-BE');}catch(e){return v;} }
+    function compactMoneyV20(v){ return Number(v||0).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+    function sanitizeNameV20(s){ return String(s||'document').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9_-]+/gi,'_').replace(/^_+|_+$/g,'').slice(0,80) || 'document'; }
+
+    function budgetDeleteAllowedV20(header){ return header && String(header.status || 'draft') !== 'validated'; }
+    deleteBudgetHeaderV113 = async function(headerId){
+      const header = state.budgetHeaders.find((b)=>b.id===headerId);
+      if(!header) return;
+      if(!budgetDeleteAllowedV20(header)) return alert('Ce budget est validé. Pour éviter une incohérence avec les appels, seuls les budgets non validés peuvent être supprimés.');
+      if(!confirm(`Supprimer définitivement le budget non validé "${header.label || 'Budget'}" et toutes ses lignes ?`)) return;
+      const { error: lineError } = await supabaseClient.from('compta_budget_lines').delete().eq('budget_id', headerId);
+      if(lineError) return alert(lineError.message);
+      const { error } = await supabaseClient.from('compta_budgets').delete().eq('id', headerId);
+      if(error) return alert(error.message);
+      state.selectedBudgetHeaderId = '';
+      await loadBudgetHeaders();
+      await loadBudgetLines();
+      renderBudgets();
+    };
+
+    function pdfCssAgV16(){ return `@page{size:A4;margin:14mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Century Gothic,Arial,sans-serif;color:#172033;background:white;font-size:11.2px;line-height:1.34}.page{position:relative;min-height:267mm;padding:0 0 12mm 0;break-inside:avoid;page-break-inside:avoid}.page:not(:last-child){break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}.brandbar{height:7px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:14px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:12px;margin-bottom:14px}.logo{font-size:23px;color:#1f7a8c;font-weight:900;letter-spacing:.02em}.agency{font-size:10px;color:#475569;line-height:1.32}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:21px}.doc-title strong{display:block;margin-top:4px;color:#172033}.window-address{position:absolute;right:11mm;top:40mm;width:86mm;min-height:34mm;border:0;padding:0;font-size:11.8px;line-height:1.42;color:#111827;font-weight:700;text-align:left}.with-window-space{padding-top:54mm}.intro{font-size:12.3px;line-height:1.5}.muted{color:#667085}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.meta,.box{border:1px solid #d9e6ec;border-radius:12px;padding:9px;background:#fbfdfe}.box{margin-top:10px}.meta span{display:block;color:#667085;font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:.04em}.meta strong{display:block;margin-top:3px;font-size:12.5px}h1,h2,h3{color:#14586a}h2{font-size:16px;margin:0 0 8px}.agenda-list{counter-reset:item;margin:0;padding:0;list-style:none}.agenda-list li{counter-increment:item;border-bottom:1px solid #e6eef5;padding:7px 0;break-inside:avoid;page-break-inside:avoid}.agenda-list li:before{content:counter(item);display:inline-flex;width:23px;height:23px;border-radius:8px;background:#eaf7fa;color:#14586a;align-items:center;justify-content:center;font-weight:900;margin-right:8px}.agenda-title{font-weight:900}.agenda-desc{display:block;margin-left:34px;margin-top:2px;color:#475569;line-height:1.32}.proxy-box{border:2px solid #1f7a8c;border-radius:16px;padding:15px;margin-top:10px}.line{border-bottom:1px dotted #6b7280;height:24px;margin:7px 0}.sign{height:58px;border-bottom:1px solid #94a3b8;margin-top:16px}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:6px;color:#64748b;font-size:9px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin-top:7px;font-size:9.8px}td,th{padding:4.4px 5px;border-bottom:1px solid #e6eef5;text-align:left;vertical-align:top}th{background:#f2f7fa;color:#14586a}.amount{text-align:right;white-space:nowrap}.vote-yes{color:#146c2e;font-weight:900}.vote-no{color:#991b1b;font-weight:900}.vote-abstain{color:#92400e;font-weight:900}.result{display:inline-block;border-radius:999px;padding:3px 8px;font-weight:900}.result.ok{background:#dff7e8;color:#146c2e}.result.no{background:#fde2e2;color:#991b1b}.quorum-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.pill{border:1px solid #d9e6ec;border-radius:12px;padding:8px;background:#fbfdfe}.pill span{display:block;color:#667085;font-size:8.8px;text-transform:uppercase;font-weight:800}.pill strong{font-size:14px;color:#14586a}.pv-point{border:1px solid #d9e6ec;border-radius:12px;padding:9px;margin:7px 0;break-inside:avoid;page-break-inside:avoid}.pv-point h3{font-size:13px;margin:0 0 5px}.pv-point-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.names{font-size:9px;color:#475569}.annex-img{width:100%;height:auto;max-height:250mm;object-fit:contain;display:block;margin:0 auto}.compact-section{break-inside:avoid;page-break-inside:avoid}.settlement-cover-total{font-size:24px;font-weight:900;color:#1f7a8c}.settlement-pay{border:2px solid #1f7a8c;border-radius:14px;padding:12px;margin-top:10px;background:#f7fdff}.debit{color:#b42318}.credit{color:#157347}@media print{.page:not(:last-child){page-break-after:always}.page:last-child{page-break-after:auto}.pv-point,.compact-section,tr{page-break-inside:avoid;break-inside:avoid}}`; }
+    function agWindowAddressV16(owner){ return `<div class="window-address">${ownerAddressBlockV16 ? ownerAddressBlockV16(owner) : addressBlockHtmlV20(owner)}</div>`; }
+
+    function callPdfCssV20(){ return `@page{size:A4;margin:14mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Century Gothic,Arial,sans-serif;color:#172033;background:#fff;font-size:11.4px;line-height:1.35}.page{position:relative;min-height:267mm;padding:0 0 12mm 0;page-break-after:always}.page:last-child{page-break-after:auto}.brandbar{height:7px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:14px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:12px;margin-bottom:14px}.logo{font-size:23px;color:#1f7a8c;font-weight:900}.agency{font-size:10px;color:#475569;line-height:1.32}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:21px}.doc-title strong{display:block;margin-top:4px}.window-address{position:absolute;right:11mm;top:40mm;width:86mm;min-height:34mm;font-weight:700;line-height:1.42;font-size:11.8px}.with-window-space{padding-top:54mm}.box{border:1px solid #d9e6ec;border-radius:13px;padding:11px;background:#fbfdfe;margin-top:10px}.meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.meta{border:1px solid #d9e6ec;border-radius:12px;padding:9px;background:#fbfdfe}.meta span{display:block;color:#667085;font-size:9px;text-transform:uppercase;font-weight:800}.meta strong{display:block;margin-top:3px;font-size:13px}.amount-box{border:2px solid #1f7a8c;border-radius:16px;padding:14px;background:#f7fdff;margin-top:12px;display:flex;justify-content:space-between;align-items:center}.amount-box strong{font-size:26px;color:#14586a}table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.2px}th{background:#f2f7fa;color:#14586a;text-align:left;font-weight:900}td,th{padding:6px;border-bottom:1px solid #e6eef5;vertical-align:top}.amount{text-align:right;white-space:nowrap}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:6px;color:#64748b;font-size:9px;display:flex;justify-content:space-between}.payment-ref{font-size:15px;font-weight:900;color:#14586a;background:#eaf7fa;border-radius:10px;padding:8px;display:inline-block}@media print{.page{page-break-after:always}.page:last-child{page-break-after:auto}tr{page-break-inside:avoid}}`; }
+    function callPdfHeaderV20(title, copro){ return `<div class="brandbar"></div><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div class="agency">RUE DE MENIN 400 - BOULEVARD DU ROI ALBERT 42-44<br>7700 - 7500 MOUSCRON-TOURNAI<br>TÉL. 056/85.00.85 - 069/64.69.60<br>info@wapi-syndik.be</div></div><div class="doc-title"><h1>${escapeHtml(title)}</h1><strong>${escapeHtml(copro || '')}</strong><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>`; }
+    function callPdfFooterV20(label){ return `<div class="footer"><span>WAPI-SYNDIK SPRL</span><span>${escapeHtml(label || '')}</span></div>`; }
+    function communicationForCallV20(call, owner){ return call.payment_reference || call.communication || call.structured_communication || owner?.structured_communication || owner?.reference || ''; }
+
+    function groupOwnerCallsForPdfV20(calls){
+      const map=new Map();
+      calls.forEach((c)=>{ const key=(c.call_id||c.label||c.due_date||'call')+'|'+(c.owner_id||'owner'); if(!map.has(key)) map.set(key,[]); map.get(key).push(c); });
+      return Array.from(map.values());
+    }
+    function callPageHtmlV20(group){
+      const first=group[0];
+      const copro=state.copros.find((x)=>x.id===first.copro_id) || first.compta_copros || {};
+      const owner=ownerForCallV20(first);
+      const total=group.reduce((s,c)=>s+Number(c.amount_due||0),0);
+      const ref=communicationForCallV20(first, owner);
+      const bank=bankForCoproV121 ? bankForCoproV121(first.copro_id) : (state.bankAccounts||[]).find(b=>b.copro_id===first.copro_id);
+      return `<section class="page">${callPdfHeaderV20('Appel de provisions', copro.name || '')}<div class="window-address">${addressBlockHtmlV20(owner)}</div><div class="with-window-space"><p>Madame, Monsieur,</p><p>Veuillez trouver ci-dessous l'appel de provisions relatif à votre copropriété.</p><div class="meta-grid"><div class="meta"><span>Copropriétaire</span><strong>${escapeHtml(ownerNameV20(owner))}</strong></div><div class="meta"><span>Échéance</span><strong>${formatDateV20(first.due_date)}</strong></div><div class="meta"><span>Période</span><strong>${escapeHtml(first.period_label || first.label || '')}</strong></div><div class="meta"><span>Copropriété</span><strong>${escapeHtml(copro.name || '')}</strong></div></div><table><thead><tr><th>Lot</th><th>Libellé</th><th class="amount">Montant</th></tr></thead><tbody>${group.map(c=>`<tr><td>${escapeHtml(c.compta_lots?.lot_number || '')}</td><td>${escapeHtml(c.label || first.period_label || 'Appel')}</td><td class="amount">${compactMoneyV20(c.amount_due)}</td></tr>`).join('')}</tbody></table><div class="amount-box"><span>Montant à payer</span><strong>${compactMoneyV20(total)}</strong></div><div class="box"><p><strong>Coordonnées de paiement</strong></p><p>Compte de la copropriété : <strong>${escapeHtml(bank?.iban || 'IBAN à compléter')}</strong>${bank?.bic ? ' — BIC : <strong>'+escapeHtml(bank.bic)+'</strong>' : ''}</p>${ref ? `<p>Communication : <span class="payment-ref">${escapeHtml(ref)}</span></p>` : '<p>Communication : votre référence copropriétaire.</p>'}</div></div>${callPdfFooterV20('Appel de provisions')}</section>`;
+    }
+    function printOwnerCallsV11(ids, title='Appels de provisions'){
+      const calls=ids.map((id)=>state.ownerCalls.find((c)=>c.id===id)).filter(Boolean);
+      if(!calls.length) return alert('Aucun copropriétaire sélectionné.');
+      const pages=groupOwnerCallsForPdfV20(calls).map(callPageHtmlV20).join('');
+      const win=window.open('','_blank');
+      win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>${callPdfCssV20()}</style></head><body>${pages}<script>window.print();<\/script></body></html>`);
+      win.document.close();
+    }
+
+    function callDispatchFiltersReadV20(){
+      const f=state.callDispatchFilters || {};
+      f.copro=$('callDispatchCoproFilter')?.value || f.copro || '';
+      f.type=$('callDispatchTypeFilter')?.value || f.type || 'provisions';
+      f.from=$('callDispatchFrom')?.value || '';
+      f.to=$('callDispatchTo')?.value || '';
+      f.status=$('callDispatchStatusFilter')?.value || f.status || 'to_send';
+      f.search=($('callDispatchSearch')?.value || '').toLowerCase().trim();
+      state.callDispatchFilters=f;
+      return f;
+    }
+    function callDispatchRowsV20(){
+      const f=callDispatchFiltersReadV20();
+      return (state.ownerCalls || []).filter((c)=>{
+        if(ownerCallAccountingStatus && ownerCallAccountingStatus(c)!=='accounted') return false;
+        if(f.copro && c.copro_id!==f.copro) return false;
+        if(f.type && f.type!=='all' && (c.call_type || 'provisions')!==f.type) return false;
+        const d=String(c.due_date || c.call_date || '').slice(0,10);
+        if(f.from && d < f.from) return false;
+        if(f.to && d > f.to) return false;
+        const sent = callDeliveryStatusV20(c)==='sent';
+        if(f.status==='to_send' && sent) return false;
+        if(f.status==='sent' && !sent) return false;
+        if(f.search){
+          const owner=ownerForCallV20(c); const copro=coproById ? coproById(c.copro_id) : state.copros.find(x=>x.id===c.copro_id);
+          const corpus=[ownerNameV20(owner), ownerEmailV20(owner), copro?.name, c.label, c.period_label, c.due_date, c.amount_due].join(' ').toLowerCase();
+          if(!corpus.includes(f.search)) return false;
+        }
+        return true;
+      });
+    }
+    function groupCallDispatchV20(rows){
+      const map=new Map();
+      rows.forEach((c)=>{ const key=c.call_id || `${c.copro_id}|${c.period_label}|${c.due_date}|${c.label}`; if(!map.has(key)) map.set(key,[]); map.get(key).push(c); });
+      return Array.from(map.entries()).sort((a,b)=>String(a[1][0].due_date||'').localeCompare(String(b[1][0].due_date||'')) || String(a[1][0].compta_copros?.name||'').localeCompare(String(b[1][0].compta_copros?.name||'')));
+    }
+    function selectedDispatchIdsV20(){ if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(Array.from(state.callDispatchSelectedIds||[])); return Array.from(state.callDispatchSelectedIds); }
+    function renderCallDispatchV20(){
+      if(!$('callDispatchTable')) return;
+      if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(Array.from(state.callDispatchSelectedIds||[]));
+      const f=state.callDispatchFilters || {type:'provisions',status:'to_send'};
+      $('callDispatchCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+(state.copros||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('callDispatchCoproFilter').value=f.copro||''; $('callDispatchTypeFilter').value=f.type||'provisions'; $('callDispatchFrom').value=f.from||''; $('callDispatchTo').value=f.to||''; $('callDispatchStatusFilter').value=f.status||'to_send'; $('callDispatchSearch').value=f.search||'';
+      const rows=callDispatchRowsV20(); const visible=new Set(rows.map(r=>r.id)); Array.from(state.callDispatchSelectedIds).forEach(id=>{ if(!visible.has(id)) state.callDispatchSelectedIds.delete(id); });
+      const mail=rows.filter(c=>ownerEmailV20(ownerForCallV20(c))).length; const paper=rows.length-mail; const selected=rows.filter(c=>state.callDispatchSelectedIds.has(c.id));
+      $('callDispatchSummary').innerHTML=`<div class="dispatch-metric"><span>Appels visibles</span><strong>${rows.length}</strong></div><div class="dispatch-metric"><span>Montant visible</span><strong>${money(rows.reduce((s,c)=>s+Number(c.amount_due||0),0))}</strong></div><div class="dispatch-metric"><span>E-mail</span><strong>${mail}</strong></div><div class="dispatch-metric"><span>Courrier</span><strong>${paper}</strong></div>`;
+      const groups=groupCallDispatchV20(rows);
+      $('callDispatchTable').innerHTML=groups.map(([key,arr])=>{
+        const first=arr[0], copro=state.copros.find(x=>x.id===first.copro_id)||first.compta_copros||{};
+        const subtotal=arr.reduce((s,c)=>s+Number(c.amount_due||0),0); const mailCount=arr.filter(c=>ownerEmailV20(ownerForCallV20(c))).length; const paperCount=arr.length-mailCount; const sentCount=arr.filter(c=>callDeliveryStatusV20(c)==='sent').length; const allChecked=arr.every(c=>state.callDispatchSelectedIds.has(c.id));
+        return `<div class="dispatch-group" data-dispatch-group="${escapeHtml(key)}"><div class="dispatch-group-head"><input type="checkbox" data-dispatch-group-check="${escapeHtml(key)}" ${allChecked?'checked':''}><div><h3>${escapeHtml(copro.name||'Copropriété')}</h3><small>${escapeHtml(first.period_label||first.label||'Appel')} · Échéance ${formatDateV20(first.due_date)}</small></div><div><strong>${arr.length}</strong><small>ligne(s)</small></div><div><strong>${money(subtotal)}</strong><small>montant</small></div><div><span class="dispatch-channel-mail">${mailCount} mail</span><br><span class="dispatch-channel-paper">${paperCount} courrier</span>${sentCount?`<br><span class="badge ok">${sentCount} envoyé(s)</span>`:''}</div><div class="dispatch-actions"><button class="btn secondary small" type="button" data-print-dispatch-group="${escapeHtml(key)}">PDF groupe</button><button class="btn secondary small" type="button" data-toggle-dispatch-group="${escapeHtml(key)}">Détails</button></div></div><div class="dispatch-details"><div class="table-wrap"><table><thead><tr><th></th><th>Copropriétaire</th><th>Lot</th><th>E-mail</th><th>Montant</th><th>Canal</th><th>Statut</th></tr></thead><tbody>${arr.map(c=>{ const owner=ownerForCallV20(c); const email=ownerEmailV20(owner); const selected=state.callDispatchSelectedIds.has(c.id); const channel=email?'email':'paper'; const sent=callDeliveryStatusV20(c)==='sent'; return `<tr class="${sent?'dispatch-recipient-row--sent':channel==='email'?'dispatch-recipient-row--mail':'dispatch-recipient-row--paper'}"><td><input class="call-dispatch-check" type="checkbox" data-dispatch-call="${c.id}" ${selected?'checked':''}></td><td>${escapeHtml(ownerNameV20(owner))}</td><td>${escapeHtml(c.compta_lots?.lot_number||'')}</td><td>${email?escapeHtml(email):'<span class="dispatch-warning">Adresse mail manquante</span>'}</td><td><strong>${money(c.amount_due)}</strong></td><td>${channel==='email'?'<span class="dispatch-channel-mail">E-mail</span>':'<span class="dispatch-channel-paper">Courrier</span>'}</td><td>${sent?'<span class="badge ok">Envoyé</span>':'<span class="badge warn">À envoyer</span>'}</td></tr>`; }).join('')}</tbody></table></div></div></div>`;
+      }).join('') || '<div class="notice">Aucun appel comptabilisé correspondant aux filtres.</div>';
+    }
+
+    function dispatchSelectedCallsV20(){ return selectedDispatchIdsV20().map(id=>state.ownerCalls.find(c=>c.id===id)).filter(Boolean); }
+    function openCallDispatchPrepareModalV20(){
+      const calls=dispatchSelectedCallsV20(); if(!calls.length) return alert('Coche au moins un appel.');
+      const emailCalls=calls.filter(c=>ownerEmailV20(ownerForCallV20(c))); const paperCalls=calls.filter(c=>!ownerEmailV20(ownerForCallV20(c)));
+      const body=`<div class="popup-form"><div class="dispatch-package-grid"><div class="dispatch-package-card"><span>Total sélection</span><strong>${calls.length}</strong><div>${money(calls.reduce((s,c)=>s+Number(c.amount_due||0),0))}</div></div><div class="dispatch-package-card"><span>Par e-mail</span><strong>${emailCalls.length}</strong><div>${emailCalls.length ? 'Prêt pour envoi électronique' : 'Aucun'}</div></div><div class="dispatch-package-card"><span>Par courrier</span><strong>${paperCalls.length}</strong><div>${paperCalls.length ? 'PDF courrier générable automatiquement' : 'Aucun'}</div></div></div><div class="notice"><strong>Envoi e-mail :</strong> le module prépare les destinataires et le dossier d’envoi. L’envoi automatique réel demandera la configuration d’un serveur mail/API. Les copropriétaires sans e-mail basculent automatiquement dans le PDF courrier.</div><div class="table-wrap"><table><thead><tr><th>Copropriétaire</th><th>E-mail</th><th>Montant</th><th>Canal</th></tr></thead><tbody>${calls.map(c=>{const o=ownerForCallV20(c), email=ownerEmailV20(o);return `<tr><td>${escapeHtml(ownerNameV20(o))}</td><td>${email?escapeHtml(email):'<span class="dispatch-warning">Courrier</span>'}</td><td>${money(c.amount_due)}</td><td>${email?'E-mail':'Courrier'}</td></tr>`}).join('')}</tbody></table></div></div>`;
+      openAppModal('Préparer l’envoi des appels', body, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn secondary" id="downloadCallDispatchZipBtn" type="button">Dossier ZIP</button><button class="btn secondary" id="printPaperCallDispatchBtn" type="button">PDF courrier</button><button class="btn" id="markCallDispatchSentBtn" type="button">Marquer comme envoyé</button>`, {size:'wide'});
+    }
+    async function downloadCallDispatchZipV20(){
+      const calls=dispatchSelectedCallsV20(); if(!calls.length) return alert('Aucun appel sélectionné.'); if(!window.JSZip) return alert('JSZip n’est pas chargé.');
+      const zip=new JSZip(); const batch=`APPELS-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}`;
+      const csv=['copro;proprietaire;email;canal;date_echeance;libelle;montant'];
+      calls.forEach(c=>{ const o=ownerForCallV20(c), copro=state.copros.find(x=>x.id===c.copro_id)||{}; const email=ownerEmailV20(o); csv.push([copro.name||'',ownerNameV20(o),email,email?'email':'courrier',c.due_date||'',c.label||'',String(c.amount_due||0).replace('.',',')].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')); });
+      zip.file('liste_envoi_appels.csv', csv.join('\n'));
+      const grouped=groupOwnerCallsForPdfV20(calls); grouped.forEach((group)=>{ const first=group[0]; const owner=ownerForCallV20(first); zip.file(`appels_html/${sanitizeNameV20(ownerNameV20(owner))}_${sanitizeNameV20(first.period_label||first.label||'appel')}.html`, `<!doctype html><html><head><meta charset="utf-8"><style>${callPdfCssV20()}</style></head><body>${callPageHtmlV20(group)}</body></html>`); });
+      const blob=await zip.generateAsync({type:'blob'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${batch}_dossier_envoi_appels.zip`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    function printPaperCallDispatchV20(){ const ids=dispatchSelectedCallsV20().filter(c=>!ownerEmailV20(ownerForCallV20(c))).map(c=>c.id); if(!ids.length) return alert('Aucun copropriétaire sans e-mail dans la sélection.'); printOwnerCallsV11(ids,'Appels courrier'); }
+    async function markCallDispatchSentV20(){
+      const calls=dispatchSelectedCallsV20(); if(!calls.length) return alert('Aucun appel sélectionné.'); if(!confirm('Marquer ces appels comme envoyés ?')) return;
+      const batch=`APPELS-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}`; const now=new Date().toISOString();
+      const ids=calls.map(c=>c.id);
+      const { error } = await supabaseClient.from('compta_owner_calls').update({delivery_status:'sent', delivery_channel:'auto', sent_at:now, sent_batch_ref:batch}).in('id', ids);
+      if(error) return alert('Impossible de marquer les appels comme envoyés. As-tu bien exécuté la migration V20 ? ' + error.message);
+      try{ await supabaseClient.from('compta_call_send_batches').insert({batch_ref:batch, status:'prepared', selected_count:calls.length, email_count:calls.filter(c=>ownerEmailV20(ownerForCallV20(c))).length, paper_count:calls.filter(c=>!ownerEmailV20(ownerForCallV20(c))).length, created_by:currentUser.id}); }catch(e){}
+      closeAppModal(); state.callDispatchSelectedIds.clear(); await loadAll(); switchToView('callDispatch'); alert('Appels marqués comme envoyés.');
+    }
+
+    const previousRenderAllV20 = renderAll;
+    renderAll = function(){ previousRenderAllV20(); renderCallDispatchV20(); };
+
+    document.addEventListener('click',(e)=>{
+      const t=e.target;
+      if(t?.id==='refreshCallDispatchBtn') renderCallDispatchV20();
+      if(t?.id==='selectAllVisibleCallDispatchBtn'){ state.callDispatchSelectedIds=new Set(callDispatchRowsV20().map(c=>c.id)); renderCallDispatchV20(); }
+      if(t?.id==='prepareCallDispatchBtn') openCallDispatchPrepareModalV20();
+      if(t?.id==='downloadCallDispatchZipBtn') downloadCallDispatchZipV20();
+      if(t?.id==='printPaperCallDispatchBtn') printPaperCallDispatchV20();
+      if(t?.id==='markCallDispatchSentBtn') markCallDispatchSentV20();
+      if(t?.dataset?.toggleDispatchGroup){ const group=t.closest('.dispatch-group'); if(group) group.classList.toggle('open'); }
+      if(t?.dataset?.printDispatchGroup){ const key=t.dataset.printDispatchGroup; const group=groupCallDispatchV20(callDispatchRowsV20()).find(([k])=>String(k)===String(key)); if(group) printOwnerCallsV11(group[1].map(c=>c.id),'Appels groupe'); }
+    });
+    document.addEventListener('change',(e)=>{
+      const id=e.target?.id;
+      if(['callDispatchCoproFilter','callDispatchTypeFilter','callDispatchFrom','callDispatchTo','callDispatchStatusFilter'].includes(id)){ callDispatchFiltersReadV20(); renderCallDispatchV20(); }
+      if(e.target?.classList?.contains('call-dispatch-check')){ if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(); if(e.target.checked) state.callDispatchSelectedIds.add(e.target.dataset.dispatchCall); else state.callDispatchSelectedIds.delete(e.target.dataset.dispatchCall); renderCallDispatchV20(); }
+      if(e.target?.dataset?.dispatchGroupCheck){ const key=e.target.dataset.dispatchGroupCheck; const group=groupCallDispatchV20(callDispatchRowsV20()).find(([k])=>String(k)===String(key)); if(group){ group[1].forEach(c=> e.target.checked ? state.callDispatchSelectedIds.add(c.id) : state.callDispatchSelectedIds.delete(c.id)); renderCallDispatchV20(); } }
+    });
+    document.addEventListener('input',(e)=>{ if(e.target?.id==='callDispatchSearch'){ callDispatchFiltersReadV20(); renderCallDispatchV20(); } });
 
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
