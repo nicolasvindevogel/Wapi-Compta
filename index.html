@@ -1475,6 +1475,22 @@
     @media(max-width:1050px){.dispatch-group-head{grid-template-columns:34px 1fr;align-items:start}.dispatch-actions{justify-content:flex-start}.dispatch-dashboard,.dispatch-package-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:700px){.dispatch-dashboard,.dispatch-package-grid{grid-template-columns:1fr}}
 
+
+
+    /* ---- V22 : envois mail intégrés, J’informe et modèles e-mail ---- */
+    .mail-composer-grid{display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1.15fr);gap:16px;align-items:start}
+    .mail-composer-card{border:1px solid var(--line);border-radius:18px;background:#fff;padding:14px;box-shadow:0 10px 28px rgba(15,23,42,.04)}
+    .mail-composer-card h3{margin:0 0 10px;color:var(--brand)}
+    .mail-composer-card textarea{min-height:180px;resize:vertical;font-family:inherit;line-height:1.45}
+    .mail-recipient-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .mail-recipient-table select{min-width:118px}
+    .mail-recipient-table tr.channel-email{background:#f7fdff}.mail-recipient-table tr.channel-paper{background:#fffaf0}.mail-recipient-table tr.channel-skip{opacity:.55;background:#f8fafc}
+    .mail-template-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}
+    .mail-template-card h3{margin:0;color:var(--brand)}.mail-template-card .mail-preview{white-space:pre-wrap;color:var(--muted);font-size:12px;margin-top:6px;max-height:72px;overflow:auto}
+    .inform-recipient-row{display:grid;grid-template-columns:28px 1fr 150px 130px;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid #edf2f7;background:#fff}
+    .inform-recipient-row:hover{background:#f8fcfd}.inform-recipient-row small{display:block;color:var(--muted)}
+    @media(max-width:900px){.mail-composer-grid{grid-template-columns:1fr}.inform-recipient-row{grid-template-columns:28px 1fr}.inform-recipient-row > div:nth-child(n+3){grid-column:2}}
+
   </style>
 </head>
 <body>
@@ -1556,6 +1572,7 @@
             <button data-view="payments" data-title="Paiement factures" title="Paiement factures"><span class="nav__item"><span class="nav-icon">💳</span><span class="nav-label">Paiement factures</span></span></button>
             <button data-view="callDispatch" data-title="Envoi appels de provisions" title="Envoi appels de provisions"><span class="nav__item"><span class="nav-icon">📨</span><span class="nav-label">Envoi appels</span></span></button>
             <button data-view="sendJournal" data-title="Envois / Journal" title="Envois / Journal"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Envois / Journal</span></span></button>
+            <button data-view="inform" data-title="J’informe" title="J’informe"><span class="nav__item"><span class="nav-icon">📢</span><span class="nav-label">J’informe</span></span></button>
             <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
           </div>
         </div>
@@ -1836,6 +1853,31 @@
             </div>
             <div id="sendJournalSummary" class="send-log-dashboard"></div>
             <div id="sendJournalTable"></div>
+          </div>
+        </section>
+
+        <section id="informView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <div>
+                <h2>J’informe</h2>
+                <p class="muted-note">Créer une communication générale vers une copropriété ou une sélection de copropriétaires, avec rédaction du mail et choix mail/courrier avant journalisation.</p>
+              </div>
+              <div class="top-actions">
+                <button class="btn secondary" id="informRefreshBtn" type="button">Rafraîchir</button>
+                <button class="btn" id="informPrepareBtn" type="button">Préparer l’envoi</button>
+              </div>
+            </div>
+            <div class="notice">Cette section sert aux informations générales : travaux, rappels, informations syndic, coupures, communications aux copropriétaires. Chaque destinataire reçoit son propre envoi individuel.</div>
+            <div class="list-filters">
+              <label>Copropriété <select id="informCoproFilter"></select></label>
+              <label>Recherche <input id="informOwnerSearch" placeholder="Nom, e-mail, adresse..."></label>
+              <label>Modèle <select id="informTemplateSelect"></select></label>
+              <label>&nbsp;<button class="btn secondary" id="informSelectAllBtn" type="button">Tout cocher</button></label>
+              <label>&nbsp;<button class="btn secondary" id="informSelectNoneBtn" type="button">Aucun</button></label>
+            </div>
+            <div id="informSummary" class="send-log-dashboard"></div>
+            <div id="informRecipientsTable"></div>
           </div>
         </section>
         <section id="coprosView" class="view hidden">
@@ -2165,6 +2207,7 @@
                 <button class="btn" id="newCallProjectBtn" type="button">Nouvel appel</button>
                 <button class="btn secondary" id="validateSelectedPendingCallsBtn" type="button">Comptabiliser sélection</button>
                 <button class="btn secondary" id="printAllCallsBtn" type="button">PDF tous</button>
+                <button class="btn" id="callsPrepareSendBtn" type="button">Préparer envoi</button>
               </div>
             </div>
             <div class="notice">Les appels générés arrivent d’abord en attente. Tu coches les périodes à comptabiliser; elles passent ensuite dans la liste comptabilisée et apparaissent dans la balance copropriétaire.</div>
@@ -2246,6 +2289,7 @@
                 <button class="btn secondary" id="settlementPreviewAllBtn" type="button">Actualiser</button>
                 <button class="btn" id="settlementPrintSelectedBtn" type="button">PDF sélection</button>
                 <button class="btn secondary" id="settlementPrintAllBtn" type="button">PDF tous</button>
+                <button class="btn" id="settlementPrepareSendBtn" type="button">Préparer envoi</button>
               </div>
             </div>
             <div class="notice">Le calcul utilise les factures fournisseurs de l’exercice, les comptes de classe 6, les clés de répartition et les lots du copropriétaire. Les frais occupants et frais privatifs sont préparés via les options ajoutées dans les factures.</div>
@@ -2294,7 +2338,8 @@
           <div class="card">
             <div class="toolbar">
               <h2>Balance des tiers</h2>
-              <div class="quick-actions"><button class="btn secondary" id="exportThirdBalancePdfBtn" type="button">Exporter PDF situation</button></div>
+              <div class="quick-actions"><button class="btn secondary" id="exportThirdBalancePdfBtn" type="button">Exporter PDF situation</button>
+                <button class="btn" id="thirdBalancePrepareSendBtn" type="button">Préparer envoi</button></div>
             </div>
             <div class="notice">Vue synthétique par tiers. La première ligne de détail est toujours le solde reporté au début de l’exercice sélectionné.</div>
             <div class="list-filters"><label>Copropriété <select id="thirdBalanceCoproFilter"></select></label><label>Exercice <select id="thirdBalanceYearFilter"></select></label><label>Type de tiers <select id="thirdBalanceTypeFilter"><option value="all">Tous</option><option value="owners">Copropriétaires</option><option value="suppliers">Fournisseurs</option></select></label><label>Recherche <input id="thirdBalanceSearch" placeholder="Nom du tiers..."></label></div>
@@ -2534,15 +2579,21 @@
         <section id="templatesView" class="view hidden">
           <div class="card">
             <div class="toolbar">
-              <h2>Modeles</h2>
-              <span class="badge warn">Module a structurer</span>
+              <div>
+                <h2>Modèles d’e-mail</h2>
+                <p class="muted-note">Modèles utilisés avant chaque envoi : appels, décomptes, situations, AG et informations générales.</p>
+              </div>
+              <div class="top-actions">
+                <button class="btn secondary" id="refreshMailTemplatesBtn" type="button">Rafraîchir</button>
+                <button class="btn" id="newMailTemplateBtn" type="button">Nouveau modèle</button>
+              </div>
             </div>
-            <div class="context-banner">
-              <span>Contexte : <span data-active-copro-label>Mode global</span></span>
-              <button class="btn secondary" type="button" onclick="switchToView('copros')">Changer de copropriete</button>
+            <div class="notice">Les variables disponibles incluent notamment {{owner_name}}, {{copro_name}}, {{period_label}}, {{document_label}}, {{amount}}, {{due_date}}. Elles sont remplacées au moment de la préparation de l’envoi.</div>
+            <div class="list-filters">
+              <label>Type <select id="mailTemplateTypeFilter"><option value="all">Tous</option><option value="owner_call">Appels de provisions</option><option value="settlement">Décomptes</option><option value="account_statement">Situation de compte</option><option value="ag_convocation">Convocation AG</option><option value="ag_minutes">PV AG</option><option value="general_notice">Information générale</option></select></label>
+              <label>Recherche <input id="mailTemplateSearch" placeholder="Libellé, objet, contenu..."></label>
             </div>
-            <p style="color:var(--muted); line-height:1.5;">Modèles de documents, mails, PDF, appels, décomptes et exports.</p>
-            <div class="module-grid"><div class="module-card"><h3>PDF</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Mails</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Exports</h3><p>Module prévu dans la feuille de route WAPI Compta. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+            <div id="mailTemplatesTable"></div>
           </div>
         </section>
 
@@ -9909,6 +9960,312 @@
     });
     document.addEventListener('input',(e)=>{ if(e.target?.id==='sendLogSearchFilter'){ sendLogFiltersReadV21(); renderSendJournalV21(); } });
     document.addEventListener('click',(e)=>{ if(e.target?.id==='refreshSendJournalBtn') { loadDeliveryLogsV21().then(renderSendJournalV21); } });
+
+
+    // ---- V22 : intégration envois depuis modules, J’informe et modèles d’e-mail ----
+    state.mailTemplates = state.mailTemplates || [];
+    state.informSelectedOwnerIds = state.informSelectedOwnerIds || new Set();
+    state.informFilters = state.informFilters || { copro:'', search:'' };
+
+    function v22Now(){ return new Date().toISOString(); }
+    function v22CurrentCoproId(selectId='') { return state.activeCoproId || (selectId && $(selectId) ? $(selectId).value : '') || ''; }
+    function v22OwnerById(id){ return (state.owners||[]).find(o=>String(o.id)===String(id)) || {}; }
+    function v22CoproById(id){ return (state.copros||[]).find(c=>String(c.id)===String(id)) || {}; }
+    function v22SafeId(s){ return String(s||'').replace(/[^a-zA-Z0-9_-]/g,'_'); }
+    function v22OwnerDisplay(owner){ return (typeof ownerNameV20 === 'function') ? ownerNameV20(owner||{}) : (owner?.display_name || owner?._name || ''); }
+    function v22TemplateVars(payload){
+      const owner = payload.owner || {};
+      const copro = payload.copro || {};
+      return Object.assign({
+        owner_name: v22OwnerDisplay(owner),
+        owner_email: ownerEmailV21(owner),
+        copro_name: copro.name || '',
+        document_label: payload.document_label || payload.label || '',
+        period_label: payload.period_label || payload.label || '',
+        amount: payload.amount != null ? money(payload.amount) : '',
+        due_date: payload.due_date || '',
+        date: new Date().toLocaleDateString('fr-BE')
+      }, payload.vars || {});
+    }
+    function v22ApplyTemplate(str, vars){
+      return String(str||'').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_,key)=> String(vars[key] ?? ''));
+    }
+    function v22DocTypeLabel(type){ return typeof documentTypeLabelV21 === 'function' ? documentTypeLabelV21(type) : type; }
+    function v22DefaultSubject(type){
+      const map = {
+        owner_call:'Appel de provisions - {{copro_name}} - {{period_label}}',
+        settlement:'Décompte - {{copro_name}} - {{period_label}}',
+        account_statement:'Situation de compte - {{copro_name}} - {{date}}',
+        ag_convocation:'Convocation AG - {{copro_name}}',
+        ag_minutes:'PV d’assemblée générale - {{copro_name}}',
+        general_notice:'Information - {{copro_name}}'
+      };
+      return map[type] || '{{document_label}} - {{copro_name}}';
+    }
+    function v22DefaultBody(type){
+      const base = 'Madame, Monsieur,\n\nVeuillez trouver ci-joint le document mentionné en objet.\n\nNous restons à votre disposition pour tout renseignement complémentaire.\n\nBien à vous,\nWAPI Syndik';
+      if(type==='owner_call') return 'Madame, Monsieur,\n\nVeuillez trouver en pièce jointe votre appel de provisions relatif à la période {{period_label}}.\n\nNous vous invitons à effectuer le paiement selon les informations reprises sur le document joint.\n\nBien à vous,\nWAPI Syndik';
+      if(type==='settlement') return 'Madame, Monsieur,\n\nVeuillez trouver en pièce jointe votre décompte relatif à l’exercice {{period_label}}.\n\nBien à vous,\nWAPI Syndik';
+      if(type==='account_statement') return 'Madame, Monsieur,\n\nVeuillez trouver en pièce jointe votre situation de compte.\n\nBien à vous,\nWAPI Syndik';
+      if(type==='general_notice') return 'Madame, Monsieur,\n\nNous vous prions de bien vouloir prendre connaissance de l’information ci-dessous :\n\n{{document_label}}\n\nBien à vous,\nWAPI Syndik';
+      return base;
+    }
+    function v22TemplatesFor(type){ return (state.mailTemplates||[]).filter(t=>t.active !== false && (!type || t.document_type===type)); }
+    function v22TemplateOptions(type, selected=''){
+      const rows = v22TemplatesFor(type);
+      return '<option value="">Modèle par défaut</option>' + rows.map(t=>`<option value="${t.id}" ${String(t.id)===String(selected)?'selected':''}>${escapeHtml(t.label||'Modèle')}</option>`).join('');
+    }
+    async function loadMailTemplatesV22(){
+      const { data, error } = await supabaseClient.from('compta_mail_templates').select('*').order('document_type',{ascending:true}).order('label',{ascending:true});
+      if(error){ console.warn('Modèles mail non chargés. Migration V21/V22 nécessaire ?', error.message); state.mailTemplates=[]; return; }
+      state.mailTemplates = data || [];
+    }
+    const previousLoadAllV22 = loadAll;
+    loadAll = async function(){ await previousLoadAllV22(); await loadMailTemplatesV22(); renderAll(); };
+
+    function v22RecipientDefaultChannel(owner){ return defaultChannelForOwnerV21(owner); }
+    function v22BuildRows(recipients, docType){
+      return recipients.map((r, idx)=>{
+        const owner = r.owner || v22OwnerById(r.owner_id);
+        const copro = r.copro || v22CoproById(r.copro_id || owner.copro_id);
+        const baseChannel = r.channel || v22RecipientDefaultChannel(owner);
+        const channel = baseChannel==='both' ? (ownerEmailV21(owner) ? 'email' : 'paper') : baseChannel;
+        return Object.assign({}, r, { idx, owner, copro, owner_id: owner.id || r.owner_id, copro_id: copro.id || r.copro_id || owner.copro_id, channel });
+      });
+    }
+    function v22OpenComposer({title='Préparer l’envoi', documentType='general_notice', documentLabel='', recipients=[], defaultSubject='', defaultBody='', onConfirm=null, allowAttachments=false}={}){
+      const rows = v22BuildRows(recipients, documentType);
+      if(!rows.length) return alert('Aucun destinataire sélectionné.');
+      const firstVars = v22TemplateVars(rows[0]);
+      const subject = v22ApplyTemplate(defaultSubject || v22DefaultSubject(documentType), firstVars);
+      const body = v22ApplyTemplate(defaultBody || v22DefaultBody(documentType), firstVars);
+      const mailCount = rows.filter(r=>r.channel==='email').length;
+      const paperCount = rows.filter(r=>r.channel==='paper').length;
+      const skipCount = rows.filter(r=>r.channel==='skip').length;
+      const html = `<div class="mail-composer-grid">
+        <div class="mail-composer-card">
+          <h3>Message</h3>
+          <div class="form-grid">
+            <label>Type de document <input disabled value="${escapeHtml(v22DocTypeLabel(documentType))}"></label>
+            <label>Modèle <select id="v22ComposerTemplate">${v22TemplateOptions(documentType)}</select></label>
+            <label>Objet <input id="v22ComposerSubject" value="${escapeHtml(subject)}"></label>
+            <label style="grid-column:1/-1;">Contenu du mail <textarea id="v22ComposerBody">${escapeHtml(body)}</textarea></label>
+            ${allowAttachments?'<label style="grid-column:1/-1;">Pièces jointes complémentaires <input id="v22ComposerFiles" type="file" multiple></label>':''}
+          </div>
+          <div class="notice">Les variables comme {{owner_name}}, {{copro_name}}, {{period_label}} sont personnalisées pour chaque destinataire au moment de l’envoi.</div>
+        </div>
+        <div class="mail-composer-card">
+          <h3>Destinataires</h3>
+          <div class="dispatch-package-grid">
+            <div class="dispatch-package-card"><span>Total</span><strong>${rows.length}</strong><div>destinataire(s)</div></div>
+            <div class="dispatch-package-card"><span>E-mail</span><strong id="v22MailCount">${mailCount}</strong><div>envoi électronique</div></div>
+            <div class="dispatch-package-card"><span>Courrier</span><strong id="v22PaperCount">${paperCount}</strong><div>PDF/courrier</div></div>
+          </div>
+          <div class="mail-recipient-toolbar"><button class="btn secondary small" data-v22-all-channel="email" type="button">Tout mail</button><button class="btn secondary small" data-v22-all-channel="paper" type="button">Tout courrier</button><button class="btn secondary small" data-v22-all-channel="skip" type="button">Ne rien envoyer</button></div>
+          <div class="table-wrap mail-recipient-table"><table><thead><tr><th>Copropriétaire</th><th>Copropriété</th><th>E-mail</th><th>Document</th><th>Canal</th></tr></thead><tbody>${rows.map(r=>{
+            const email=ownerEmailV21(r.owner); const cls=r.channel==='email'?'channel-email':r.channel==='paper'?'channel-paper':'channel-skip';
+            return `<tr class="${cls}" data-v22-row="${r.idx}"><td>${escapeHtml(v22OwnerDisplay(r.owner))}</td><td>${escapeHtml(r.copro?.name||'')}</td><td>${email?escapeHtml(email):'<span class="dispatch-warning">Adresse mail manquante</span>'}</td><td>${escapeHtml(r.document_label||documentLabel||v22DocTypeLabel(documentType))}</td><td><select data-v22-channel-row="${r.idx}"><option value="email" ${r.channel==='email'?'selected':''} ${email?'':'disabled'}>E-mail</option><option value="paper" ${r.channel==='paper'?'selected':''}>Courrier</option><option value="skip" ${r.channel==='skip'?'selected':''}>Ne pas envoyer</option></select></td></tr>`;
+          }).join('')}</tbody></table></div>
+        </div>
+      </div>`;
+      window.v22CurrentComposer = { rows, documentType, documentLabel, onConfirm };
+      openAppModal(title, html, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn secondary" id="v22PreviewPaperBtn" type="button">Préparer PDF courrier</button><button class="btn" id="v22ConfirmSendBtn" type="button">Confirmer / journaliser</button>`, {size:'wide'});
+    }
+    function v22ComposerRows(){ return (window.v22CurrentComposer?.rows || []); }
+    function v22UpdateComposerCounts(){
+      const rows=v22ComposerRows();
+      if($('v22MailCount')) $('v22MailCount').textContent=rows.filter(r=>r.channel==='email').length;
+      if($('v22PaperCount')) $('v22PaperCount').textContent=rows.filter(r=>r.channel==='paper').length;
+      rows.forEach(r=>{ const tr=document.querySelector(`[data-v22-row="${r.idx}"]`); if(tr){ tr.classList.remove('channel-email','channel-paper','channel-skip'); tr.classList.add(r.channel==='email'?'channel-email':r.channel==='paper'?'channel-paper':'channel-skip'); }});
+    }
+    function v22ApplySelectedTemplate(){
+      const tpl = (state.mailTemplates||[]).find(t=>String(t.id)===String($('v22ComposerTemplate')?.value||''));
+      const row = v22ComposerRows()[0] || {};
+      const vars = v22TemplateVars(row);
+      if(tpl){ $('v22ComposerSubject').value=v22ApplyTemplate(tpl.subject_template, vars); $('v22ComposerBody').value=v22ApplyTemplate(tpl.body_template, vars); }
+    }
+    async function v22CreateDeliveryLogs(rows, composer, modeOverride=''){
+      const now=v22Now(); const subjectTpl=$('v22ComposerSubject')?.value || ''; const bodyTpl=$('v22ComposerBody')?.value || '';
+      const clean=rows.filter(r=> (modeOverride || r.channel) !== 'skip');
+      if(!clean.length) return alert('Aucun destinataire à journaliser.');
+      const batch=`SEND-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}`;
+      const inserts = clean.map(r=>{
+        const channel = modeOverride || r.channel;
+        const vars = v22TemplateVars(r);
+        const subject = v22ApplyTemplate(subjectTpl, vars);
+        const body = v22ApplyTemplate(bodyTpl, vars);
+        return { copro_id:r.copro_id || null, owner_id:r.owner_id || null, document_type:composer.documentType, document_label:r.document_label || composer.documentLabel || v22DocTypeLabel(composer.documentType), source_type:r.source_type || composer.documentType, source_id:r.source_id || null, channel, status:channel==='email'?'sent':'paper_ready', email_to:channel==='email'?ownerEmailV21(r.owner):null, subject, body, sent_at:channel==='email'?now:null, prepared_at:now, batch_ref:batch, created_by:currentUser?.id || null, metadata:Object.assign({}, r.metadata||{}, { body_preview: body, amount:r.amount||null, due_date:r.due_date||null }) };
+      });
+      const { error } = await supabaseClient.from('compta_delivery_logs').insert(inserts);
+      if(error) return alert('Impossible de journaliser l’envoi. As-tu exécuté le SQL V22 ? '+error.message);
+      await loadDeliveryLogsV21(); renderSendJournalV21();
+      if(typeof composer.onConfirm === 'function') await composer.onConfirm(clean, inserts);
+      return inserts;
+    }
+    async function v22ConfirmComposerSend(){
+      const composer=window.v22CurrentComposer; if(!composer) return;
+      const rows=v22ComposerRows().filter(r=>r.channel!=='skip');
+      if(!rows.length) return alert('Aucun destinataire à envoyer/journaliser.');
+      const emailRows=rows.filter(r=>r.channel==='email'); const paperRows=rows.filter(r=>r.channel==='paper');
+      if(!confirm(`Confirmer ?\n\n${emailRows.length} e-mail(s) seront journalisés comme envoyés.\n${paperRows.length} courrier(s) seront préparés à l’impression.\n\nLes simples aperçus PDF ne sont pas historisés.`)) return;
+      await v22CreateDeliveryLogs(rows, composer);
+      closeAppModal();
+      await loadAll();
+      alert('Envoi journalisé. Il est visible dans Pilotage → Envois / Journal et dans l’historique du copropriétaire.');
+    }
+    function v22PrintPaperFromComposer(){
+      const composer=window.v22CurrentComposer; if(!composer) return;
+      const rows=v22ComposerRows().filter(r=>r.channel==='paper');
+      if(!rows.length) return alert('Aucun destinataire en courrier.');
+      if(composer.documentType==='owner_call') return printOwnerCallsV11(rows.map(r=>r.source_id).filter(Boolean), 'Courriers appels');
+      if(composer.documentType==='settlement') return openPrintWindowV16('Courriers décomptes', rows.map(r=>settlementPdfForOwnerV17(r.owner_id, r.copro_id, r.fiscal_year_id)).join(''));
+      if(composer.documentType==='account_statement') return (typeof printThirdRowsV11 === 'function') ? printThirdRowsV11(rows.map(r=>r.third_row).filter(Boolean), false) : exportThirdBalancePdf();
+      const html = rows.map(r=>`<section class="page">${agPdfHeaderV15('Information générale', r.copro?.name||'')}${agWindowAddressV16(r.owner)}<div class="with-window-space"><h2>${escapeHtml($('v22ComposerSubject')?.value||'Information')}</h2><div style="white-space:pre-wrap;line-height:1.5;">${escapeHtml($('v22ComposerBody')?.value||'')}</div></div>${agPdfFooterV15('Information')}</section>`).join('');
+      openPrintWindowV16('Courriers information générale', html);
+    }
+
+    function v22SettlementRecipients(selectedOnly=true){
+      const coproId=selectedSettlementCoproV17(); const yearId=selectedSettlementYearV17(coproId); let ownerIds=[];
+      if(selectedOnly){ ownerIds=[...document.querySelectorAll('[data-settlement-select]:checked')].map(x=>x.dataset.settlementSelect); }
+      if(!ownerIds.length) ownerIds=settlementOwnersV17().map(o=>o.id);
+      const year=(state.fiscalYears||[]).find(y=>y.id===yearId);
+      return ownerIds.map(id=>({ owner:v22OwnerById(id), owner_id:id, copro:v22CoproById(coproId), copro_id:coproId, fiscal_year_id:yearId, document_type:'settlement', document_label:`Décompte ${year?.label||''}`, period_label:year?.label||'', source_type:'settlement', source_id:null }));
+    }
+    function v22OpenSettlementSend(){
+      const rows=v22SettlementRecipients(true);
+      v22OpenComposer({ title:'Préparer l’envoi des décomptes', documentType:'settlement', documentLabel:'Décompte', recipients:rows });
+    }
+    function v22CurrentCallRecipients(){
+      let ids=[...document.querySelectorAll('[data-owner-call-select]:checked')].map(x=>x.dataset.ownerCallSelect);
+      if(!ids.length){ ids=state.ownerCalls.filter(c=>ownerCallAccountingStatus(c)==='accounted' && (!state.activeCoproId || c.copro_id===state.activeCoproId)).map(c=>c.id); }
+      return ids.map(id=>state.ownerCalls.find(c=>String(c.id)===String(id))).filter(Boolean).map(c=>({ owner:ownerForCallV20(c), owner_id:c.owner_id, copro:v22CoproById(c.copro_id), copro_id:c.copro_id, document_type:'owner_call', document_label:c.period_label||c.label||'Appel de provisions', period_label:c.period_label||c.label||'', amount:c.amount_due, due_date:c.due_date, source_type:'owner_call', source_id:c.id, metadata:{call_id:c.call_id, lot_id:c.lot_id} }));
+    }
+    function v22OpenCallsSend(){
+      const rows=v22CurrentCallRecipients();
+      v22OpenComposer({ title:'Préparer l’envoi des appels', documentType:'owner_call', documentLabel:'Appel de provisions', recipients:rows, onConfirm: async (rows)=>{
+        const now=v22Now(); for(const r of rows.filter(x=>x.source_id)){ await supabaseClient.from('compta_owner_calls').update({delivery_status:r.channel==='email'?'sent':'paper_ready', delivery_channel:r.channel, sent_at:r.channel==='email'?now:null}).eq('id', r.source_id); }
+      }});
+    }
+    function v22ThirdBalanceRecipients(){
+      const rows = typeof rowsForCurrentThirdBalanceV11 === 'function' ? rowsForCurrentThirdBalanceV11() : thirdRowsFor($('thirdBalanceTypeFilter')?.value||'owners', scopedCoproId('thirdBalanceCoproFilter'), $('thirdBalanceYearFilter')?.value||'');
+      return rows.filter(r=>r.type==='owner').map(r=>({ owner:v22OwnerById(r.id), owner_id:r.id, copro:v22CoproById(scopedCoproId('thirdBalanceCoproFilter') || v22OwnerById(r.id).copro_id), copro_id:scopedCoproId('thirdBalanceCoproFilter') || v22OwnerById(r.id).copro_id, document_type:'account_statement', document_label:'Situation de compte', source_type:'account_statement', source_id:null, third_row:r, amount:Math.abs(r.balance||0), metadata:{balance:r.balance} }));
+    }
+    function v22OpenThirdBalanceSend(){
+      const rows=v22ThirdBalanceRecipients();
+      v22OpenComposer({ title:'Préparer l’envoi des situations de compte', documentType:'account_statement', documentLabel:'Situation de compte', recipients:rows });
+    }
+
+    function renderInformV22(){
+      if(!$('informRecipientsTable')) return;
+      const coproSelect=$('informCoproFilter'); const prev=state.informFilters.copro || state.activeCoproId || coproSelect.value || '';
+      coproSelect.innerHTML='<option value="">Choisir une copropriété...</option>'+(state.copros||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.name||'')}</option>`).join('');
+      coproSelect.value=prev;
+      $('informTemplateSelect').innerHTML=v22TemplateOptions('general_notice');
+      const search=(state.informFilters.search||'').toLowerCase().trim();
+      const rows=(state.owners||[]).filter(o=>(!prev||o.copro_id===prev)&&(!search||[o.display_name,o.email,o.address].join(' ').toLowerCase().includes(search)));
+      const visible=new Set(rows.map(o=>o.id));
+      if(!(state.informSelectedOwnerIds instanceof Set)) state.informSelectedOwnerIds=new Set(Array.from(state.informSelectedOwnerIds||[]));
+      Array.from(state.informSelectedOwnerIds).forEach(id=>{ if(!visible.has(id)) state.informSelectedOwnerIds.delete(id); });
+      const mail=rows.filter(o=>defaultChannelForOwnerV21(o)==='email').length; const paper=rows.filter(o=>defaultChannelForOwnerV21(o)==='paper').length; const selected=rows.filter(o=>state.informSelectedOwnerIds.has(o.id)).length;
+      $('informSummary').innerHTML=`<div class="dispatch-metric"><span>Destinataires</span><strong>${rows.length}</strong></div><div class="dispatch-metric"><span>Sélectionnés</span><strong>${selected}</strong></div><div class="dispatch-metric"><span>Préférence mail</span><strong>${mail}</strong></div><div class="dispatch-metric"><span>Courrier</span><strong>${paper}</strong></div>`;
+      $('informRecipientsTable').innerHTML = `<div class="table-wrap">${rows.map(o=>`<div class="inform-recipient-row"><input type="checkbox" data-inform-owner="${o.id}" ${state.informSelectedOwnerIds.has(o.id)?'checked':''}><div><strong>${escapeHtml(o.display_name||'')}</strong><small>${escapeHtml(o.address||'')}</small></div><div>${ownerEmailV21(o)||'<span class="dispatch-warning">Sans e-mail</span>'}</div><div>${deliveryPreferenceBadgeV21(ownerPrefV21(o))}</div></div>`).join('') || '<div class="notice">Choisis une copropriété ou aucun copropriétaire trouvé.</div>'}</div>`;
+    }
+    function v22OpenInformSend(){
+      const coproId=$('informCoproFilter')?.value || state.activeCoproId || '';
+      if(!coproId) return alert('Choisis une copropriété.');
+      let ownerIds=[...state.informSelectedOwnerIds];
+      if(!ownerIds.length && confirm('Aucun copropriétaire coché. Préparer l’envoi pour tous les copropriétaires visibles ?')) ownerIds=(state.owners||[]).filter(o=>o.copro_id===coproId).map(o=>o.id);
+      const rows=ownerIds.map(id=>({ owner:v22OwnerById(id), owner_id:id, copro:v22CoproById(coproId), copro_id:coproId, document_type:'general_notice', document_label:'Information générale', source_type:'general_notice' }));
+      const tpl=(state.mailTemplates||[]).find(t=>String(t.id)===String($('informTemplateSelect')?.value||''));
+      v22OpenComposer({ title:'J’informe - préparer la communication', documentType:'general_notice', documentLabel:'Information générale', recipients:rows, defaultSubject:tpl?.subject_template, defaultBody:tpl?.body_template, allowAttachments:true });
+      if(tpl && $('v22ComposerTemplate')) $('v22ComposerTemplate').value=tpl.id;
+    }
+
+    function renderMailTemplatesV22(){
+      if(!$('mailTemplatesTable')) return;
+      const type=$('mailTemplateTypeFilter')?.value||'all'; const search=($('mailTemplateSearch')?.value||'').toLowerCase().trim();
+      const rows=(state.mailTemplates||[]).filter(t=>(type==='all'||t.document_type===type)&&(!search||[t.label,t.subject_template,t.body_template].join(' ').toLowerCase().includes(search)));
+      $('mailTemplatesTable').innerHTML=rows.map(t=>`<div class="mail-template-card"><div><h3>${escapeHtml(t.label||'')}</h3><div class="summary-line"><span class="badge">${escapeHtml(v22DocTypeLabel(t.document_type))}</span>${t.active?'<span class="badge ok">Actif</span>':'<span class="badge">Inactif</span>'}</div><strong>${escapeHtml(t.subject_template||'')}</strong><div class="mail-preview">${escapeHtml(t.body_template||'')}</div></div><div class="actions-inline"><button class="btn secondary small" data-edit-mail-template="${t.id}" type="button">Modifier</button><button class="btn danger small" data-delete-mail-template="${t.id}" type="button">Supprimer</button></div></div>`).join('') || '<div class="notice">Aucun modèle.</div>';
+    }
+    function openMailTemplateModalV22(id=''){
+      const t=(state.mailTemplates||[]).find(x=>String(x.id)===String(id)) || {document_type:'general_notice',label:'',subject_template:'',body_template:'',active:true};
+      const html=`<div class="popup-form"><div class="form-grid"><label>Type <select id="tplDocType"><option value="owner_call">Appels de provisions</option><option value="settlement">Décomptes</option><option value="account_statement">Situation de compte</option><option value="ag_convocation">Convocation AG</option><option value="ag_minutes">PV AG</option><option value="general_notice">Information générale</option></select></label><label>Libellé <input id="tplLabel" value="${escapeHtml(t.label||'')}"></label><label style="grid-column:1/-1;">Objet <input id="tplSubject" value="${escapeHtml(t.subject_template||v22DefaultSubject(t.document_type))}"></label><label style="grid-column:1/-1;">Contenu <textarea id="tplBody" style="min-height:220px;">${escapeHtml(t.body_template||v22DefaultBody(t.document_type))}</textarea></label><label>Actif <select id="tplActive"><option value="true">Oui</option><option value="false">Non</option></select></label></div><div class="notice">Variables possibles : {{owner_name}}, {{copro_name}}, {{period_label}}, {{document_label}}, {{amount}}, {{due_date}}, {{date}}.</div></div>`;
+      openAppModal(id?'Modifier le modèle e-mail':'Nouveau modèle e-mail', html, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn" id="saveMailTemplateBtn" data-template-id="${id}" type="button">Enregistrer</button>`, {size:'wide'});
+      $('tplDocType').value=t.document_type||'general_notice'; $('tplActive').value=String(t.active!==false);
+    }
+    async function saveMailTemplateV22(id=''){
+      const payload={document_type:$('tplDocType').value,label:$('tplLabel').value.trim(),subject_template:$('tplSubject').value.trim(),body_template:$('tplBody').value,active:$('tplActive').value==='true',updated_at:new Date().toISOString()};
+      if(!payload.label||!payload.subject_template||!payload.body_template) return alert('Libellé, objet et contenu sont obligatoires.');
+      let res; if(id) res=await supabaseClient.from('compta_mail_templates').update(payload).eq('id',id); else res=await supabaseClient.from('compta_mail_templates').insert(Object.assign(payload,{created_by:currentUser?.id||null}));
+      if(res.error) return alert(res.error.message);
+      closeAppModal(); await loadMailTemplatesV22(); renderMailTemplatesV22();
+    }
+    async function deleteMailTemplateV22(id){ if(!confirm('Supprimer ce modèle e-mail ?')) return; const {error}=await supabaseClient.from('compta_mail_templates').delete().eq('id',id); if(error) return alert(error.message); await loadMailTemplatesV22(); renderMailTemplatesV22(); }
+
+    const previousRenderAllV22 = renderAll;
+    renderAll = function(){ previousRenderAllV22(); renderInformV22(); renderMailTemplatesV22(); };
+
+    document.addEventListener('click', (e)=>{
+      const t=e.target.closest?.('button');
+      if(!t) return;
+      if(t.id==='settlementPrepareSendBtn') v22OpenSettlementSend();
+      if(t.id==='callsPrepareSendBtn') v22OpenCallsSend();
+      if(t.id==='thirdBalancePrepareSendBtn') v22OpenThirdBalanceSend();
+      if(t.id==='informRefreshBtn') renderInformV22();
+      if(t.id==='informSelectAllBtn'){ document.querySelectorAll('[data-inform-owner]').forEach(cb=>{cb.checked=true; state.informSelectedOwnerIds.add(cb.dataset.informOwner);}); renderInformV22(); }
+      if(t.id==='informSelectNoneBtn'){ state.informSelectedOwnerIds.clear(); renderInformV22(); }
+      if(t.id==='informPrepareBtn') v22OpenInformSend();
+      if(t.id==='v22ConfirmSendBtn') v22ConfirmComposerSend();
+      if(t.id==='v22PreviewPaperBtn') v22PrintPaperFromComposer();
+      if(t.dataset.v22AllChannel){ v22ComposerRows().forEach(r=>{ const email=ownerEmailV21(r.owner); r.channel=t.dataset.v22AllChannel==='email' && !email ? 'paper' : t.dataset.v22AllChannel; const sel=document.querySelector(`[data-v22-channel-row="${r.idx}"]`); if(sel) sel.value=r.channel; }); v22UpdateComposerCounts(); }
+      if(t.id==='newMailTemplateBtn') openMailTemplateModalV22();
+      if(t.id==='refreshMailTemplatesBtn') loadMailTemplatesV22().then(renderMailTemplatesV22);
+      if(t.dataset.editMailTemplate) openMailTemplateModalV22(t.dataset.editMailTemplate);
+      if(t.dataset.deleteMailTemplate) deleteMailTemplateV22(t.dataset.deleteMailTemplate);
+      if(t.id==='saveMailTemplateBtn') saveMailTemplateV22(t.dataset.templateId||'');
+    });
+    document.addEventListener('change', (e)=>{
+      if(e.target?.id==='informCoproFilter'){ state.informFilters.copro=e.target.value; state.informSelectedOwnerIds.clear(); renderInformV22(); }
+      if(e.target?.dataset?.informOwner){ if(e.target.checked) state.informSelectedOwnerIds.add(e.target.dataset.informOwner); else state.informSelectedOwnerIds.delete(e.target.dataset.informOwner); renderInformV22(); }
+      if(e.target?.dataset?.v22ChannelRow){ const row=v22ComposerRows().find(r=>String(r.idx)===String(e.target.dataset.v22ChannelRow)); if(row){ row.channel=e.target.value; v22UpdateComposerCounts(); } }
+      if(e.target?.id==='v22ComposerTemplate') v22ApplySelectedTemplate();
+      if(['mailTemplateTypeFilter'].includes(e.target?.id)) renderMailTemplatesV22();
+    });
+    document.addEventListener('input', (e)=>{
+      if(e.target?.id==='informOwnerSearch'){ state.informFilters.search=e.target.value; renderInformV22(); }
+      if(e.target?.id==='mailTemplateSearch') renderMailTemplatesV22();
+    });
+
+
+    // ---- V22.1 : raccourcis envoi depuis Assemblées générales ----
+    function enhanceAgSendButtonsV22(){
+      const box=document.querySelector('#agModuleRoot .ag-pdf-actions');
+      if(!box || box.dataset.v22Enhanced==='1') return;
+      const meeting=typeof agMeeting==='function' ? agMeeting() : null;
+      if(!meeting) return;
+      box.dataset.v22Enhanced='1';
+      box.insertAdjacentHTML('beforeend', `<button class="btn secondary" type="button" data-v22-send-ag-convocation="${meeting.id}">Envoyer convocations</button><button class="btn secondary" type="button" data-v22-send-ag-minutes="${meeting.id}">Envoyer PV</button>`);
+    }
+    function v22AgRecipients(meetingId, docType){
+      const m=(state.agMeetings||[]).find(x=>String(x.id)===String(meetingId)); if(!m) return [];
+      const copro=v22CoproById(m.copro_id);
+      const owners=(typeof getCoproOwnersForAg==='function' ? getCoproOwnersForAg(m.copro_id) : []).map(x=>x.owner).filter(Boolean);
+      const label = docType==='ag_convocation' ? `Convocation AG ${formatDateV14(m.meeting_date)}` : `PV AG ${formatDateV14(m.meeting_date)}`;
+      return owners.map(o=>({owner:o, owner_id:o.id, copro, copro_id:m.copro_id, document_type:docType, document_label:label, period_label:formatDateV14(m.meeting_date), source_type:docType, source_id:m.id, metadata:{meeting_id:m.id, meeting_date:m.meeting_date}}));
+    }
+    function v22OpenAgSend(meetingId, docType){
+      const title = docType==='ag_convocation' ? 'Préparer l’envoi des convocations AG' : 'Préparer l’envoi du PV d’AG';
+      v22OpenComposer({title, documentType:docType, documentLabel:docType==='ag_convocation'?'Convocation AG':'PV AG', recipients:v22AgRecipients(meetingId, docType), onConfirm: async (rows)=>{
+        if(docType==='ag_convocation') await supabaseClient.from('compta_ag_meetings').update({status:'sent'}).eq('id', meetingId);
+      }});
+    }
+    const previousRenderAllV221 = renderAll;
+    renderAll = function(){ previousRenderAllV221(); setTimeout(enhanceAgSendButtonsV22, 0); };
+    document.addEventListener('click',(e)=>{
+      const b=e.target.closest?.('button'); if(!b) return;
+      if(b.dataset.v22SendAgConvocation) v22OpenAgSend(b.dataset.v22SendAgConvocation, 'ag_convocation');
+      if(b.dataset.v22SendAgMinutes) v22OpenAgSend(b.dataset.v22SendAgMinutes, 'ag_minutes');
+    });
 
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
