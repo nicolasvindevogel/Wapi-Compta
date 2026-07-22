@@ -1455,6 +1455,15 @@
     @media(max-width:700px){.settlement-dashboard{grid-template-columns:1fr}}
 
 
+
+    /* ---- V21 : fondation envois, journal et historique copropriétaire ---- */
+    .send-log-dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .send-log-card{border:1px solid #dbe7ee;border-radius:16px;background:#fff;padding:14px;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .send-log-card span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}.send-log-card strong{font-size:24px;color:var(--brand-dark)}
+    .delivery-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 9px;font-weight:800;font-size:12px}.delivery-chip.email{background:#eaf7fa;color:#14586a}.delivery-chip.paper{background:#fff7ed;color:#9a3412}.delivery-chip.both{background:#eef2ff;color:#3730a3}.delivery-chip.none{background:#f1f5f9;color:#475569}
+    .delivery-status.sent{background:#dff7e8;color:#146c2e}.delivery-status.paper{background:#fff7ed;color:#9a3412}.delivery-status.error{background:#fde2e2;color:#991b1b}.delivery-status.pending{background:#fff3cd;color:#8a5a00}.delivery-status.cancelled{background:#f1f5f9;color:#475569}
+    .history-panel{border:1px solid #dbe7ee;border-radius:16px;background:#fbfdff;padding:14px;margin-top:14px}.history-list{display:grid;gap:8px;margin-top:10px}.history-item{border:1px solid #e6eef5;border-radius:14px;padding:10px;background:#fff;display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:start}.history-item strong{display:block;color:#172033}.history-item small{display:block;color:var(--muted);margin-top:2px}.delivery-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.send-prep-table select{min-width:120px}.send-prep-table tr.mail-row{background:#f7fdff}.send-prep-table tr.paper-row{background:#fffaf0}.send-prep-table tr.skip-row{opacity:.55;background:#f8fafc}.window-warning{border-left:4px solid #f59e0b;background:#fff7ed;padding:10px 12px;border-radius:12px;margin:10px 0;color:#7c2d12}
+
     /* ---- V20 : envoi appels multi-copro + PDF plus professionnels ---- */
     .dispatch-dashboard{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin:14px 0}
     .dispatch-metric{border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#fff,#f4fbfd);padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.035)}
@@ -1546,6 +1555,7 @@
             <button data-view="invoiceOcr" data-title="Traitement factures OCR" title="Traitement factures OCR"><span class="nav__item"><span class="nav-icon">🔎</span><span class="nav-label">Traitement factures OCR</span></span></button>
             <button data-view="payments" data-title="Paiement factures" title="Paiement factures"><span class="nav__item"><span class="nav-icon">💳</span><span class="nav-label">Paiement factures</span></span></button>
             <button data-view="callDispatch" data-title="Envoi appels de provisions" title="Envoi appels de provisions"><span class="nav__item"><span class="nav-icon">📨</span><span class="nav-label">Envoi appels</span></span></button>
+            <button data-view="sendJournal" data-title="Envois / Journal" title="Envois / Journal"><span class="nav__item"><span class="nav-icon">🧾</span><span class="nav-label">Envois / Journal</span></span></button>
             <button data-view="bank" data-title="Financier / Banque" title="Financier / Banque"><span class="nav__item"><span class="nav-icon">🏦</span><span class="nav-label">Financier / Banque</span></span></button>
           </div>
         </div>
@@ -1803,6 +1813,31 @@
           </div>
         </section>
 
+        <section id="sendJournalView" class="view hidden">
+          <div class="card">
+            <div class="toolbar">
+              <div>
+                <h2>Envois / Journal</h2>
+                <p class="muted-note">Suivi global des documents réellement envoyés par e-mail ou préparés pour courrier. Les simples aperçus PDF ne sont pas historisés.</p>
+              </div>
+              <div class="top-actions">
+                <button class="btn secondary" id="refreshSendJournalBtn" type="button">Rafraîchir</button>
+              </div>
+            </div>
+            <div class="notice">Ce journal servira de trace commune pour les appels, décomptes, situations, convocations, PV et communications générales. Les lignes sont créées uniquement lors d’une confirmation d’envoi ou d’une préparation courrier.</div>
+            <div class="list-filters">
+              <label>Copropriété <select id="sendLogCoproFilter"></select></label>
+              <label>Type document <select id="sendLogDocTypeFilter"><option value="all">Tous</option><option value="owner_call">Appels de provisions</option><option value="settlement">Décomptes</option><option value="account_statement">Situations de compte</option><option value="ag_convocation">Convocations AG</option><option value="ag_minutes">PV AG</option><option value="general_notice">Information générale</option></select></label>
+              <label>Canal <select id="sendLogChannelFilter"><option value="all">Tous</option><option value="email">E-mail</option><option value="paper">Courrier</option></select></label>
+              <label>Statut <select id="sendLogStatusFilter"><option value="all">Tous</option><option value="sent">Envoyé</option><option value="paper_ready">Courrier à imprimer</option><option value="error">Erreur</option><option value="pending">À envoyer</option><option value="cancelled">Annulé</option></select></label>
+              <label>Du <input id="sendLogFromFilter" type="date"></label>
+              <label>Au <input id="sendLogToFilter" type="date"></label>
+              <label>Recherche <input id="sendLogSearchFilter" placeholder="Copropriétaire, objet, e-mail..."></label>
+            </div>
+            <div id="sendJournalSummary" class="send-log-dashboard"></div>
+            <div id="sendJournalTable"></div>
+          </div>
+        </section>
         <section id="coprosView" class="view hidden">
           <div class="card">
             <div class="toolbar">
@@ -9668,6 +9703,212 @@
       if(e.target?.dataset?.dispatchGroupCheck){ const key=e.target.dataset.dispatchGroupCheck; const group=groupCallDispatchV20(callDispatchRowsV20()).find(([k])=>String(k)===String(key)); if(group){ group[1].forEach(c=> e.target.checked ? state.callDispatchSelectedIds.add(c.id) : state.callDispatchSelectedIds.delete(c.id)); renderCallDispatchV20(); } }
     });
     document.addEventListener('input',(e)=>{ if(e.target?.id==='callDispatchSearch'){ callDispatchFiltersReadV20(); renderCallDispatchV20(); } });
+
+
+    // ---- V21 : fondation envois, préférences, journal et historique tiers ----
+    state.deliveryLogs = state.deliveryLogs || [];
+    state.deliveryChannelOverridesV21 = state.deliveryChannelOverridesV21 || {};
+    state.sendLogFiltersV21 = state.sendLogFiltersV21 || { copro:'', docType:'all', channel:'all', status:'all', from:'', to:'', search:'' };
+
+    function deliveryPreferenceLabelV21(value){
+      const v=value || 'email';
+      if(v==='paper') return 'Courrier';
+      if(v==='both') return 'Mail + courrier';
+      if(v==='none') return 'Ne pas envoyer';
+      return 'E-mail';
+    }
+    function deliveryPreferenceBadgeV21(value){
+      const v=value || 'email';
+      return `<span class="delivery-chip ${escapeHtml(v)}">${escapeHtml(deliveryPreferenceLabelV21(v))}</span>`;
+    }
+    function deliveryStatusLabelV21(status){
+      const v=status || 'pending';
+      if(v==='sent') return '<span class="badge delivery-status sent">Envoyé</span>';
+      if(v==='paper_ready') return '<span class="badge delivery-status paper">Courrier à imprimer</span>';
+      if(v==='error') return '<span class="badge delivery-status error">Erreur</span>';
+      if(v==='cancelled') return '<span class="badge delivery-status cancelled">Annulé</span>';
+      return '<span class="badge delivery-status pending">À envoyer</span>';
+    }
+    function documentTypeLabelV21(type){
+      const map={owner_call:'Appel de provisions',settlement:'Décompte',account_statement:'Situation de compte',ag_convocation:'Convocation AG',ag_minutes:'PV AG',general_notice:'Information générale',supplier_invoice:'Facture fournisseur'};
+      return map[type] || type || '-';
+    }
+    function ownerEmailValidV21(owner){ const email=String(owner?.email || owner?._email || '').trim(); return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+    function ownerEmailV21(owner){ return ownerEmailValidV21(owner) ? String(owner.email || owner._email || '').trim() : ''; }
+    function ownerPrefV21(owner){ return owner?.delivery_preference || owner?.send_preference || owner?.communication_preference || 'email'; }
+    function defaultChannelForOwnerV21(owner){
+      const pref=ownerPrefV21(owner);
+      if(pref==='none') return 'skip';
+      if(pref==='paper') return 'paper';
+      if(pref==='both') return ownerEmailV21(owner) ? 'email' : 'paper';
+      return ownerEmailV21(owner) ? 'email' : 'paper';
+    }
+    function ownerHistoryRowsV21(ownerId){
+      return (state.deliveryLogs || []).filter(l=>l.owner_id===ownerId).sort((a,b)=>String(b.created_at||b.sent_at||'').localeCompare(String(a.created_at||a.sent_at||'')));
+    }
+
+    async function loadDeliveryLogsV21(){
+      const { data, error } = await supabaseClient.from('compta_delivery_logs').select('*').order('created_at',{ascending:false}).limit(1000);
+      if(error){ console.warn('Journal envois non chargé. Migration V21 nécessaire ?', error.message); state.deliveryLogs=[]; return; }
+      state.deliveryLogs=data || [];
+    }
+    const previousLoadAllV21 = loadAll;
+    loadAll = async function(){
+      await previousLoadAllV21();
+      await loadDeliveryLogsV21();
+      renderAll();
+    };
+
+    function createOwnerOptionDeliveryV21(selected='email'){
+      const v=selected || 'email';
+      return `<option value="email" ${v==='email'?'selected':''}>E-mail par défaut</option><option value="paper" ${v==='paper'?'selected':''}>Courrier papier</option><option value="both" ${v==='both'?'selected':''}>Mail + courrier</option><option value="none" ${v==='none'?'selected':''}>Ne pas envoyer automatiquement</option>`;
+    }
+
+    function identityRecordsV21(){
+      const selectedCopro = state.activeCoproId || $('ownersFilterCopro')?.value || '';
+      return {
+        owners: state.owners.filter((o)=>!selectedCopro || o.copro_id===selectedCopro).map((o)=>({...o,_type:'owner',_name:o.display_name,_email:o.email,_phone:o.phone,_address:o.address,_iban:o.iban||''})),
+        suppliers: state.suppliers.map((s)=>({...s,_type:'supplier',_name:s.name,_email:s.email,_phone:s.phone||'',_address:s.address||'',_iban:s.iban||''})),
+        occupants: state.occupants.filter((o)=>!selectedCopro || o.copro_id===selectedCopro).map((o)=>({...o,_type:'occupant',_name:o.display_name,_email:o.email,_phone:o.phone,_address:o.address,_iban:o.iban||''}))
+      };
+    }
+
+    function renderOwners(){
+      if(!$('ownersTable')) return;
+      const selectedCopro = state.activeCoproId || $('ownersFilterCopro')?.value || '';
+      const types = identityRecordsV21();
+      document.querySelectorAll('[data-identity-type]').forEach((btn)=>btn.classList.toggle('active', btn.dataset.identityType===state.selectedIdentityType));
+      const records = types[state.selectedIdentityType === 'owner' ? 'owners' : state.selectedIdentityType === 'supplier' ? 'suppliers' : 'occupants'] || [];
+      $('ownersTable').innerHTML = `<div class="summary-line"><span class="badge">${records.length} tiers</span><span class="badge">Contexte : ${escapeHtml(selectedCopro ? (state.copros.find(c=>c.id===selectedCopro)?.name || '') : 'global')}</span>${state.selectedIdentityType==='owner'?'<span class="badge">Historique d’envoi disponible dans la fiche</span>':''}</div><div class="table-wrap"><table><thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Adresse</th><th>${state.selectedIdentityType==='owner'?'Préférence envoi':'Statut'}</th><th>Actions</th></tr></thead><tbody>${records.map((rec)=>`<tr><td>${escapeHtml(rec._name||'')}</td><td>${escapeHtml(rec._email||'')}</td><td>${escapeHtml(rec._phone||'')}</td><td>${escapeHtml(rec._address||'')}</td><td>${state.selectedIdentityType==='owner'?deliveryPreferenceBadgeV21(rec.delivery_preference):rec.active===false?'<span class="badge">Inactif</span>':'<span class="badge ok">Actif</span>'}</td><td><button class="btn secondary small" type="button" data-open-identity="${rec._type}|${rec.id}">Ouvrir</button></td></tr>`).join('') || '<tr><td colspan="6">Aucun tiers.</td></tr>'}</tbody></table></div>`;
+      renderIdentityDetail();
+    }
+
+    function openIdentityModal(type = state.selectedIdentityType || 'owner', id = null){
+      state.selectedIdentityType = type; state.selectedIdentityId = id;
+      const types = identityRecordsV21(); const map={owner:types.owners,supplier:types.suppliers,occupant:types.occupants};
+      const rec = id ? (map[type] || []).find((r)=>r.id===id) : null;
+      const title = rec ? `Fiche ${type==='owner'?'copropriétaire':type==='supplier'?'fournisseur':'occupant'}` : `Nouveau ${type==='owner'?'copropriétaire':type==='supplier'?'fournisseur':'occupant'}`;
+      const coproId = rec?.copro_id || state.activeCoproId || $('ownersFilterCopro')?.value || '';
+      const lots = type==='owner' && rec ? state.lots.filter((lot)=>lot.owner_id===rec.id) : [];
+      const totalQ = lots.reduce((s,l)=>s+Number(l.quotities||0),0);
+      const history = rec && type==='owner' ? ownerHistoryRowsV21(rec.id) : [];
+      const historyHtml = rec && type==='owner' ? `<div class="history-panel"><div class="toolbar"><h3>Historique</h3><span class="badge">${history.length} envoi(s)</span></div><div class="muted-note">Seuls les documents confirmés comme envoyés ou préparés pour courrier apparaissent ici. Les aperçus PDF ne sont pas historisés.</div><div class="history-list">${history.slice(0,12).map((h)=>`<div class="history-item"><div>${formatDateV20(h.sent_at||h.created_at)}</div><div><strong>${escapeHtml(documentTypeLabelV21(h.document_type))} — ${escapeHtml(h.document_label||'')}</strong><small>${escapeHtml(h.email_to||'')} ${h.error_message?' · '+escapeHtml(h.error_message):''}</small></div><div>${deliveryStatusLabelV21(h.status)}</div></div>`).join('') || '<div class="notice">Aucun envoi enregistré pour ce copropriétaire.</div>'}</div></div>` : '';
+      const body = `<div class="popup-form"><div class="modal-help">La préférence d’envoi sert à préparer automatiquement les documents : e-mail, courrier ou exclusion. Elle reste modifiable au moment de l’envoi.</div><div class="form-grid">${type !== 'supplier' ? `<label>Copropriété <select id="modalIdentityCopro">${coproOptions(coproId)}</select></label>` : ''}<label>Nom <input id="modalIdentityName" value="${escapeHtml(rec?._name || '')}" /></label><label>Email <input id="modalIdentityEmail" value="${escapeHtml(rec?._email || '')}" /></label><label>Téléphone <input id="modalIdentityPhone" value="${escapeHtml(rec?._phone || '')}" /></label><label>Adresse <input id="modalIdentityAddress" value="${escapeHtml(rec?._address || '')}" /></label><label>IBAN <input id="modalIdentityIban" value="${escapeHtml(rec?._iban || '')}" /></label>${type==='owner'?`<label>Préférence d’envoi <select id="modalIdentityDeliveryPreference">${createOwnerOptionDeliveryV21(rec?.delivery_preference || 'email')}</select></label>`:''}</div>${rec && type==='owner'?`<div class="summary-line"><span class="badge">Lots : ${lots.length}</span><span class="badge">Quotités : ${Number(totalQ).toLocaleString('fr-BE')}</span><span class="badge">${escapeHtml(lots.map((l)=>l.lot_number).join(', ') || 'Aucun lot lié')}</span></div>`:''}${historyHtml}</div>`;
+      openAppModal(title, body, modalFormFooter('modalSaveIdentityBtn'), {subtitle: rec?._name || coproContextLabel(), size:'wide'});
+      $('modalSaveIdentityBtn').onclick = saveIdentityFromModal;
+    }
+    function selectIdentity(type,id){ openIdentityModal(type,id); }
+    async function saveIdentityFromModal(){
+      const type=state.selectedIdentityType || 'owner'; const id=state.selectedIdentityId; const name=$('modalIdentityName').value.trim(); if(!name) return alert('Indique le nom / la dénomination.');
+      let tableName='compta_owners'; let payload={ email:$('modalIdentityEmail').value.trim() || null, phone:$('modalIdentityPhone').value.trim() || null, address:$('modalIdentityAddress').value.trim() || null, iban:$('modalIdentityIban').value.trim() || null };
+      if(type==='owner'){ payload.display_name=name; payload.delivery_preference=$('modalIdentityDeliveryPreference')?.value || 'email'; }
+      if(type==='supplier'){ tableName='compta_suppliers'; payload.name=name; }
+      if(type==='occupant'){ tableName='compta_occupants'; payload.display_name=name; }
+      if(type!=='supplier'){ payload.copro_id=$('modalIdentityCopro')?.value || state.activeCoproId || $('ownersFilterCopro')?.value || null; if(!payload.copro_id) return alert('Choisis une copropriété.'); }
+      if(!id) payload.created_by=currentUser.id;
+      const req = id ? supabaseClient.from(tableName).update(payload).eq('id',id) : supabaseClient.from(tableName).insert(payload);
+      const { error } = await req; if(error) return alert(error.message + (type==='owner'?' — As-tu exécuté la migration V21 ?':''));
+      closeAppModal(); await loadAll();
+    }
+
+    async function deleteBudgetHeaderV113(headerId){
+      const header=state.budgetHeaders.find((b)=>b.id===headerId); if(!header) return;
+      if(header.status==='validated' && hasCallsForBudgetContext(headerId)) return alert('Suppression refusée : ce budget est validé et des appels existent déjà sur cette copropriété/exercice.');
+      const extra = header.status==='validated' ? 'Ce budget est validé. ' : '';
+      if(!confirm(`${extra}Supprimer définitivement le budget "${header.label || 'Budget'}" et toutes ses lignes ?`)) return;
+      const { error: lineError } = await supabaseClient.from('compta_budget_lines').delete().eq('budget_id', headerId); if(lineError) return alert(lineError.message);
+      const { error } = await supabaseClient.from('compta_budgets').delete().eq('id', headerId); if(error) return alert(error.message);
+      state.selectedBudgetHeaderId=''; await loadBudgetHeaders(); await loadBudgetLines(); renderBudgets();
+    }
+
+    function sendLogFiltersReadV21(){
+      const f=state.sendLogFiltersV21 || {};
+      f.copro=$('sendLogCoproFilter')?.value || f.copro || '';
+      f.docType=$('sendLogDocTypeFilter')?.value || f.docType || 'all';
+      f.channel=$('sendLogChannelFilter')?.value || f.channel || 'all';
+      f.status=$('sendLogStatusFilter')?.value || f.status || 'all';
+      f.from=$('sendLogFromFilter')?.value || '';
+      f.to=$('sendLogToFilter')?.value || '';
+      f.search=($('sendLogSearchFilter')?.value || '').toLowerCase().trim();
+      state.sendLogFiltersV21=f; return f;
+    }
+    function sendLogRowsV21(){
+      const f=sendLogFiltersReadV21();
+      return (state.deliveryLogs || []).filter((l)=>{
+        if(f.copro && l.copro_id!==f.copro) return false;
+        if(f.docType!=='all' && l.document_type!==f.docType) return false;
+        if(f.channel!=='all' && l.channel!==f.channel) return false;
+        if(f.status!=='all' && l.status!==f.status) return false;
+        const d=String(l.sent_at || l.created_at || '').slice(0,10);
+        if(f.from && d < f.from) return false;
+        if(f.to && d > f.to) return false;
+        if(f.search){ const owner=state.owners.find(o=>o.id===l.owner_id); const copro=state.copros.find(c=>c.id===l.copro_id); const corpus=[owner?.display_name,copro?.name,l.document_label,l.email_to,l.channel,l.status,l.error_message].join(' ').toLowerCase(); if(!corpus.includes(f.search)) return false; }
+        return true;
+      });
+    }
+    function renderSendJournalV21(){
+      if(!$('sendJournalTable')) return;
+      const f=state.sendLogFiltersV21 || {docType:'all',channel:'all',status:'all'};
+      $('sendLogCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+(state.copros||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('sendLogCoproFilter').value=f.copro||''; $('sendLogDocTypeFilter').value=f.docType||'all'; $('sendLogChannelFilter').value=f.channel||'all'; $('sendLogStatusFilter').value=f.status||'all'; $('sendLogFromFilter').value=f.from||''; $('sendLogToFilter').value=f.to||''; $('sendLogSearchFilter').value=f.search||'';
+      const rows=sendLogRowsV21(); const email=rows.filter(r=>r.channel==='email').length; const paper=rows.filter(r=>r.channel==='paper').length; const errors=rows.filter(r=>r.status==='error').length;
+      $('sendJournalSummary').innerHTML=`<div class="send-log-card"><span>Lignes visibles</span><strong>${rows.length}</strong></div><div class="send-log-card"><span>E-mails</span><strong>${email}</strong></div><div class="send-log-card"><span>Courriers</span><strong>${paper}</strong></div><div class="send-log-card"><span>Erreurs</span><strong>${errors}</strong></div>`;
+      $('sendJournalTable').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriété</th><th>Copropriétaire</th><th>Type</th><th>Document</th><th>Canal</th><th>Statut</th><th>E-mail</th></tr></thead><tbody>${rows.map((l)=>{ const owner=state.owners.find(o=>o.id===l.owner_id); const copro=state.copros.find(c=>c.id===l.copro_id); return `<tr><td>${formatDateV20(l.sent_at||l.created_at)}</td><td>${escapeHtml(copro?.name||'')}</td><td>${escapeHtml(owner?.display_name||'')}</td><td>${escapeHtml(documentTypeLabelV21(l.document_type))}</td><td>${escapeHtml(l.document_label||'')}</td><td>${l.channel==='email'?'<span class="delivery-chip email">E-mail</span>':'<span class="delivery-chip paper">Courrier</span>'}</td><td>${deliveryStatusLabelV21(l.status)}</td><td>${escapeHtml(l.email_to||'')}</td></tr>`; }).join('') || '<tr><td colspan="8">Aucun envoi dans le filtre actuel.</td></tr>'}</tbody></table></div>`;
+    }
+
+    function callChannelV21(call){ const owner=ownerForCallV20(call); return state.deliveryChannelOverridesV21?.[call.id] || defaultChannelForOwnerV21(owner); }
+    function openCallDispatchPrepareModalV20(){
+      const calls=dispatchSelectedCallsV20(); if(!calls.length) return alert('Coche au moins un appel.');
+      calls.forEach((c)=>{ if(!state.deliveryChannelOverridesV21[c.id]) state.deliveryChannelOverridesV21[c.id]=defaultChannelForOwnerV21(ownerForCallV20(c)); });
+      const emailCalls=calls.filter(c=>callChannelV21(c)==='email'); const paperCalls=calls.filter(c=>callChannelV21(c)==='paper'); const skipped=calls.filter(c=>callChannelV21(c)==='skip');
+      const body=`<div class="popup-form"><div class="dispatch-package-grid"><div class="dispatch-package-card"><span>Total sélection</span><strong>${calls.length}</strong><div>${money(calls.reduce((s,c)=>s+Number(c.amount_due||0),0))}</div></div><div class="dispatch-package-card"><span>Par e-mail</span><strong>${emailCalls.length}</strong><div>Préparé pour l’envoi API</div></div><div class="dispatch-package-card"><span>Par courrier</span><strong>${paperCalls.length}</strong><div>PDF courrier à imprimer</div></div><div class="dispatch-package-card"><span>Non envoyés</span><strong>${skipped.length}</strong><div>Exclus de l’envoi</div></div></div><div class="notice">Tu peux forcer ponctuellement le canal. Le journal ne sera alimenté que lorsque tu confirmeras l’envoi ou que tu prépareras le lot courrier.</div><div class="table-wrap send-prep-table"><table><thead><tr><th>Copropriétaire</th><th>E-mail</th><th>Montant</th><th>Préférence</th><th>Canal pour cet envoi</th></tr></thead><tbody>${calls.map(c=>{const o=ownerForCallV20(c), email=ownerEmailV21(o), channel=callChannelV21(c);return `<tr class="${channel==='email'?'mail-row':channel==='paper'?'paper-row':'skip-row'}"><td>${escapeHtml(ownerNameV20(o))}</td><td>${email?escapeHtml(email):'<span class="dispatch-warning">Adresse mail manquante</span>'}</td><td>${money(c.amount_due)}</td><td>${deliveryPreferenceBadgeV21(ownerPrefV21(o))}</td><td><select data-v21-channel-for="${c.id}"><option value="email" ${channel==='email'?'selected':''} ${email?'':'disabled'}>E-mail</option><option value="paper" ${channel==='paper'?'selected':''}>Courrier</option><option value="skip" ${channel==='skip'?'selected':''}>Ne pas envoyer</option></select></td></tr>`}).join('')}</tbody></table></div></div>`;
+      openAppModal('Préparer l’envoi des appels', body, `<button class="btn secondary" type="button" data-modal-close>Fermer</button><button class="btn secondary" id="downloadCallDispatchZipBtn" type="button">Dossier ZIP</button><button class="btn secondary" id="printPaperCallDispatchBtn" type="button">PDF courrier</button><button class="btn" id="markCallDispatchSentBtn" type="button">Confirmer envoi / journaliser</button>`, {size:'wide'});
+    }
+    function printPaperCallDispatchV20(){
+      const calls=dispatchSelectedCallsV20().filter(c=>callChannelV21(c)==='paper'); const ids=calls.map(c=>c.id); if(!ids.length) return alert('Aucun courrier à imprimer dans la sélection.');
+      printOwnerCallsV11(ids,'Appels courrier');
+      if(confirm('Inscrire ces courriers dans le journal comme “courrier à imprimer” ?')) createDeliveryLogsForCallsV21(calls,'paper','paper_ready');
+    }
+    async function createDeliveryLogsForCallsV21(calls, forcedChannel='', forcedStatus=''){
+      const now=new Date().toISOString();
+      const rows=calls.filter(c=>forcedChannel || callChannelV21(c)!=='skip').map((c)=>{ const owner=ownerForCallV20(c); const channel=forcedChannel || callChannelV21(c); return {copro_id:c.copro_id, owner_id:c.owner_id, document_type:'owner_call', document_label:c.period_label || c.label || 'Appel de provisions', source_type:'owner_call', source_id:c.id, channel, status:forcedStatus || (channel==='email'?'sent':'paper_ready'), email_to:channel==='email'?ownerEmailV21(owner):null, sent_at:channel==='email'?now:null, prepared_at:now, created_by:currentUser.id, metadata:{amount_due:c.amount_due, due_date:c.due_date, lot_id:c.lot_id}}; });
+      if(!rows.length) return;
+      const { error } = await supabaseClient.from('compta_delivery_logs').insert(rows);
+      if(error) alert('Journal non alimenté. As-tu exécuté la migration V21 ? '+error.message);
+      await loadDeliveryLogsV21(); renderSendJournalV21();
+    }
+    async function markCallDispatchSentV20(){
+      const calls=dispatchSelectedCallsV20().filter(c=>callChannelV21(c)!=='skip'); if(!calls.length) return alert('Aucun appel à envoyer/journaliser.'); if(!confirm('Confirmer l’envoi e-mail et/ou la préparation courrier pour cette sélection ?')) return;
+      const batch=`APPELS-${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}`; const now=new Date().toISOString();
+      for(const c of calls){ const channel=callChannelV21(c); await supabaseClient.from('compta_owner_calls').update({delivery_status:channel==='email'?'sent':'paper_ready', delivery_channel:channel, sent_at:channel==='email'?now:null, sent_batch_ref:batch}).eq('id', c.id); }
+      await createDeliveryLogsForCallsV21(calls,'','');
+      try{ await supabaseClient.from('compta_call_send_batches').insert({batch_ref:batch, status:'prepared', selected_count:calls.length, email_count:calls.filter(c=>callChannelV21(c)==='email').length, paper_count:calls.filter(c=>callChannelV21(c)==='paper').length, created_by:currentUser.id}); }catch(e){}
+      closeAppModal(); state.callDispatchSelectedIds.clear(); state.deliveryChannelOverridesV21={}; await loadAll(); switchToView('callDispatch'); alert('Envoi journalisé. Les lignes sont visibles dans Pilotage → Envois / Journal et dans l’historique du copropriétaire.');
+    }
+
+    function renderCallDispatchV20(){
+      if(!$('callDispatchTable')) return;
+      if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(Array.from(state.callDispatchSelectedIds||[]));
+      const f=state.callDispatchFilters || {type:'provisions',status:'to_send'};
+      $('callDispatchCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+(state.copros||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('callDispatchCoproFilter').value=f.copro||''; $('callDispatchTypeFilter').value=f.type||'provisions'; $('callDispatchFrom').value=f.from||''; $('callDispatchTo').value=f.to||''; $('callDispatchStatusFilter').value=f.status||'to_send'; $('callDispatchSearch').value=f.search||'';
+      const rows=callDispatchRowsV20(); const visible=new Set(rows.map(r=>r.id)); Array.from(state.callDispatchSelectedIds).forEach(id=>{ if(!visible.has(id)) state.callDispatchSelectedIds.delete(id); });
+      const mail=rows.filter(c=>defaultChannelForOwnerV21(ownerForCallV20(c))==='email').length; const paper=rows.filter(c=>defaultChannelForOwnerV21(ownerForCallV20(c))==='paper').length; const noSend=rows.filter(c=>defaultChannelForOwnerV21(ownerForCallV20(c))==='skip').length;
+      $('callDispatchSummary').innerHTML=`<div class="dispatch-metric"><span>Appels visibles</span><strong>${rows.length}</strong></div><div class="dispatch-metric"><span>Montant visible</span><strong>${money(rows.reduce((s,c)=>s+Number(c.amount_due||0),0))}</strong></div><div class="dispatch-metric"><span>E-mail</span><strong>${mail}</strong></div><div class="dispatch-metric"><span>Courrier</span><strong>${paper}</strong></div>${noSend?`<div class="dispatch-metric"><span>Exclus</span><strong>${noSend}</strong></div>`:''}`;
+      const groups=groupCallDispatchV20(rows);
+      $('callDispatchTable').innerHTML=groups.map(([key,arr])=>{ const first=arr[0]; const copro=state.copros.find(c=>c.id===first.copro_id)||{}; const subtotal=arr.reduce((s,c)=>s+Number(c.amount_due||0),0); const mailCount=arr.filter(c=>defaultChannelForOwnerV21(ownerForCallV20(c))==='email').length; const paperCount=arr.filter(c=>defaultChannelForOwnerV21(ownerForCallV20(c))==='paper').length; const sentCount=arr.filter(c=>callDeliveryStatusV20(c)==='sent').length; const allChecked=arr.every(c=>state.callDispatchSelectedIds.has(c.id)); return `<div class="dispatch-group" data-dispatch-group="${escapeHtml(key)}"><div class="dispatch-group-head"><input type="checkbox" data-dispatch-group-check="${escapeHtml(key)}" ${allChecked?'checked':''}><div><h3>${escapeHtml(copro.name||'Copropriété')}</h3><small>${escapeHtml(first.period_label||first.label||'Appel')} · Échéance ${formatDateV20(first.due_date)}</small></div><div><strong>${arr.length}</strong><small>ligne(s)</small></div><div><strong>${money(subtotal)}</strong><small>montant</small></div><div><span class="dispatch-channel-mail">${mailCount} mail</span><br><span class="dispatch-channel-paper">${paperCount} courrier</span>${sentCount?`<br><span class="badge ok">${sentCount} envoyé(s)</span>`:''}</div><div class="dispatch-actions"><button class="btn secondary small" type="button" data-print-dispatch-group="${escapeHtml(key)}">PDF groupe</button><button class="btn secondary small" type="button" data-toggle-dispatch-group="${escapeHtml(key)}">Détails</button></div></div><div class="dispatch-details"><div class="table-wrap"><table><thead><tr><th></th><th>Copropriétaire</th><th>Lot</th><th>E-mail</th><th>Montant</th><th>Préférence</th><th>Canal prévu</th><th>Statut</th></tr></thead><tbody>${arr.map(c=>{ const owner=ownerForCallV20(c); const email=ownerEmailV21(owner); const selected=state.callDispatchSelectedIds.has(c.id); const channel=defaultChannelForOwnerV21(owner); const sent=callDeliveryStatusV20(c)==='sent'; return `<tr class="${sent?'dispatch-recipient-row--sent':channel==='email'?'dispatch-recipient-row--mail':channel==='paper'?'dispatch-recipient-row--paper':'skip-row'}"><td><input class="call-dispatch-check" type="checkbox" data-dispatch-call="${c.id}" ${selected?'checked':''}></td><td>${escapeHtml(ownerNameV20(owner))}</td><td>${escapeHtml(c.compta_lots?.lot_number||'')}</td><td>${email?escapeHtml(email):'<span class="dispatch-warning">Adresse mail manquante</span>'}</td><td><strong>${money(c.amount_due)}</strong></td><td>${deliveryPreferenceBadgeV21(ownerPrefV21(owner))}</td><td>${channel==='email'?'<span class="dispatch-channel-mail">E-mail</span>':channel==='paper'?'<span class="dispatch-channel-paper">Courrier</span>':'<span class="badge">Ne pas envoyer</span>'}</td><td>${sent?'<span class="badge ok">Envoyé</span>':'<span class="badge warn">À envoyer</span>'}</td></tr>`; }).join('')}</tbody></table></div></div></div>`; }).join('') || '<div class="notice">Aucun appel comptabilisé correspondant aux filtres.</div>';
+    }
+
+    const previousRenderAllV21 = renderAll;
+    renderAll = function(){ previousRenderAllV21(); renderCallDispatchV20(); renderSendJournalV21(); };
+
+    document.addEventListener('change',(e)=>{
+      if(e.target?.dataset?.v21ChannelFor){ state.deliveryChannelOverridesV21[e.target.dataset.v21ChannelFor]=e.target.value; openCallDispatchPrepareModalV20(); }
+      const id=e.target?.id;
+      if(['sendLogCoproFilter','sendLogDocTypeFilter','sendLogChannelFilter','sendLogStatusFilter','sendLogFromFilter','sendLogToFilter'].includes(id)){ sendLogFiltersReadV21(); renderSendJournalV21(); }
+    });
+    document.addEventListener('input',(e)=>{ if(e.target?.id==='sendLogSearchFilter'){ sendLogFiltersReadV21(); renderSendJournalV21(); } });
+    document.addEventListener('click',(e)=>{ if(e.target?.id==='refreshSendJournalBtn') { loadDeliveryLogsV21().then(renderSendJournalV21); } });
 
 
     boot().then(() => { updateTopbarContext(); updateSidebarButtons(); });
