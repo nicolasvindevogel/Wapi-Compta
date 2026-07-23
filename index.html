@@ -2310,7 +2310,44 @@
 
     .menu-group, .menu-group__header, .menu-group__body { display: none !important; }
 
-  </style>
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style>
 </head>
 <body>
   <section id="setupScreen" class="login-wrap hidden">
@@ -2510,7 +2547,7 @@
           </div>
         </div>
         <div class="top-actions">
-          <span id="userPill" class="user-pill"></span>
+          <select id="activeFiscalYearSelect" title="Exercice actif"></select><span id="userPill" class="user-pill"></span>
           <button id="refreshBtn" class="btn secondary" type="button">Actualiser</button>
           <button id="logoutBtn" class="btn danger" type="button">Deconnexion</button>
         </div>
@@ -3455,6 +3492,95 @@
             </div>
             <p style="color:var(--muted); line-height:1.5;">Historique des actions : créations, validations, corrections, imports et modifications sensibles.</p>
             <div class="module-grid"><div class="module-card"><h3>Audit</h3><p>Module prévu dans la feuille de route WAPI One. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Utilisateur</h3><p>Module prévu dans la feuille de route WAPI One. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Horodatage</h3><p>Module prévu dans la feuille de route WAPI One. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+          </div>
+        </section>
+
+
+
+        <section id="coproSettingsView" class="view hidden">
+          <div class="card">
+            <div class="toolbar"><h2>Réglages copropriété</h2><div class="top-actions"><button class="btn" id="v28SaveCoproSettingsBtn" type="button">Enregistrer réglages</button></div></div>
+            <div class="notice">Code copro, gestionnaire, données officielles, documents, comptes bancaires et paramètres utilisés dans les PDF et les paiements.</div>
+            <div class="v28-fieldset">
+              <h3>Informations copropriété <span class="v28-pill">Contexte actif</span></h3>
+              <div class="form-grid">
+                <label>Copropriété <select id="v28CoproSettingsSelect"></select></label>
+                <label>Code copro <input id="v28CoproCode" placeholder="Ex. ALB" maxlength="12"></label>
+                <label>Nom <input id="v28CoproName"></label>
+                <label>BCE <input id="v28CoproBce" placeholder="0xxx.xxx.xxx"></label>
+                <label>Adresse <input id="v28CoproAddress"></label>
+                <label>Gestionnaire <input id="v28CoproManager" placeholder="Nom du gestionnaire"></label>
+              </div>
+            </div>
+            <div class="v28-fieldset">
+              <h3>Exercice actif et numérotation <span class="v28-pill">Ex : ALB-EX26-001</span></h3>
+              <div class="form-grid">
+                <label>Exercice <select id="v28FiscalYearSettingsSelect"></select></label>
+                <label>Code exercice <input id="v28FiscalYearCode" placeholder="EX26"></label>
+                <label>Dernier numéro facture interne <input id="v28LastInternalInvoiceNo" type="number" min="0" step="1"></label>
+              </div>
+            </div>
+            <div class="v28-fieldset">
+              <h3>Comptes bancaires copropriété</h3>
+              <div class="form-grid">
+                <label>Libellé <input id="v28BankLabel" placeholder="Compte à vue / réserve"></label>
+                <label>IBAN <input id="v28BankIban" placeholder="BE..."></label>
+                <label>BIC <input id="v28BankBic" placeholder="BIC"></label>
+                <label>Compte comptable <select id="v28BankAccountAccounting"></select></label>
+                <label>Type <select id="v28BankType"><option value="current">Compte à vue</option><option value="savings">Compte épargne</option></select></label>
+                <label><span>&nbsp;</span><button class="btn secondary" id="v28AddBankAccountBtn" type="button">Ajouter compte</button></label>
+              </div>
+              <div id="v28CoproBankAccountsTable"></div>
+            </div>
+            <div class="v28-fieldset">
+              <h3>Documents copropriété <button class="btn secondary small" id="v28AddFolderBtn" type="button">+ Dossier</button></h3>
+              <p class="muted-note">Style “Files” : dossiers renommables, puis documents classés par dossier. Le glisser-déposer complet sera branché quand le stockage définitif sera en place.</p>
+              <div id="v28FoldersGrid" class="v28-folder-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="metersView" class="view hidden">
+          <div class="card">
+            <div class="toolbar"><h2>Relevés de compteurs</h2><div class="top-actions"><button class="btn secondary" id="v28PrepareMeterBtn" type="button">Préparer tableau</button><button class="btn" id="v28ValidateMeterBtn" type="button">Valider / OD</button></div></div>
+            <div class="notice">Répartition d’une facture eau/chauffage selon index début/fin. Le tableau calcule automatiquement les consommations, puis prépare l’OD et les frais privatifs pour les décomptes.</div>
+            <div class="form-grid">
+              <label>Copropriété <select id="v28MeterCopro"></select></label>
+              <label>Exercice <select id="v28MeterYear"></select></label>
+              <label>Compte facture à solder <select id="v28MeterAccount"></select></label>
+              <label>Libellé <input id="v28MeterLabel" placeholder="Relevé compteur eau / chauffage"></label>
+              <label>Montant facture total <input id="v28MeterInvoiceTotal" type="number" step="0.01"></label>
+              <label>Prix unitaire forcé <input id="v28MeterUnitPrice" type="number" step="0.0001" placeholder="Optionnel"></label>
+            </div>
+            <div class="v28-kpi-row"><div class="v28-kpi"><small>Lots concernés</small><strong id="v28MeterLotsKpi">0</strong></div><div class="v28-kpi"><small>Consommation totale</small><strong id="v28MeterConsKpi">0</strong></div><div class="v28-kpi"><small>Total réparti</small><strong id="v28MeterTotalKpi">0,00 €</strong></div></div>
+            <div id="v28MeterTable" class="v28-compact-table"></div>
+          </div>
+        </section>
+
+        <section id="codaPilotView" class="view hidden">
+          <div class="card">
+            <div class="toolbar"><h2>Validation CODA</h2><div class="top-actions"><button class="btn secondary" id="v28RefreshCodaBtn" type="button">Rafraîchir</button><button class="btn" id="v28ValidateSelectedCodaBtn" type="button">Valider sélection</button></div></div>
+            <div class="notice">Les CODA importés depuis le centre de traitement se valident ici, toutes copropriétés confondues ou filtrés par copropriété.</div>
+            <div class="list-filters">
+              <label>Copropriété <select id="v28CodaCoproFilter"></select></label>
+              <label>Statut <select id="v28CodaStatusFilter"><option value="">Tous</option><option value="imported">Importé</option><option value="to_validate">À valider</option><option value="validated">Validé</option><option value="rejected">Rejeté</option></select></label>
+              <label>Tri <select id="v28CodaSort"><option value="created_at">Date import</option><option value="statement_number">N° extrait</option><option value="statement_date">Date extrait</option></select></label>
+            </div>
+            <div id="v28CodaTable"></div>
+          </div>
+        </section>
+
+        <section id="accountLookupView" class="view hidden">
+          <div class="card">
+            <div class="toolbar"><h2>Consultation compte comptable</h2><button class="btn secondary" id="v28AccountLookupRefreshBtn" type="button">Rechercher</button></div>
+            <div class="form-grid">
+              <label>Copropriété <select id="v28AccountLookupCopro"></select></label>
+              <label>Compte comptable <input id="v28AccountLookupCode" placeholder="Ex. 61050"></label>
+              <label>Du <input id="v28AccountLookupFrom" type="date"></label>
+              <label>Au <input id="v28AccountLookupTo" type="date"></label>
+            </div>
+            <div class="v28-kpi-row"><div class="v28-kpi"><small>Débit</small><strong id="v28AccountDebit">0,00 €</strong></div><div class="v28-kpi"><small>Crédit</small><strong id="v28AccountCredit">0,00 €</strong></div><div class="v28-kpi"><small>Solde</small><strong id="v28AccountSolde">0,00 €</strong></div></div>
+            <div id="v28AccountLookupTable"></div>
           </div>
         </section>
 
@@ -6207,7 +6333,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div><script>print();<\/script></body></html>`); win.document.close(); }
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>Appel de fonds</h1><strong>${escapeHtml(copro?.name||'')}</strong></div></div><div class="box"><p><strong>Copropriétaire :</strong> ${escapeHtml(owner)}</p><p><strong>Lot :</strong> ${escapeHtml(c.compta_lots?.lot_number||'')}</p><p><strong>Libellé :</strong> ${escapeHtml(c.label||'')}</p><p><strong>Échéance :</strong> ${escapeHtml(c.due_date||'')}</p><p class="amount">${money(c.amount_due)}</p></div><script>print();<\/script></body></html>`); win.document.close(); }
     function printAllCalls(){ state.ownerCalls.filter((c)=>!state.activeCoproId||c.copro_id===state.activeCoproId).slice(0,50).forEach((c)=>printOwnerCall(c.id)); }
 
     function openDistributionKeyModal(id=null){ const key=id?state.distributionKeys.find(k=>k.id===id):null; const coproId=key?.copro_id||state.activeCoproId||$('distributionCopro')?.value||''; const body=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="modalDistCopro">${coproOptions(coproId)}</select></label><label>Nom de la clé <input id="modalDistName" value="${escapeHtml(key?.name||'')}"></label><label>Clé par défaut <select id="modalDistDefault"><option value="false">Non</option><option value="true" ${key?.is_default?'selected':''}>Oui</option></select></label></div></div>`; openAppModal(id?'Modifier clé de répartition':'Nouvelle clé de répartition', body, modalFormFooter('modalSaveDistBtn', id&&!key?.is_default?`<button class="btn danger" type="button" id="modalDeleteDistBtn">Supprimer</button>`:''), {size:'narrow'}); $('modalSaveDistBtn').onclick=async()=>{ const payload={copro_id:$('modalDistCopro').value,name:$('modalDistName').value.trim(),is_default:$('modalDistDefault').value==='true',created_by:currentUser.id}; if(!payload.copro_id||!payload.name)return alert('Complète les champs.'); const req=id?supabaseClient.from('compta_distribution_keys').update(payload).eq('id',id):supabaseClient.from('compta_distribution_keys').insert(payload); const {error}=await req; if(error)return alert(error.message); closeAppModal(); await loadAll(); }; if($('modalDeleteDistBtn'))$('modalDeleteDistBtn').onclick=async()=>{ if(!confirm('Supprimer cette clé ?'))return; await supabaseClient.from('compta_distribution_items').delete().eq('distribution_key_id',id); const {error}=await supabaseClient.from('compta_distribution_keys').delete().eq('id',id); if(error)return alert(error.message); closeAppModal(); await loadAll(); }; }
@@ -6424,7 +6587,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>${escapeHtml(header?.label||'Budget')}</h1><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>${Object.entries(groups).map(([keyId,arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="key"><h2>${escapeHtml(k?.name||'Sans clé')} - ${money(subtotal)}</h2><table><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr>${arr.map((l)=>{const a=l.compta_accounts||state.accounts.find(x=>x.id===l.account_id)||{}; return `<tr><td>${escapeHtml((a.code||'')+' - '+(a.label||''))}</td><td>${escapeHtml(l.label||'')}</td><td>${money(l.amount)}</td></tr>`}).join('')}</table></div>`}).join('')}<div class="total">TOTAL BUDGET : ${money(total)}</div><script>window.print();<\/script></body></html>`;
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body><div class="head"><div><div class="logo">WAPI-SYNDIK</div><div>DL GROUPE</div></div><div><h1>${escapeHtml(header?.label||'Budget')}</h1><div>${new Date().toLocaleDateString('fr-BE')}</div></div></div>${Object.entries(groups).map(([keyId,arr])=>{ const k=state.distributionKeys.find((x)=>x.id===keyId); const subtotal=arr.reduce((s,l)=>s+Number(l.amount||0),0); return `<div class="key"><h2>${escapeHtml(k?.name||'Sans clé')} - ${money(subtotal)}</h2><table><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr>${arr.map((l)=>{const a=l.compta_accounts||state.accounts.find(x=>x.id===l.account_id)||{}; return `<tr><td>${escapeHtml((a.code||'')+' - '+(a.label||''))}</td><td>${escapeHtml(l.label||'')}</td><td>${money(l.amount)}</td></tr>`}).join('')}</table></div>`}).join('')}<div class="total">TOTAL BUDGET : ${money(total)}</div><script>window.print();<\/script></body></html>`;
       const w=window.open('','_blank'); w.document.write(htmlBody); w.document.close();
     }
 
@@ -6577,7 +6777,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body><div class="head"><div class="logo">WAPI-SYNDIK</div><h1>Situation de compte / Balance des tiers</h1></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body><div class="head"><div class="logo">WAPI-SYNDIK</div><h1>Situation de compte / Balance des tiers</h1></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
     }
 
     const originalRenderAllV10 = renderAll;
@@ -6901,7 +7138,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${body}<script>window.print();<\/script></body></html>`); win.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${body}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
     function printCallGroupAllV11(callKey) { printOwnerCallsV11(state.ownerCalls.filter((c)=>c.call_id===callKey).map((c)=>c.id), 'Appels de fonds'); }
@@ -7018,7 +7292,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${content}<script>window.print();<\/script></body></html>`); win.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${content}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
     function rowsForCurrentThirdBalanceV11() {
@@ -9463,7 +9774,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
     }
     function printAgPvV14(meetingId){
       const m=state.agMeetings.find(x=>x.id===meetingId); if(!m) return; const points=agMeetingPoints(meetingId); const attendees=agMeetingAttendees(meetingId); const q=computeAgQuorum(m); const copro=coproNameByIdV14(m.copro_id);
@@ -9531,7 +9879,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${html}<script>window.print();<\/script></body></html>`); win.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${html}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
     async function deleteAgV14(id){ if(!confirm('Supprimer cette AG et ses points/votes ?')) return; const {error}=await supabaseClient.from('compta_ag_meetings').delete().eq('id',id); if(error) return alert(error.message); state.agSelectedMeetingId=''; await loadAgModuleData(); renderMeetingsV14(); }
@@ -9762,7 +10147,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${pages}<script>window.print();<\/script></body></html>`); win.document.close();
     }
     function voteDetailRowsV15(point){
       const attendees=agPresentAttendeesV15(point.meeting_id);
@@ -9836,7 +10258,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${cover}${presence}${pointPages}${sign}<script>window.print();<\/script></body></html>`); win.document.close();
     }
 
 
@@ -9992,7 +10451,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${content}<script>window.print();<\/script></body></html>`);
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${content}<script>window.print();<\/script></body></html>`);
       win.document.close();
     }
     function pdfCssAgV16(){ return `@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Century Gothic,Arial,sans-serif;margin:0;color:#172033;background:white;font-size:12px;line-height:1.38}.page{position:relative;min-height:267mm;padding:0 0 13mm 0;break-inside:avoid}.page:not(:last-child){break-after:page}.brandbar{height:7px;background:#1f7a8c;border-radius:0 0 8px 8px;margin-bottom:16px}.head{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #dbe7ee;padding-bottom:13px;margin-bottom:16px}.logo{font-size:24px;color:#1f7a8c;font-weight:900;letter-spacing:.02em}.agency{font-size:10.5px;color:#475569;line-height:1.35}.doc-title{text-align:right}.doc-title h1{margin:0;color:#14586a;font-size:22px}.doc-title strong{display:block;margin-top:4px;color:#172033}.window-address{position:absolute;left:22mm;top:42mm;width:86mm;min-height:28mm;border:0;padding:0;font-size:12px;line-height:1.45;color:#111827}.with-window-space{padding-top:48mm}.intro{font-size:13px;line-height:1.55}.muted{color:#667085}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.meta,.box{border:1px solid #d9e6ec;border-radius:12px;padding:10px;background:#fbfdfe}.box{margin-top:12px}.meta span{display:block;color:#667085;font-size:9.5px;text-transform:uppercase;font-weight:800;letter-spacing:.04em}.meta strong{display:block;margin-top:3px;font-size:13px}h1,h2,h3{color:#14586a}h2{font-size:17px;margin:0 0 9px}.agenda-list{counter-reset:item;margin:0;padding:0;list-style:none}.agenda-list li{counter-increment:item;border-bottom:1px solid #e6eef5;padding:8px 0;break-inside:avoid}.agenda-list li:before{content:counter(item);display:inline-flex;width:24px;height:24px;border-radius:8px;background:#eaf7fa;color:#14586a;align-items:center;justify-content:center;font-weight:900;margin-right:8px}.agenda-title{font-weight:900}.agenda-desc{display:block;margin-left:36px;margin-top:2px;color:#475569;line-height:1.35}.proxy-box{border:2px solid #1f7a8c;border-radius:16px;padding:15px;margin-top:22px}.line{border-bottom:1px dotted #6b7280;height:24px;margin:7px 0}.sign{height:60px;border-bottom:1px solid #94a3b8;margin-top:16px}.footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #dbe7ee;padding-top:6px;color:#64748b;font-size:9.5px;display:flex;justify-content:space-between}table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10.5px}td,th{padding:5px 6px;border-bottom:1px solid #e6eef5;text-align:left;vertical-align:top}th{background:#f2f7fa;color:#14586a}.amount{text-align:right;white-space:nowrap}.vote-yes{color:#146c2e;font-weight:900}.vote-no{color:#991b1b;font-weight:900}.vote-abstain{color:#92400e;font-weight:900}.result{display:inline-block;border-radius:999px;padding:3px 8px;font-weight:900}.result.ok{background:#dff7e8;color:#146c2e}.result.no{background:#fde2e2;color:#991b1b}.quorum-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pill{border:1px solid #d9e6ec;border-radius:12px;padding:8px;background:#fbfdfe}.pill span{display:block;color:#667085;font-size:9px;text-transform:uppercase;font-weight:800}.pill strong{font-size:15px;color:#14586a}.pv-point{border:1px solid #d9e6ec;border-radius:12px;padding:10px;margin:9px 0;break-inside:avoid}.pv-point h3{font-size:14px;margin:0 0 6px}.pv-point-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.names{font-size:9.5px;color:#475569}.annex-img{max-width:100%;max-height:238mm;display:block;margin:0 auto}.annex-pdf{width:100%;height:238mm;border:1px solid #d9e6ec;border-radius:8px}.compact-section{break-inside:avoid}.page-auto{min-height:auto;padding-bottom:15mm}.page-auto:not(:last-child){break-after:auto}@media print{.page:not(:last-child){page-break-after:always}.page-auto:not(:last-child){page-break-after:auto}.pv-point{break-inside:avoid}}`; }
@@ -10204,7 +10700,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${content}${script}</body></html>`);
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${content}${script}</body></html>`);
       win.document.close();
     }
 
@@ -10926,7 +11459,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${pages}<script>window.print();<\/script></body></html>`);
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${pages}<script>window.print();<\/script></body></html>`);
       win.document.close();
     }
 
@@ -11033,7 +11603,44 @@
     .invoice-total-line.total { background:#1f7a8c; color:#fff; font-weight:900; font-size:18px; }
     .invoice-ocr-note { margin-top:22px; border-left:4px solid #f2a541; padding:10px 12px; background:#fff7e6; color:#5c3a00; }
 
-  </style></head><body>${callPageHtmlV20(group)}</body></html>`); });
+  
+
+/* ============================================================
+   V28 - Ajustements document WAPI ONE : navigation, lisibilité,
+   modules de réglages copro, compteurs, CODA pilotage, compte comptable
+   ============================================================ */
+:root{
+  --v28-accent:#6E72FF;
+  --v28-accent-soft:#EEF0FF;
+  --v28-ink:#171B2B;
+  --v28-muted:#657086;
+  --v28-line:#E8ECF3;
+  --v28-card:#FFFFFF;
+}
+.main-module-btn{ color:#24293A !important; font-weight:850 !important; }
+.main-module-btn .main-module-icon{ background:#F3F5FA !important; color:#30364A !important; }
+.main-module-btn:hover{ background:#F4F5FF !important; color:#171B2B !important; }
+.main-module-btn.active{ background:#171B2B !important; color:#fff !important; }
+.main-module-btn.active .main-module-icon{ background:rgba(255,255,255,.14) !important; color:#fff !important; }
+.module-tab{ color:#2C3347 !important; background:#fff !important; border-color:#E6EAF2 !important; }
+.module-tab.active{ background:#171B2B !important; color:#fff !important; border-color:#171B2B !important; }
+#appScreen.sidebar-collapsed .active-copro-box{ width:52px; padding:8px 6px !important; overflow:hidden; }
+#appScreen.sidebar-collapsed .active-copro-box label,
+#appScreen.sidebar-collapsed .active-copro-box .active-copro-name,
+#appScreen.sidebar-collapsed .active-copro-box select{ display:none !important; }
+.v28-fieldset{border:1px solid var(--v28-line);border-radius:20px;padding:18px;background:#fff;margin:14px 0;box-shadow:0 10px 30px rgba(25,31,50,.04)}
+.v28-fieldset h3{margin:0 0 12px;color:var(--v28-ink);letter-spacing:-.02em;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.v28-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--v28-accent-soft);color:#363BD2;padding:7px 11px;font-weight:850;font-size:12px}
+.v28-folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.v28-folder{border:1px solid #E7EAF3;border-radius:18px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFF);cursor:pointer;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease;}
+.v28-folder:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(25,31,50,.09);border-color:#CED5FF}
+.v28-folder strong{color:#171B2B;font-size:15px}.v28-folder span{color:var(--v28-muted);font-size:12px}
+.v28-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:12px 0}
+.v28-kpi{border:1px solid var(--v28-line);border-radius:18px;padding:15px;background:#fff}.v28-kpi small{display:block;color:var(--v28-muted);font-weight:750}.v28-kpi strong{font-size:24px;color:var(--v28-ink)}
+.v28-inline-input{min-width:90px;max-width:150px}.v28-compact-table table td,.v28-compact-table table th{padding:7px 8px;font-size:12px}.v28-compact-table table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em}.bank-pane-hidden-v28{display:none!important}
+#activeFiscalYearSelect{min-width:150px;border-radius:14px;border:1px solid rgba(22,26,39,.12);background:#fff;color:#171B2B;padding:10px 12px;font-weight:800}
+
+</style></head><body>${callPageHtmlV20(group)}</body></html>`); });
       const blob=await zip.generateAsync({type:'blob'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${batch}_dossier_envoi_appels.zip`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
     function printPaperCallDispatchV20(){ const ids=dispatchSelectedCallsV20().filter(c=>!ownerEmailV20(ownerForCallV20(c))).map(c=>c.id); if(!ids.length) return alert('Aucun copropriétaire sans e-mail dans la sélection.'); printOwnerCallsV11(ids,'Appels courrier'); }
@@ -12773,6 +13380,195 @@
       if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeWapiOneNavigation); else initializeWapiOneNavigation();
     })();
 
+
+
+
+
+/* ============================================================
+   V28 - Socle documentaire WAPI ONE : codes, exercice actif, réglages copro,
+   compteurs, CODA pilotage, compte comptable, PDF/menus plus propres.
+   ============================================================ */
+(function(){
+  const $id = (id)=>document.getElementById(id);
+  function opts(list, labelFn, empty='Choisir...'){
+    return `<option value="">${empty}</option>` + (list||[]).map(x=>`<option value="${x.id}">${escapeHtml(labelFn(x)||'')}</option>`).join('');
+  }
+  function currentYear(){
+    const select=$id('activeFiscalYearSelect');
+    return select?.value || state.activeFiscalYearId || state.fiscalYears?.[0]?.id || '';
+  }
+  function setCurrentYear(id){ state.activeFiscalYearId=id||''; try{localStorage.setItem('wapi-one-active-fiscal-year', state.activeFiscalYearId)}catch(e){} }
+  function coproLabel(c){ return [c.code||c.reference||'', c.name||''].filter(Boolean).join(' - '); }
+  function yearLabel(y){ return [y.code||'', y.label||''].filter(Boolean).join(' - '); }
+  async function safeSelect(table, select='*'){
+    try{ const {data,error}=await supabaseClient.from(table).select(select); if(error) throw error; return data||[]; }catch(e){ console.warn('V28 table optionnelle', table, e.message); return []; }
+  }
+  async function loadV28Extra(){
+    state.v28Folders = await safeSelect('compta_copro_folders','*');
+    state.v28Documents = await safeSelect('compta_copro_documents','*');
+    state.v28MeterBatches = await safeSelect('compta_meter_batches','*');
+    state.v28MeterLines = await safeSelect('compta_meter_lines','*');
+    state.v28CoproBankAccounts = await safeSelect('compta_copro_bank_accounts','*');
+  }
+  const previousLoadAllV28 = typeof loadAll === 'function' ? loadAll : null;
+  loadAll = async function(){ if(previousLoadAllV28) await previousLoadAllV28(); await loadV28Extra(); renderV28All(); };
+  const previousRenderAllV28 = typeof renderAll === 'function' ? renderAll : null;
+  renderAll = function(){ if(previousRenderAllV28) previousRenderAllV28(); renderV28All(); };
+  function renderFiscalYearSelector(){
+    const select=$id('activeFiscalYearSelect'); if(!select) return;
+    const saved=localStorage.getItem('wapi-one-active-fiscal-year')||'';
+    if(!state.activeFiscalYearId) state.activeFiscalYearId=saved || state.fiscalYears?.[0]?.id || '';
+    select.innerHTML = opts(state.fiscalYears||[], yearLabel, 'Exercice');
+    select.value = state.activeFiscalYearId || '';
+    select.onchange=()=>{ setCurrentYear(select.value); renderAll(); updateTopbarContext(); };
+  }
+  function renderV28All(){
+    renderFiscalYearSelector(); renderCoproSettingsV28(); renderMetersV28(); renderCodaPilotV28(); renderAccountLookupV28(); enhanceBankV28(); enhanceOwnersV28(); enhanceBilanV28();
+  }
+  function enhanceBankV28(){
+    // Le CODA et les comptes bancaires sont déplacés vers Pilotage / Réglages copro : on garde l'encodage manuel visible.
+    document.querySelectorAll('[data-bank-tab="coda"],[data-bank-tab="accounts"]').forEach(el=>el.classList.add('bank-pane-hidden-v28'));
+  }
+  function enhanceOwnersV28(){
+    const h=document.querySelector('#ownersView h2'); if(h) h.textContent='Tiers';
+    document.querySelectorAll('[data-title="Identites / Proprietaires"], [data-title="Copropriétaires"]').forEach(b=>{ b.dataset.title='Tiers'; const label=b.querySelector('.nav-label')||b; if(label) label.textContent='Tiers'; });
+  }
+  function enhanceBilanV28(){
+    const panel=$id('bilanView'); if(!panel || panel.dataset.v28Bilan) return; panel.dataset.v28Bilan='1';
+    const firstCard=panel.querySelector('.card'); if(firstCard){ firstCard.insertAdjacentHTML('afterbegin','<div class="notice"><strong>V28 :</strong> le bilan est prévu pour afficher comptes comptables, regroupement/détail des tiers, total actif sous actif et total passif sous passif, avec PDF professionnel et ouverture du détail au clic via Consultation compte comptable.</div>'); }
+  }
+  function renderCoproSettingsV28(){
+    if(!$id('v28CoproSettingsSelect')) return;
+    const coproId=state.activeCoproId || $id('v28CoproSettingsSelect').value || state.copros?.[0]?.id || '';
+    $id('v28CoproSettingsSelect').innerHTML=opts(state.copros,coproLabel,'Copropriété'); $id('v28CoproSettingsSelect').value=coproId;
+    const c=state.copros.find(x=>x.id===coproId)||{};
+    $id('v28CoproCode').value=c.code||''; $id('v28CoproName').value=c.name||''; $id('v28CoproBce').value=c.bce||''; $id('v28CoproAddress').value=c.address||''; $id('v28CoproManager').value=c.manager_name||'';
+    const years=(state.fiscalYears||[]).filter(y=>!coproId||y.copro_id===coproId);
+    const yid=currentYear() || years[0]?.id || '';
+    $id('v28FiscalYearSettingsSelect').innerHTML=opts(years,yearLabel,'Exercice'); $id('v28FiscalYearSettingsSelect').value=yid;
+    const y=state.fiscalYears.find(x=>x.id===yid)||{}; $id('v28FiscalYearCode').value=y.code||''; $id('v28LastInternalInvoiceNo').value=y.last_internal_invoice_no||0;
+    $id('v28BankAccountAccounting').innerHTML=opts((state.accounts||[]).filter(a=>String(a.code||'').startsWith('55')),a=>`${a.code} - ${a.label}`,'Compte 55');
+    const banks=(state.v28CoproBankAccounts||[]).filter(b=>b.copro_id===coproId);
+    $id('v28CoproBankAccountsTable').innerHTML=banks.length?table(['Libellé','IBAN','BIC','Compte','Type'],banks.map(b=>[b.label||'',b.iban||'',b.bic||'',b.account_code||'',b.account_type==='savings'?'Épargne':'Vue'])):'<div class="notice">Aucun compte bancaire spécifique encodé dans les réglages copro.</div>';
+    const folders=(state.v28Folders||[]).filter(f=>f.copro_id===coproId);
+    $id('v28FoldersGrid').innerHTML=(folders.length?folders:[{name:'Acte de base',id:'acte'},{name:'ROI',id:'roi'},{name:'PV AG',id:'pv'},{name:'Contrats',id:'contrats'}]).map(f=>{ const count=(state.v28Documents||[]).filter(d=>d.folder_id===f.id).length; return `<div class="v28-folder" data-folder-id="${f.id}"><strong>${escapeHtml(f.name||'Dossier')}</strong><span>${count} document(s)</span></div>`; }).join('');
+  }
+  async function saveCoproSettingsV28(){
+    const coproId=$id('v28CoproSettingsSelect')?.value||state.activeCoproId; if(!coproId) return alert('Choisis une copropriété.');
+    const payload={code:$id('v28CoproCode').value.trim(), name:$id('v28CoproName').value.trim(), bce:$id('v28CoproBce').value.trim(), address:$id('v28CoproAddress').value.trim(), manager_name:$id('v28CoproManager').value.trim()};
+    let r=await supabaseClient.from('compta_copros').update(payload).eq('id',coproId); if(r.error) return alert(r.error.message);
+    const yearId=$id('v28FiscalYearSettingsSelect')?.value; if(yearId){ r=await supabaseClient.from('compta_fiscal_years').update({code:$id('v28FiscalYearCode').value.trim(), last_internal_invoice_no:Number($id('v28LastInternalInvoiceNo').value||0)}).eq('id',yearId); if(r.error) alert(r.error.message); }
+    await loadCopros(); await loadFiscalYears(); renderV28All(); alert('Réglages copropriété enregistrés.');
+  }
+  async function addBankV28(){
+    const coproId=$id('v28CoproSettingsSelect')?.value||state.activeCoproId; if(!coproId) return alert('Choisis une copropriété.');
+    const accId=$id('v28BankAccountAccounting').value; const acc=state.accounts.find(a=>a.id===accId)||{};
+    const payload={copro_id:coproId,label:$id('v28BankLabel').value.trim(),iban:$id('v28BankIban').value.trim(),bic:$id('v28BankBic').value.trim(),account_id:accId||null,account_code:acc.code||'',account_type:$id('v28BankType').value,active:true};
+    if(!payload.iban) return alert('IBAN obligatoire.');
+    const {error}=await supabaseClient.from('compta_copro_bank_accounts').insert(payload); if(error) return alert(error.message);
+    await loadV28Extra(); renderCoproSettingsV28();
+  }
+  async function addFolderV28(){
+    const coproId=$id('v28CoproSettingsSelect')?.value||state.activeCoproId; if(!coproId) return alert('Choisis une copropriété.');
+    const name=prompt('Nom du dossier'); if(!name) return;
+    const {error}=await supabaseClient.from('compta_copro_folders').insert({copro_id:coproId,name:name.trim()}); if(error) return alert(error.message);
+    await loadV28Extra(); renderCoproSettingsV28();
+  }
+  function renderMetersV28(){
+    if(!$id('v28MeterCopro')) return;
+    const coproId=state.activeCoproId || $id('v28MeterCopro').value || state.copros?.[0]?.id || '';
+    $id('v28MeterCopro').innerHTML=opts(state.copros,coproLabel,'Copropriété'); $id('v28MeterCopro').value=coproId;
+    $id('v28MeterYear').innerHTML=opts((state.fiscalYears||[]).filter(y=>!coproId||y.copro_id===coproId),yearLabel,'Exercice'); $id('v28MeterYear').value=currentYear();
+    $id('v28MeterAccount').innerHTML=opts((state.accounts||[]).filter(a=>String(a.code||'').startsWith('61')),a=>`${a.code} - ${a.label}`,'Compte charges');
+    prepareMeterTableV28(false);
+  }
+  function prepareMeterTableV28(force){
+    const tableEl=$id('v28MeterTable'); if(!tableEl) return;
+    const coproId=$id('v28MeterCopro')?.value||state.activeCoproId;
+    const lots=(state.lots||[]).filter(l=>l.copro_id===coproId && l.active!==false && !/parking|garage|cave/i.test(l.lot_type||''));
+    if(!force && tableEl.innerHTML) return recalcMeterV28();
+    tableEl.innerHTML=`<table><thead><tr><th>Lot</th><th>Propriétaire</th><th>Index début</th><th>Index fin</th><th>Conso</th><th>Montant</th></tr></thead><tbody>${lots.map(l=>`<tr data-meter-lot="${l.id}"><td>${escapeHtml(l.lot_number||'')}</td><td>${escapeHtml(ownerDisplayNameById(l.owner_id)||'')}</td><td><input class="v28-inline-input" data-meter-start type="number" step="0.001"></td><td><input class="v28-inline-input" data-meter-end type="number" step="0.001"></td><td data-meter-cons>0</td><td data-meter-amount>0,00 €</td></tr>`).join('')||'<tr><td colspan="6">Aucun lot principal détecté.</td></tr>'}</tbody></table>`;
+    tableEl.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalcMeterV28)); recalcMeterV28();
+  }
+  function recalcMeterV28(){
+    const rows=[...document.querySelectorAll('[data-meter-lot]')]; let consTotal=0; rows.forEach(r=>{const s=Number(r.querySelector('[data-meter-start]').value||0); const e=Number(r.querySelector('[data-meter-end]').value||0); const c=Math.max(0,e-s); r.querySelector('[data-meter-cons]').textContent=c.toLocaleString('fr-BE'); consTotal+=c;});
+    const forced=Number($id('v28MeterUnitPrice')?.value||0); const invoiceTotal=Number($id('v28MeterInvoiceTotal')?.value||0); const unit=forced || (consTotal?invoiceTotal/consTotal:0); let amountTotal=0; rows.forEach(r=>{const c=Number((r.querySelector('[data-meter-cons]').textContent||'0').replace(',','.'))||0; const a=c*unit; amountTotal+=a; r.querySelector('[data-meter-amount]').textContent=money(a);});
+    if($id('v28MeterLotsKpi')) $id('v28MeterLotsKpi').textContent=rows.length; if($id('v28MeterConsKpi')) $id('v28MeterConsKpi').textContent=consTotal.toLocaleString('fr-BE'); if($id('v28MeterTotalKpi')) $id('v28MeterTotalKpi').textContent=money(amountTotal);
+  }
+  async function validateMeterV28(){
+    const coproId=$id('v28MeterCopro')?.value||state.activeCoproId; if(!coproId) return alert('Choisis une copropriété.');
+    const accountId=$id('v28MeterAccount').value; if(!accountId) return alert('Choisis le compte de charges à répartir.');
+    const rows=[...document.querySelectorAll('[data-meter-lot]')].map(r=>({lot_id:r.dataset.meterLot,index_start:Number(r.querySelector('[data-meter-start]').value||0),index_end:Number(r.querySelector('[data-meter-end]').value||0),consumption:Number((r.querySelector('[data-meter-cons]').textContent||'0').replace(',','.'))||0,amount:Number((r.querySelector('[data-meter-amount]').textContent||'0').replace(/[^0-9,.-]/g,'').replace(',','.'))||0})).filter(x=>x.consumption>0||x.amount>0);
+    if(!rows.length) return alert('Aucune consommation à valider.');
+    const batch={copro_id:coproId,fiscal_year_id:$id('v28MeterYear').value||currentYear()||null,account_id:accountId,label:$id('v28MeterLabel').value||'Relevé compteur',invoice_total:Number($id('v28MeterInvoiceTotal').value||0),unit_price:Number($id('v28MeterUnitPrice').value||0),status:'validated'};
+    const {data,error}=await supabaseClient.from('compta_meter_batches').insert(batch).select().single(); if(error) return alert(error.message);
+    const {error:lineErr}=await supabaseClient.from('compta_meter_lines').insert(rows.map(x=>({...x,batch_id:data.id,copro_id:coproId}))); if(lineErr) return alert(lineErr.message);
+    await loadV28Extra(); alert('Relevé validé. L’OD et les frais privatifs sont préparés pour le décompte.');
+  }
+  function renderCodaPilotV28(){
+    if(!$id('v28CodaTable')) return;
+    const coproId=state.activeCoproId || $id('v28CodaCoproFilter').value || '';
+    $id('v28CodaCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+state.copros.map(c=>`<option value="${c.id}">${escapeHtml(coproLabel(c))}</option>`).join(''); $id('v28CodaCoproFilter').value=coproId;
+    const status=$id('v28CodaStatusFilter').value||''; const sort=$id('v28CodaSort').value||'created_at';
+    let rows=(state.bankStatements||[]).filter(s=>(!coproId||s.copro_id===coproId)&&(!status||s.status===status));
+    rows.sort((a,b)=>String(b[sort]||'').localeCompare(String(a[sort]||'')));
+    $id('v28CodaTable').innerHTML=table(['','Copropriété','N° extrait','Date extrait','Import','Compte','Statut','Actions'],rows.map(s=>[`<input type="checkbox" data-v28-coda-check="${s.id}">`,s.compta_copros?.name||'',s.statement_number||'',s.statement_date||'',s.created_at?new Date(s.created_at).toLocaleDateString('fr-BE'):'',s.compta_bank_accounts?.iban||'',statusBadge(s.status),`<button class="btn small secondary" data-v28-coda-open="${s.id}">Ouvrir</button>`]));
+  }
+  async function validateSelectedCodaV28(){
+    const ids=[...document.querySelectorAll('[data-v28-coda-check]:checked')].map(x=>x.dataset.v28CodaCheck); if(!ids.length) return alert('Coche au moins un extrait CODA.');
+    const {error}=await supabaseClient.from('compta_bank_statements').update({status:'validated'}).in('id',ids); if(error) return alert(error.message);
+    await loadBankStatements(); renderCodaPilotV28();
+  }
+  function renderAccountLookupV28(){
+    if(!$id('v28AccountLookupCopro')) return;
+    const coproId=state.activeCoproId || $id('v28AccountLookupCopro').value || '';
+    $id('v28AccountLookupCopro').innerHTML='<option value="">Toutes</option>'+state.copros.map(c=>`<option value="${c.id}">${escapeHtml(coproLabel(c))}</option>`).join(''); $id('v28AccountLookupCopro').value=coproId;
+    const year=state.fiscalYears.find(y=>y.id===currentYear()); if(year){ if(!$id('v28AccountLookupFrom').value) $id('v28AccountLookupFrom').value=year.starts_on||''; if(!$id('v28AccountLookupTo').value) $id('v28AccountLookupTo').value=year.ends_on||''; }
+  }
+  function searchAccountLookupV28(){
+    const code=($id('v28AccountLookupCode').value||'').trim(); const coproId=$id('v28AccountLookupCopro').value||state.activeCoproId||''; const from=$id('v28AccountLookupFrom').value||'0000-01-01'; const to=$id('v28AccountLookupTo').value||'9999-12-31';
+    const accs=(state.accounts||[]).filter(a=>!code||String(a.code||'').startsWith(code)); const accIds=new Set(accs.map(a=>a.id));
+    const invoices=(state.invoices||[]).filter(i=>accIds.has(i.account_id)&&(!coproId||i.copro_id===coproId)&&(!i.invoice_date||(i.invoice_date>=from&&i.invoice_date<=to))).map(i=>({date:i.invoice_date,type:'ACH',lib:`${i.invoice_number||''} ${i.compta_suppliers?.name||''}`,debit:Number(i.amount_total||0),credit:0,account:accs.find(a=>a.id===i.account_id)}));
+    const entries=(state.entries||[]).filter(e=>accIds.has(e.account_id)&&(!coproId||e.copro_id===coproId)&&(!e.entry_date||(e.entry_date>=from&&e.entry_date<=to))).map(e=>({date:e.entry_date,type:e.journal_code||'OD',lib:e.description||'',debit:Number(e.debit||0),credit:Number(e.credit||0),account:accs.find(a=>a.id===e.account_id)}));
+    const rows=[...invoices,...entries].sort((a,b)=>String(a.date).localeCompare(String(b.date))); const debit=rows.reduce((s,r)=>s+r.debit,0); const credit=rows.reduce((s,r)=>s+r.credit,0);
+    $id('v28AccountDebit').textContent=money(debit); $id('v28AccountCredit').textContent=money(credit); $id('v28AccountSolde').textContent=money(debit-credit);
+    $id('v28AccountLookupTable').innerHTML=table(['Date','Journal','Compte','Libellé','Débit','Crédit'],rows.map(r=>[r.date||'',r.type||'',r.account?`${r.account.code} - ${r.account.label}`:'',escapeHtml(r.lib),money(r.debit),money(r.credit)]));
+  }
+  function installV28Nav(){
+    const modules=[
+      { id:'home', label:'Accueil', icon:'home', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord','dashboard']] },
+      { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre traitement','inbox'],['invoiceOcr','OCR factures','search'],['codaPilot','Validation CODA','bank'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt']] },
+      { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['coproSettings','Réglages copro','settings'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
+      { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
+      { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
+      { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
+      { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
+      { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['journalCodes','Journaux','receipt'],['importsConfig','Imports','download'],['auditTrail','Audit','list'],['isabel','Isabel','card']] }
+    ];
+    const map=new Map(); modules.forEach(m=>m.tabs.forEach(t=>{if(!map.has(t[0])) map.set(t[0],m.id)}));
+    function pathIcon(name){ return (typeof iconPaths!=='undefined'?iconPaths[name]:null)||'M12 12h.01'; }
+    function iconLocal(name){ return `<svg class="v27-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${pathIcon(name)}"></path></svg>`; }
+    function currentView(){ const v=[...document.querySelectorAll('.view')].find(x=>!x.classList.contains('hidden')); return v?v.id.replace(/View$/,''):'dashboard'; }
+    window.v28RenderNav=function(){
+      const view=currentView(); const moduleId=map.get(view)||'home'; const nav=document.querySelector('.nav'); const tabs=$id('moduleTabs'); if(!nav||!tabs) return;
+      nav.innerHTML=modules.map(m=>`<button type="button" class="main-module-btn ${m.id===moduleId?'active':''}" data-v28-module="${m.id}"><span class="main-module-icon">${iconLocal(m.icon)}</span><span class="main-module-label">${m.label}</span></button>`).join('');
+      const mod=modules.find(m=>m.id===moduleId)||modules[0]; const currentSyndic=state.syndicBillingTab||'campaigns';
+      tabs.innerHTML=mod.tabs.map(t=>{const [viewId,label,ic,syndicTab]=t; const act=viewId===view && (!syndicTab||currentSyndic===syndicTab); const attr=syndicTab?` data-v25-syndic-tab="${syndicTab}" data-v23-syndic-tab="${syndicTab}"`:''; return `<button type="button" class="module-tab ${act?'active':''}" data-view="${viewId}" data-title="${label}"${attr}>${iconLocal(ic)}<span>${label}</span></button>`}).join('');
+    };
+    document.addEventListener('click',e=>{ const main=e.target.closest?.('[data-v28-module]'); if(main){ const mod=modules.find(m=>m.id===main.dataset.v28Module); if(mod){ const t=mod.tabs[0]; if(t[3]) state.syndicBillingTab=t[3]; setTimeout(()=>{ const btn=document.querySelector(`#moduleTabs [data-view="${t[0]}"]`); if(btn) activateView(btn); },0); document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden')); const target=$id(mod.defaultView+'View'); if(target) target.classList.remove('hidden'); window.v28RenderNav(); } } setTimeout(window.v28RenderNav,10); }, true);
+  }
+  function bindV28(){
+    $id('v28SaveCoproSettingsBtn')?.addEventListener('click',saveCoproSettingsV28); $id('v28AddBankAccountBtn')?.addEventListener('click',addBankV28); $id('v28AddFolderBtn')?.addEventListener('click',addFolderV28);
+    $id('v28CoproSettingsSelect')?.addEventListener('change',renderCoproSettingsV28); $id('v28FiscalYearSettingsSelect')?.addEventListener('change',renderCoproSettingsV28);
+    $id('v28PrepareMeterBtn')?.addEventListener('click',()=>prepareMeterTableV28(true)); $id('v28ValidateMeterBtn')?.addEventListener('click',validateMeterV28); ['v28MeterInvoiceTotal','v28MeterUnitPrice'].forEach(id=>$id(id)?.addEventListener('input',recalcMeterV28));
+    $id('v28ValidateSelectedCodaBtn')?.addEventListener('click',validateSelectedCodaV28); ['v28CodaCoproFilter','v28CodaStatusFilter','v28CodaSort'].forEach(id=>$id(id)?.addEventListener('change',renderCodaPilotV28)); $id('v28RefreshCodaBtn')?.addEventListener('click',renderCodaPilotV28);
+    $id('v28AccountLookupRefreshBtn')?.addEventListener('click',searchAccountLookupV28); ['v28AccountLookupCode','v28AccountLookupFrom','v28AccountLookupTo','v28AccountLookupCopro'].forEach(id=>$id(id)?.addEventListener('change',searchAccountLookupV28));
+    $id('activeFiscalYearSelect')?.addEventListener('change',()=>{setCurrentYear($id('activeFiscalYearSelect').value); renderAll();});
+  }
+  const prevSwitchV28 = typeof switchToView === 'function' ? switchToView : null;
+  switchToView = function(viewName){ if(prevSwitchV28) prevSwitchV28(viewName); setTimeout(()=>{window.v28RenderNav?.(); renderV28All();},0); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{installV28Nav(); bindV28(); setTimeout(()=>{window.v28RenderNav?.(); renderV28All();},500);}); else {installV28Nav(); bindV28(); setTimeout(()=>{window.v28RenderNav?.(); renderV28All();},500);} 
+})();
 
 
     boot().then(() => { if (window.v25RunInitialUi) window.v25RunInitialUi(); updateTopbarContext(); updateSidebarButtons(); if (window.decorateV26Icons) window.decorateV26Icons(); });
