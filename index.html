@@ -2427,6 +2427,11 @@
 @media(max-width:900px){.v31-od-card{grid-template-columns:1fr}.v31-od-card .btn{width:100%}}
 
 </style>
+
+<style>
+/* V31.4 : si un navigateur garde un ancien état, une popup vide reste invisible. */
+#globalModalBackdrop.hidden, #lotModalBackdrop.hidden { display: none !important; }
+</style>
 </head>
 <body>
   <section id="setupScreen" class="login-wrap hidden">
@@ -5710,14 +5715,23 @@
 
     // ---- V8: ouverture des editions et creations en popup ----
     function openAppModal(title, bodyHtml, footerHtml = '', options = {}) {
+      const backdrop = $('globalModalBackdrop');
       const modal = $('globalModal');
+      const bodyContent = String(bodyHtml || '').trim();
+      if (!bodyContent && !options.allowEmpty) {
+        console.warn('Popup vide bloqué :', title || 'Edition');
+        if (backdrop) backdrop.classList.add('hidden');
+        if ($('globalModalBody')) $('globalModalBody').innerHTML = '';
+        if ($('globalModalFooter')) $('globalModalFooter').innerHTML = '';
+        return;
+      }
       $('globalModalTitle').textContent = title || 'Edition';
       $('globalModalSubtitle').textContent = options.subtitle || '';
-      $('globalModalBody').innerHTML = bodyHtml || '';
+      $('globalModalBody').innerHTML = bodyContent;
       $('globalModalFooter').innerHTML = footerHtml || '<button class="btn secondary" type="button" data-modal-close>Fermer</button>';
       modal.classList.remove('narrow', 'wide');
       if (options.size) modal.classList.add(options.size);
-      $('globalModalBackdrop').classList.remove('hidden');
+      backdrop.classList.remove('hidden');
     }
 
     function closeAppModal() {
@@ -5728,7 +5742,7 @@
 
     $('globalModalCloseBtn').addEventListener('click', closeAppModal);
     $('globalModalBackdrop').addEventListener('click', (event) => {
-      if (event.target.id === 'globalModalBackdrop' || event.target.dataset.modalClose !== undefined) closeAppModal();
+      if (event.target.dataset.modalClose !== undefined) closeAppModal();
     });
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && !$('globalModalBackdrop').classList.contains('hidden')) closeAppModal();
@@ -16255,6 +16269,25 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(v31RenderAll,800)); else setTimeout(v31RenderAll,800);
 })();
 
+
+
+    // V31.4 - sécurité démarrage : ne jamais afficher une popup vide au chargement.
+    function forceHideEmptyModalV314() {
+      const backdrop = $('globalModalBackdrop');
+      const body = $('globalModalBody');
+      if (!backdrop || !body) return;
+      if (!String(body.innerHTML || '').trim()) {
+        backdrop.classList.add('hidden');
+        $('globalModalFooter').innerHTML = '';
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(forceHideEmptyModalV314, 50));
+    } else {
+      setTimeout(forceHideEmptyModalV314, 50);
+    }
+    setTimeout(forceHideEmptyModalV314, 600);
+    setTimeout(forceHideEmptyModalV314, 1600);
 
     boot().then(() => { if (window.v25RunInitialUi) window.v25RunInitialUi(); updateTopbarContext(); updateSidebarButtons(); if (window.decorateV26Icons) window.decorateV26Icons(); });
   </script>
