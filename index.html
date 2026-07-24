@@ -2367,6 +2367,54 @@
 .v29-ag-point input,.v29-ag-point textarea,.v29-ag-point select{width:100%}.v29-ag-point textarea{min-height:72px;resize:vertical}.v29-ag-inline{display:grid;grid-template-columns:1fr 220px;gap:10px;margin-top:12px}.v29-ag-inline-full{margin-top:10px}
 .v29-compact-pdf table{font-size:10.5px}.v29-compact-pdf td,.v29-compact-pdf th{padding:4px 5px!important}.v29-clickable-row{cursor:pointer}.v29-clickable-row:hover{background:#F6F8FF}.v29-total-bottom{margin-top:10px;padding:12px;border-radius:16px;background:#171B2B;color:#fff;font-weight:950;display:flex;justify-content:space-between;align-items:center}.v29-date-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.v29-inline-danger{color:#B42318;font-weight:900}.v29-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.v29-info-card{border:1px solid var(--v29-line);border-radius:18px;background:#fff;padding:14px}.v29-info-card span{display:block;color:var(--v29-muted);font-weight:800;font-size:12px}.v29-info-card strong{font-size:22px;color:var(--v29-ink)}
 
+
+
+/* ============================================================
+   V30 - Comptabilité avancée + correction icônes sidebar
+   ============================================================ */
+.main-module-icon,
+.nav-icon,
+.menu-group__icon{font-size:0!important; line-height:0!important; overflow:hidden!important;}
+.main-module-icon svg,
+.module-tab svg,
+.nav-icon svg,
+.menu-group__icon svg,
+.v30-svg-icon{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block;flex:0 0 auto;}
+.module-tab svg{width:16px;height:16px;}
+.main-module-btn{min-height:46px!important;}
+.main-module-btn .main-module-icon{flex:0 0 30px!important;width:30px!important;height:30px!important;}
+.v30-account-toolbar,.v30-coda-toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:14px 0;}
+.v30-account-toolbar label,.v30-coda-toolbar label{min-width:160px;}
+.v30-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0;}
+.v30-kpi-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px;box-shadow:0 10px 26px rgba(20,22,36,.05);}
+.v30-kpi-card span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;}
+.v30-kpi-card strong{display:block;margin-top:6px;font-size:22px;letter-spacing:-.04em;color:#171B2B;}
+.v30-table{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:13px;}
+.v30-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#6c7384;letter-spacing:.04em;padding:7px 10px;}
+.v30-table td{background:#fff;border-top:1px solid #e9edf5;border-bottom:1px solid #e9edf5;padding:10px;vertical-align:middle;}
+.v30-table td:first-child{border-left:1px solid #e9edf5;border-radius:12px 0 0 12px;}
+.v30-table td:last-child{border-right:1px solid #e9edf5;border-radius:0 12px 12px 0;}
+.v30-row-click{cursor:pointer;}
+.v30-row-click:hover td{background:#f7f9ff;}
+.v30-money-debit{font-weight:900;color:#c8404b;}
+.v30-money-credit{font-weight:900;color:#11845b;}
+.v30-bilan-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px;}
+.v30-bilan-panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 12px 28px rgba(20,22,36,.05);}
+.v30-bilan-panel h3{margin:0 0 10px;font-size:18px;}
+.v30-bilan-total{margin-top:10px;border-top:2px solid #171B2B;padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:950;}
+.v30-coda-card{border:1px solid #e6eaf2;background:#fff;border-radius:20px;margin:12px 0;overflow:hidden;box-shadow:0 12px 28px rgba(20,22,36,.05);}
+.v30-coda-head{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:14px;align-items:center;padding:14px 16px;cursor:pointer;}
+.v30-coda-head:hover{background:#f7f9ff;}
+.v30-coda-head h3{margin:0;font-size:16px;}
+.v30-coda-content{padding:0 16px 16px;border-top:1px solid #edf0f6;background:#fbfcff;}
+.v30-coda-lines{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.v30-coda-line{display:grid;grid-template-columns:120px minmax(120px,1fr) 120px minmax(180px,1.3fr) 130px minmax(160px,1.2fr) auto;gap:8px;align-items:center;background:#fff;border:1px solid #e9edf5;border-radius:14px;padding:8px;}
+.v30-coda-line input,.v30-coda-line select{min-width:0;height:38px;font-size:12px;}
+.v30-coda-line .btn{height:38px;padding:0 12px;}
+.v30-search-results{margin-top:12px;}
+.v30-empty{padding:18px;border:1px dashed #cfd6e5;border-radius:16px;background:#fff;color:var(--muted);}
+@media(max-width:1100px){.v30-bilan-grid{grid-template-columns:1fr}.v30-coda-head{grid-template-columns:auto 1fr}.v30-coda-line{grid-template-columns:1fr 1fr}.v30-coda-line .actions-inline{grid-column:1/-1}}
+
 </style>
 </head>
 <body>
@@ -13557,7 +13605,7 @@
 
       const MODULES = [
         { id:'home', label:'Accueil', icon:'home', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord','dashboard']] },
-        { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre de traitement','inbox'],['invoiceOcr','OCR factures','search'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt']] },
+        { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre de traitement','inbox'],['invoiceOcr','OCR factures','search'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt'],['codaPilot','Validation CODA','bank']] },
         { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Copropriétés','building'],['lots','Lots','hash'],['owners','Copropriétaires','user'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Dossiers travaux','wrench']] },
         { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Financier / Banque','bank'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['thirdBalance','Balance tiers','users'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
         { id:'states', label:'États comptables', icon:'chart', defaultView:'ledger', tabs:[['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['journals','Journaux','archive'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
@@ -14044,6 +14092,157 @@
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{renderAll();}catch(e){}},800)); else setTimeout(()=>{try{renderAll();}catch(e){}},800);
+})();
+
+
+
+
+/* ============================================================
+   V30 - Comptabilité avancée, CODA déroulants, icônes corrigées
+   ============================================================ */
+(function(){
+  const $id = (id)=>document.getElementById(id);
+  const esc30 = (v)=> typeof escapeHtml==='function' ? escapeHtml(v ?? '') : String(v ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const money30 = (v)=> typeof money==='function' ? money(Number(v||0)) : new Intl.NumberFormat('fr-BE',{style:'currency',currency:'EUR'}).format(Number(v||0));
+  const abs = (v)=>Math.abs(Number(v||0));
+  const ICONS = {
+    home:'M3 12 12 3l9 9v8a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-8Z', dashboard:'M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z', inbox:'M22 12h-6l-2 3h-4l-2-3H2m20 0-3.5-7h-13L2 12v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-7Z', search:'M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z', card:'M3 6h18v12H3V6Zm0 4h18M7 15h3', send:'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z', receipt:'M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .67V2H4Zm4 6h8M8 12h8M8 16h5', megaphone:'M3 11v2a2 2 0 0 0 2 2h2l4 5v-5l8-3V8l-8-3v6H5a2 2 0 0 0-2 2Z', bank:'M3 10h18M5 10V8l7-4 7 4v2M6 10v8M10 10v8M14 10v8M18 10v8M4 18h16', building:'M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M9 21v-4h2v4M8 7h.01M12 7h.01M8 11h.01M12 11h.01M18 21V9h2v12', hash:'M5 9h14M5 15h14M10 3 8 21M16 3l-2 18', user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', puzzle:'M10 3h4v4h3a2 2 0 1 1 0 4h-3v3h-4v-3H7a2 2 0 1 1 0-4h3V3Z', wrench:'M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-3 3-3-3 3-3Z', book:'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V6H6.5A2.5 2.5 0 0 0 4 8.5v11ZM20 2H6.5A2.5 2.5 0 0 0 4 4.5v14', euro:'M17 5a7 7 0 1 0 0 14M3 10h10M3 14h10', speaker:'M5 9v6h4l5 4V5L9 9H5Zm12 1a4 4 0 0 1 0 4', file:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M8 13h8M8 17h6', calendar:'M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z', chart:'M3 3v18h18M7 16v-5M12 16V8M17 16v-9', users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', archive:'M21 8v13H3V8M1 3h22v5H1V3Zm9 8h4', vote:'M9 11h6M12 8v6M5 21h14M7 17h10l2-10H5l2 10ZM9 3h6l2 4H7l2-4Z', list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', settings:'M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.07a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.24.62.8 1 1.55 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.55 1Z', shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z', tag:'M20.5 13.5 13 21l-10-10V3h8l9.5 9.5a1.4 1.4 0 0 1 0 2ZM7 7h.01', calculator:'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm2 4h6M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01', download:'M12 3v12M7 10l5 5 5-5M5 21h14', dot:'M12 12h.01'
+  };
+  function svg30(name){ return `<svg class="v30-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[name]||ICONS.dot}"></path></svg>`; }
+  const moduleIconMap={home:'home',pilotage:'dashboard',copros:'building',compta:'book',states:'chart',ag:'vote',syndic:'tag',config:'settings'};
+  const viewIconMap={dashboard:'home',processing:'inbox',invoiceOcr:'search',payments:'card',callDispatch:'send',inform:'megaphone',sendJournal:'receipt',copros:'building',lots:'hash',owners:'users',distribution:'puzzle',buildings:'building',works:'wrench',invoices:'file',bank:'bank',meters:'calculator',budgets:'euro',calls:'speaker',statements:'file',thirdBalance:'users',expensesList:'receipt',exercises:'calendar',accountLookup:'search',ledger:'book',financialLedger:'bank',balance:'chart',journals:'archive',bilan:'calculator',heldFunds:'euro',multicoproConsultation:'search',meetings:'vote',resolutions:'list',syndicBilling:'tag',agency:'building',accounts:'book',templates:'list',bankInstitutions:'bank',vatCodes:'calculator',journalCodes:'receipt',defaultExpenseTypes:'list',users:'users',accessControl:'shield',auditTrail:'list',importsConfig:'download',isabel:'card'};
+  function fixSidebarIconsV30(){
+    document.querySelectorAll('.main-module-btn').forEach(btn=>{ const holder=btn.querySelector('.main-module-icon'); if(holder) holder.innerHTML=svg30(moduleIconMap[btn.dataset.module]||'dot'); });
+    document.querySelectorAll('.module-tab').forEach(btn=>{ const view=btn.dataset.view; const holder=btn.querySelector('span:first-child'); if(holder) holder.innerHTML=svg30(viewIconMap[view]||'dot'); });
+    document.querySelectorAll('.nav button[data-view]').forEach(btn=>{ const holder=btn.querySelector('.nav-icon'); if(holder) holder.innerHTML=svg30(viewIconMap[btn.dataset.view]||'dot'); });
+  }
+  const oldDecorate=window.decorateV26Icons;
+  window.decorateV26Icons=function(){ try{ if(oldDecorate) oldDecorate(); }catch(e){} fixSidebarIconsV30(); };
+
+  function v30CoproId(){ return state.activeCoproId || $id('activeCoproSelect')?.value || ''; }
+  function v30Year(){ const yid=state.activeFiscalYearId || $id('activeFiscalYearSelect')?.value || ''; return (state.fiscalYears||[]).find(y=>String(y.id)===String(yid)) || null; }
+  function v30DateInYear(date, y){ if(!y || !date) return true; return String(date)>=String(y.starts_on||'0000-01-01') && String(date)<=String(y.ends_on||'9999-12-31'); }
+  function v30AccById(id){ return (state.accounts||[]).find(a=>String(a.id)===String(id)); }
+  function v30AccByCode(code){ return (state.accounts||[]).find(a=>String(a.code||'')===String(code)); }
+  function v30AccLabel(code){ const a=v30AccByCode(code); return a ? `${a.code} - ${a.label||''}` : code; }
+  function v30BankCode(tx){ const b=(state.bankAccounts||[]).find(x=>String(x.id)===String(tx.bank_account_id)); if(b?.account_code) return String(b.account_code); const c=String(b?.compta_accounts?.code||''); if(c) return c; return b?.account_type==='savings'?'550':'551'; }
+  function v30TierCode(type){ return type==='supplier'?'440':type==='owner'?'410':type==='occupant'?'418':'499'; }
+  function v30CallCreditCode(c){ if(c.accounting_account_code) return String(c.accounting_account_code); const t=String(c.call_type||'').toLowerCase(); if(t.includes('roulement')) return '100'; if(t.includes('reserve') || t.includes('réserve')) return '160'; if(t.includes('extra')) return '702'; return '701'; }
+  function v30Entry(list, code, debit, credit, label, date, ref, coproId, detailType='', detailId=''){
+    list.push({code:String(code||'499'),label,date,ref,copro_id:coproId,debit:Number(debit||0),credit:Number(credit||0),detailType,detailId});
+  }
+  function v30Entries(){
+    const y=v30Year(); const copro=v30CoproId(); const rows=[];
+    (state.invoices||[]).filter(i=>i.status!=='rejected' && (!copro||i.copro_id===copro) && v30DateInYear(i.invoice_date,y)).forEach(i=>{
+      const acc=v30AccById(i.account_id); const chargeCode=String(i.account_code||acc?.code||'610'); const amount=Number(i.amount_total||0);
+      v30Entry(rows,chargeCode,amount,0,i.description||`Facture ${i.invoice_number||''}`,i.invoice_date,i.invoice_number,i.copro_id,'invoice',i.id);
+      v30Entry(rows,'440',0,amount,`Dette fournisseur ${i.invoice_number||''}`,i.invoice_date,i.invoice_number,i.copro_id,'invoice',i.id);
+    });
+    (state.ownerCalls||[]).filter(c=>(!copro||c.copro_id===copro) && (!y || c.fiscal_year_id===y.id || v30DateInYear(c.due_date,y)) && (typeof ownerCallAccountingStatus!=='function' || ownerCallAccountingStatus(c)==='accounted')).forEach(c=>{
+      const amount=Number(c.amount_due||0); v30Entry(rows,'410',amount,0,c.label||'Appel',c.due_date,c.period_label,c.copro_id,'call',c.id); v30Entry(rows,v30CallCreditCode(c),0,amount,c.label||'Appel',c.due_date,c.period_label,c.copro_id,'call',c.id);
+    });
+    (state.bankTransactions||[]).filter(t=>(!copro||t.copro_id===copro) && v30DateInYear(t.transaction_date,y)).forEach(t=>{
+      const amount=Number(t.amount||0); const bank=v30BankCode(t); const tier=v30TierCode(t.tier_type); const lab=t.communication||t.description||t.counterparty_name||'Mouvement bancaire';
+      if(amount>=0){ v30Entry(rows,bank,amount,0,lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); v30Entry(rows,tier,0,amount,lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); }
+      else { v30Entry(rows,tier,abs(amount),0,lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); v30Entry(rows,bank,0,abs(amount),lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); }
+    });
+    return rows;
+  }
+  function v30GroupedAccounts(){
+    const map=new Map();
+    v30Entries().forEach(e=>{ if(!map.has(e.code)) map.set(e.code,{code:e.code,label:v30AccLabel(e.code),debit:0,credit:0,lines:[]}); const r=map.get(e.code); r.debit+=e.debit; r.credit+=e.credit; r.lines.push(e); });
+    return [...map.values()].sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true}));
+  }
+  function v30RenderBalance(){
+    const el=$id('balanceTable'); if(!el) return;
+    const rows=v30GroupedAccounts(); const d=rows.reduce((s,r)=>s+r.debit,0), c=rows.reduce((s,r)=>s+r.credit,0);
+    const y=v30Year();
+    el.innerHTML=`<div class="v30-account-toolbar"><label>Exercice actif <input value="${esc30(y?.label||'Tous exercices')}" disabled></label><button class="btn secondary" type="button" data-v30-balance-pdf>PDF balance</button></div><div class="v30-kpi-grid"><div class="v30-kpi-card"><span>Total débit</span><strong>${money30(d)}</strong></div><div class="v30-kpi-card"><span>Total crédit</span><strong>${money30(c)}</strong></div><div class="v30-kpi-card"><span>Écart</span><strong>${money30(d-c)}</strong></div></div><table class="v30-table"><thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th>Solde</th></tr></thead><tbody>${rows.map(r=>`<tr class="v30-row-click" data-v30-account-code="${esc30(r.code)}"><td><strong>${esc30(r.code)}</strong></td><td>${esc30(r.label.replace(/^\d+\s*-\s*/,''))}</td><td>${money30(r.debit)}</td><td>${money30(r.credit)}</td><td class="${r.debit-r.credit>=0?'v30-money-debit':'v30-money-credit'}">${money30(r.debit-r.credit)}</td></tr>`).join('')||'<tr><td colspan="5">Aucune donnée.</td></tr>'}</tbody></table>`;
+  }
+  function v30RenderBilan(){
+    if(!$id('bilanActifTable')) return;
+    const rows=v30GroupedAccounts();
+    const actif=rows.filter(r=>['2','3','4','5'].includes(String(r.code)[0]) && r.debit-r.credit>=0).concat(rows.filter(r=>String(r.code).startsWith('410') && r.debit-r.credit>0));
+    const passif=rows.filter(r=>['1','4'].includes(String(r.code)[0]) && r.credit-r.debit>0).concat(rows.filter(r=>String(r.code).startsWith('440') && r.credit-r.debit>0));
+    const activeTotal=actif.reduce((s,r)=>s+Math.abs(r.debit-r.credit),0), passiveTotal=passif.reduce((s,r)=>s+Math.abs(r.credit-r.debit),0);
+    const rowHtml=(list,side)=>`<table class="v30-table"><thead><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr></thead><tbody>${list.map(r=>`<tr class="v30-row-click" data-v30-account-code="${esc30(r.code)}"><td><strong>${esc30(r.code)}</strong></td><td>${esc30(r.label.replace(/^\d+\s*-\s*/,''))}</td><td>${money30(Math.abs(r.debit-r.credit))}</td></tr>`).join('')||'<tr><td colspan="3">Aucune donnée</td></tr>'}</tbody></table><div class="v30-bilan-total"><span>Total ${side}</span><strong>${money30(side==='actif'?activeTotal:passiveTotal)}</strong></div>`;
+    $id('bilanActifTable').innerHTML=rowHtml(actif,'actif');
+    $id('bilanPassifTable').innerHTML=rowHtml(passif,'passif');
+    if($id('bilanSummary')) $id('bilanSummary').innerHTML=`<span class="badge ok">Total actif : ${money30(activeTotal)}</span><span class="badge warn">Total passif : ${money30(passiveTotal)}</span><span class="badge ${Math.abs(activeTotal-passiveTotal)<0.01?'ok':'warn'}">Écart : ${money30(activeTotal-passiveTotal)}</span><button class="btn secondary small" data-v30-bilan-pdf type="button">PDF bilan</button>`;
+  }
+  function v30RenderHeldFunds(){
+    const card=$id('heldFundsView')?.querySelector('.card'); if(!card) return;
+    const copro=v30CoproId();
+    const banks=(state.bankAccounts||[]).filter(b=>!copro||b.copro_id===copro).map(b=>{ const balance=(state.bankTransactions||[]).filter(t=>t.bank_account_id===b.id).reduce((s,t)=>s+Number(t.amount||0),0); return {b,balance}; });
+    const reserve=(state.ownerCalls||[]).filter(c=>(!copro||c.copro_id===copro) && String(c.call_type||'').toLowerCase().includes('reserve'));
+    const roulement=(state.ownerCalls||[]).filter(c=>(!copro||c.copro_id===copro) && String(c.call_type||'').toLowerCase().includes('roulement'));
+    const totalBank=banks.reduce((s,x)=>s+x.balance,0), totalReserve=reserve.reduce((s,c)=>s+Number(c.amount_due||0),0), totalRoulement=roulement.reduce((s,c)=>s+Number(c.amount_due||0),0);
+    const partRows=(calls)=>{ const m=new Map(); calls.forEach(c=>{ const n=c.compta_owners?.display_name || (state.owners||[]).find(o=>o.id===c.owner_id)?.display_name || 'Copropriétaire'; m.set(n,(m.get(n)||0)+Number(c.amount_due||0)); }); return [...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])); };
+    card.innerHTML=`<div class="toolbar"><div><h2>Fonds détenus</h2><p class="muted-note">Trésorerie bancaire, fonds de réserve et fonds de roulement avec part par copropriétaire.</p></div><button class="btn secondary" data-v30-held-pdf type="button">PDF fonds détenus</button></div><div class="v30-kpi-grid"><div class="v30-kpi-card"><span>Trésorerie banque</span><strong>${money30(totalBank)}</strong></div><div class="v30-kpi-card"><span>Fonds réserve théorique</span><strong>${money30(totalReserve)}</strong></div><div class="v30-kpi-card"><span>Fonds roulement théorique</span><strong>${money30(totalRoulement)}</strong></div></div><h3>Comptes bancaires</h3><table class="v30-table"><thead><tr><th>Copropriété</th><th>Compte</th><th>IBAN</th><th>Solde</th></tr></thead><tbody>${banks.map(x=>`<tr><td>${esc30(x.b.compta_copros?.name||'')}</td><td>${esc30(x.b.label||'')}</td><td>${esc30(x.b.iban||'')}</td><td>${money30(x.balance)}</td></tr>`).join('')||'<tr><td colspan="4">Aucun compte bancaire</td></tr>'}</tbody></table><div class="v30-bilan-grid"><div class="v30-bilan-panel"><h3>Part fonds de réserve</h3><table class="v30-table"><tbody>${partRows(reserve).map(([n,a])=>`<tr><td>${esc30(n)}</td><td>${money30(a)}</td></tr>`).join('')||'<tr><td>Aucune ligne</td></tr>'}</tbody></table></div><div class="v30-bilan-panel"><h3>Part fonds de roulement</h3><table class="v30-table"><tbody>${partRows(roulement).map(([n,a])=>`<tr><td>${esc30(n)}</td><td>${money30(a)}</td></tr>`).join('')||'<tr><td>Aucune ligne</td></tr>'}</tbody></table></div></div>`;
+  }
+  function v30RenderMultiSearch(){
+    const card=$id('multicoproConsultationView')?.querySelector('.card'); if(!card) return;
+    if(!card.dataset.v30Ready){ card.dataset.v30Ready='1'; card.innerHTML=`<div class="toolbar"><div><h2>Consultation multi-copropriété</h2><p class="muted-note">Recherche globale par montant, tiers, VCS, communication, numéro de facture ou libellé.</p></div></div><div class="v30-account-toolbar"><label>Recherche globale <input id="v30GlobalSearch" placeholder="Montant, tiers, VCS, facture, communication..."></label><label>Type <select id="v30GlobalType"><option value="all">Tout</option><option value="invoice">Factures</option><option value="bank">Banque/CODA</option><option value="call">Appels</option><option value="tier">Tiers</option></select></label><button class="btn" id="v30GlobalSearchBtn" type="button">Rechercher</button></div><div id="v30GlobalResults" class="v30-search-results"></div>`; }
+    if(!$id('v30GlobalResults')?.innerHTML) v30RunGlobalSearch();
+  }
+  function v30RunGlobalSearch(){
+    const q=($id('v30GlobalSearch')?.value||'').toLowerCase().trim(); const type=$id('v30GlobalType')?.value||'all'; const results=[];
+    const match=(arr)=>arr.join(' ').toLowerCase().includes(q);
+    if(type==='all'||type==='invoice') (state.invoices||[]).forEach(i=>{ const s=state.suppliers?.find(x=>x.id===i.supplier_id); const c=state.copros?.find(x=>x.id===i.copro_id); if(!q||match([i.invoice_number,i.description,i.amount_total,s?.name,c?.name])) results.push(['Facture',c?.name||'',s?.name||'',i.invoice_number||'',money30(i.amount_total||0),i.invoice_date||'']); });
+    if(type==='all'||type==='bank') (state.bankTransactions||[]).forEach(t=>{ const c=state.copros?.find(x=>x.id===t.copro_id); if(!q||match([t.statement_number,t.communication,t.description,t.counterparty_name,t.amount,c?.name])) results.push(['Banque/CODA',c?.name||'',t.counterparty_name||'',t.communication||t.description||'',money30(t.amount||0),t.transaction_date||'']); });
+    if(type==='all'||type==='call') (state.ownerCalls||[]).forEach(ca=>{ const c=state.copros?.find(x=>x.id===ca.copro_id); const o=state.owners?.find(x=>x.id===ca.owner_id); if(!q||match([ca.label,ca.period_label,ca.amount_due,o?.display_name,c?.name,o?.vcs])) results.push(['Appel',c?.name||'',o?.display_name||'',ca.label||ca.period_label||'',money30(ca.amount_due||0),ca.due_date||'']); });
+    if(type==='all'||type==='tier') (state.owners||[]).forEach(o=>{ if(!q||match([o.display_name,o.email,o.vcs,o.owner_code])) results.push(['Copropriétaire','',o.display_name||'',o.email||'',o.vcs||'',o.owner_code||'']); });
+    if(type==='all'||type==='tier') (state.suppliers||[]).forEach(s=>{ if(!q||match([s.name,s.email,s.iban,s.vat_number,s.supplier_code])) results.push(['Fournisseur','',s.name||'',s.email||'',s.iban||'',s.supplier_code||'']); });
+    const el=$id('v30GlobalResults'); if(el) el.innerHTML = results.length ? `<table class="v30-table"><thead><tr><th>Type</th><th>Copropriété</th><th>Tiers</th><th>Référence</th><th>Montant / info</th><th>Date / code</th></tr></thead><tbody>${results.slice(0,200).map(r=>`<tr>${r.map(x=>`<td>${esc30(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '<div class="v30-empty">Aucun résultat. Essaie avec un montant, un nom, une communication VCS ou un numéro de facture.</div>';
+  }
+  function v30CodaTierOptions(type, selected){
+    const list = type==='owner' ? (state.owners||[]).map(o=>[o.id,o.display_name||'']) : type==='supplier' ? (state.suppliers||[]).map(s=>[s.id,s.name||'']) : type==='occupant' ? (state.occupants||[]).map(o=>[o.id,o.display_name||'']) : [];
+    return '<option value="">Aucun</option>'+list.map(([id,n])=>`<option value="${id}" ${String(id)===String(selected)?'selected':''}>${esc30(n)}</option>`).join('');
+  }
+  function v30RenderCodaPilot(){
+    if(!$id('v28CodaTable')) return;
+    const coproId=$id('v28CodaCoproFilter')?.value || ''; const status=$id('v28CodaStatusFilter')?.value || ''; const sort=$id('v28CodaSort')?.value || 'created_at';
+    if($id('v28CodaCoproFilter')) $id('v28CodaCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${c.id===coproId?'selected':''}>${esc30(c.name)}</option>`).join('');
+    let rows=(state.bankStatements||[]).filter(s=>(!coproId||s.copro_id===coproId)&&(!status||s.status===status)); rows.sort((a,b)=>String(b[sort]||'').localeCompare(String(a[sort]||'')));
+    $id('v28CodaTable').innerHTML = rows.map(s=>{
+      const tx=(state.bankTransactions||[]).filter(t=>t.statement_id===s.id || (!t.statement_id && t.bank_account_id===s.bank_account_id && t.statement_number===s.statement_number));
+      const debit=tx.filter(t=>Number(t.amount)<0).reduce((a,t)=>a+abs(t.amount),0), credit=tx.filter(t=>Number(t.amount)>0).reduce((a,t)=>a+Number(t.amount||0),0); const calc=Number(s.opening_balance||0)+credit-debit;
+      const open = state.v30OpenCodaId===s.id;
+      return `<div class="v30-coda-card" data-v30-coda-card="${s.id}"><div class="v30-coda-head" data-v30-coda-toggle="${s.id}"><input type="checkbox" data-v30-coda-check="${s.id}" onclick="event.stopPropagation()"><div><h3>${esc30(s.compta_copros?.name||'Copropriété')}</h3><div class="muted-note">${esc30(s.file_name||'CODA')} · ${tx.length} mouvement(s)</div></div><div><strong>Extrait</strong><br>${esc30(s.statement_number||'-')}</div><div><strong>Date</strong><br>${esc30(s.statement_date||'-')}</div><div>${typeof statusBadge==='function'?statusBadge(s.status):esc30(s.status||'')}</div></div><div class="v30-coda-content ${open?'':'hidden'}"><div class="v30-kpi-grid"><div class="v30-kpi-card"><span>Solde initial</span><strong>${money30(s.opening_balance||0)}</strong></div><div class="v30-kpi-card"><span>Débit</span><strong>${money30(debit)}</strong></div><div class="v30-kpi-card"><span>Crédit</span><strong>${money30(credit)}</strong></div><div class="v30-kpi-card"><span>Solde calculé</span><strong>${money30(calc)}</strong></div><div class="v30-kpi-card"><span>Solde CODA</span><strong>${money30(s.closing_balance||0)}</strong></div></div><div class="actions-inline"><button class="btn secondary small" data-v30-coda-validate="${s.id}" type="button">Valider extrait</button><button class="btn danger small" data-reject-statement="${s.id}" type="button">Rejeter</button></div><div class="v30-coda-lines">${tx.map(t=>`<div class="v30-coda-line" data-v30-coda-tx="${t.id}"><input type="date" data-v30-coda-date value="${esc30(t.transaction_date||'')}"><input data-v30-coda-label value="${esc30(t.communication||t.description||'')}"><input type="number" step="0.01" data-v30-coda-amount value="${Number(t.amount||0)}"><input data-v30-coda-counterparty value="${esc30(t.counterparty_name||'')}"><select data-v30-coda-tier-type><option value="">Sans tiers</option><option value="owner" ${t.tier_type==='owner'?'selected':''}>Copropriétaire</option><option value="supplier" ${t.tier_type==='supplier'?'selected':''}>Fournisseur</option><option value="occupant" ${t.tier_type==='occupant'?'selected':''}>Occupant</option></select><select data-v30-coda-tier>${v30CodaTierOptions(t.tier_type,t.tier_id)}</select><div class="actions-inline"><button class="btn secondary small" data-v30-save-coda-tx="${t.id}" type="button">Enregistrer</button></div></div>`).join('')||'<div class="v30-empty">Aucune ligne détectée pour cet extrait.</div>'}</div></div></div>`;
+    }).join('') || '<div class="v30-empty">Aucun CODA pour les filtres actuels.</div>';
+  }
+  async function v30SaveCodaTx(id){
+    const row=document.querySelector(`[data-v30-coda-tx="${id}"]`); if(!row) return;
+    const payload={transaction_date:row.querySelector('[data-v30-coda-date]')?.value||null, amount:Number(row.querySelector('[data-v30-coda-amount]')?.value||0), communication:row.querySelector('[data-v30-coda-label]')?.value?.trim()||null, description:row.querySelector('[data-v30-coda-label]')?.value?.trim()||null, counterparty_name:row.querySelector('[data-v30-coda-counterparty]')?.value?.trim()||null, tier_type:row.querySelector('[data-v30-coda-tier-type]')?.value||null, tier_id:row.querySelector('[data-v30-coda-tier]')?.value||null, updated_at:new Date().toISOString()};
+    const {error}=await supabaseClient.from('compta_bank_transactions').update(payload).eq('id',id); if(error) return alert(error.message);
+    await loadAll(); alert('Ligne CODA mise à jour. Le grand livre financier reprend cette correction.');
+  }
+  async function v30ValidateCoda(id){ const {error}=await supabaseClient.from('compta_bank_statements').update({status:'validated',validated_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id); if(error) return alert(error.message); await loadAll(); }
+  async function v30ValidateSelectedCoda(){ const ids=[...document.querySelectorAll('[data-v30-coda-check]:checked')].map(x=>x.dataset.v30CodaCheck); if(!ids.length) return alert('Coche au moins un extrait.'); if(!confirm(`Valider ${ids.length} extrait(s) CODA ?`)) return; const {error}=await supabaseClient.from('compta_bank_statements').update({status:'validated',validated_at:new Date().toISOString(),updated_at:new Date().toISOString()}).in('id',ids); if(error) return alert(error.message); await loadAll(); }
+  function v30PrintHtml(title, html){ const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>${esc30(title)}</title><style>body{font-family:Inter,Arial;margin:24px;color:#171B2B}h1{font-size:22px}.v30-table,table{width:100%;border-collapse:collapse;font-size:11px}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left}th{background:#171B2B;color:white}.btn,.actions-inline,input,select{display:none!important}</style></head><body><h1>${esc30(title)}</h1>${html}<script>window.print();<\/script></body></html>`); w.document.close(); }
+  function renderV30All(){ fixSidebarIconsV30(); try{v30RenderBalance();}catch(e){console.warn('V30 balance',e)} try{v30RenderBilan();}catch(e){console.warn('V30 bilan',e)} try{v30RenderHeldFunds();}catch(e){console.warn('V30 fonds',e)} try{v30RenderMultiSearch();}catch(e){console.warn('V30 multi',e)} try{v30RenderCodaPilot();}catch(e){console.warn('V30 coda',e)} }
+  const oldRenderAll=typeof renderAll==='function'?renderAll:null;
+  renderAll=function(){ if(oldRenderAll) oldRenderAll(); renderV30All(); };
+  const oldRunInitial=window.v25RunInitialUi;
+  window.v25RunInitialUi=function(){ if(oldRunInitial) oldRunInitial(); setTimeout(renderV30All,100); setTimeout(fixSidebarIconsV30,300); };
+  document.addEventListener('click', async (e)=>{
+    const b=e.target.closest?.('button');
+    const accountRow=e.target.closest?.('[data-v30-account-code]');
+    if(accountRow && !b){ const code=accountRow.dataset.v30AccountCode; if(typeof switchToView==='function') switchToView('accountLookup'); setTimeout(()=>{ if($id('v28AccountLookupCode')) $id('v28AccountLookupCode').value=code; if(typeof renderAccountLookupV28==='function') renderAccountLookupV28(); },100); return; }
+    if(!b) return;
+    if(b.dataset.v30BilanPdf!==undefined) return v30PrintHtml('Bilan comptable', $id('bilanView')?.querySelector('.card')?.innerHTML||'');
+    if(b.dataset.v30BalancePdf!==undefined) return v30PrintHtml('Balance générale', $id('balanceTable')?.innerHTML||'');
+    if(b.dataset.v30HeldPdf!==undefined) return v30PrintHtml('Fonds détenus', $id('heldFundsView')?.querySelector('.card')?.innerHTML||'');
+    if(b.id==='v30GlobalSearchBtn') return v30RunGlobalSearch();
+    if(b.id==='v28ValidateSelectedCodaBtn') return v30ValidateSelectedCoda();
+    if(b.dataset.v30CodaToggle){ state.v30OpenCodaId = state.v30OpenCodaId===b.dataset.v30CodaToggle ? '' : b.dataset.v30CodaToggle; return v30RenderCodaPilot(); }
+    if(b.dataset.v30CodaValidate) return v30ValidateCoda(b.dataset.v30CodaValidate);
+    if(b.dataset.v30SaveCodaTx) return v30SaveCodaTx(b.dataset.v30SaveCodaTx);
+  });
+  document.addEventListener('click',(e)=>{ const h=e.target.closest?.('[data-v30-coda-toggle]'); if(h && !e.target.closest('button,input,select')){ state.v30OpenCodaId = state.v30OpenCodaId===h.dataset.v30CodaToggle ? '' : h.dataset.v30CodaToggle; v30RenderCodaPilot(); }});
+  document.addEventListener('input',(e)=>{ if(e.target?.id==='v30GlobalSearch') v30RunGlobalSearch(); });
+  document.addEventListener('change',(e)=>{ const t=e.target; if(!t) return; if(['v28CodaCoproFilter','v28CodaStatusFilter','v28CodaSort'].includes(t.id)) v30RenderCodaPilot(); if(t.matches('[data-v30-coda-tier-type]')){ const row=t.closest('[data-v30-coda-tx]'); const tx=(state.bankTransactions||[]).find(x=>String(x.id)===String(row?.dataset.v30CodaTx)); const sel=row?.querySelector('[data-v30-coda-tier]'); if(sel) sel.innerHTML=v30CodaTierOptions(t.value, tx?.tier_id); } if(t.id==='v30GlobalType') v30RunGlobalSearch(); });
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(renderV30All,700)); else setTimeout(renderV30All,700);
 })();
 
 
