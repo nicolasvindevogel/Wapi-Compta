@@ -1,15 +1,12 @@
-WAPI One V32 - Structure propre
+WAPI One V32.1 — stabilisation étape 1
 
-1. Dézippez ce dossier.
-2. Dans GitHub, remplacez/ajoutez à la racine du dépôt :
-   - index.html
-   - le dossier css
-   - le dossier js
-   - le dossier assets
+Fichiers à envoyer à la racine GitHub :
+- index.html
+- dossier assets
+- dossier css
+- dossier js
 
-3. Ne supprimez pas vos fichiers SQL existants si vous les conservez dans GitHub.
-4. Aucun SQL n’est à exécuter pour cette V32.
-5. Committez les changements.
-6. Rechargez le site avec CTRL + F5.
+SQL à exécuter dans Supabase :
+- sql/024_v32_1_stabilisation_etape1.sql
 
-Objectif de la V32 : stabilisation technique. Le logiciel n’est plus contenu dans un seul index.html : CSS et JavaScript sont séparés. Les données Supabase ne sont pas modifiées.
+Après commit : CTRL + F5 dans le navigateur.
