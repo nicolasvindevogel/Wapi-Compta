@@ -2426,6 +2426,30 @@
 .v30-row-click,[data-v31-account-code]{cursor:pointer}.v30-row-click:hover,[data-v31-account-code]:hover{background:#F6F8FF!important}
 @media(max-width:900px){.v31-od-card{grid-template-columns:1fr}.v31-od-card .btn{width:100%}}
 
+
+
+/* --- V31.6 : dashboard copro, codes tiers, OD propre --- */
+.dashboard-v316-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+.dashboard-v316-card{background:rgba(255,255,255,.86);border:1px solid rgba(148,163,184,.22);border-radius:22px;padding:18px;box-shadow:0 16px 38px rgba(15,23,42,.08)}
+.dashboard-v316-card .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800;margin-bottom:8px}
+.dashboard-v316-card .value{font-size:28px;font-weight:900;color:#0f2f44;line-height:1.05}
+.dashboard-v316-card .sub{margin-top:8px;color:#64748b;font-size:13px;line-height:1.35}
+.dashboard-v316-wide{grid-column:1 / -1;display:grid;grid-template-columns:minmax(260px,1.1fr) repeat(3,minmax(160px,.7fr));gap:14px}
+@media(max-width:1100px){.dashboard-v316-wide{grid-template-columns:1fr}}
+.tier-code-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:#eef2ff;color:#263b80;border:1px solid #dbe4ff;padding:5px 9px;font-size:12px;font-weight:900;letter-spacing:.03em;white-space:nowrap}
+.od-v316-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:14px 0 18px}
+.od-v316-table{width:100%;border-collapse:separate;border-spacing:0 8px}
+.od-v316-table th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;text-align:left;padding:0 8px}
+.od-v316-table td{background:#fff;border-top:1px solid #e5eef6;border-bottom:1px solid #e5eef6;padding:8px}
+.od-v316-table td:first-child{border-left:1px solid #e5eef6;border-radius:14px 0 0 14px}
+.od-v316-table td:last-child{border-right:1px solid #e5eef6;border-radius:0 14px 14px 0}
+.od-v316-table select,.od-v316-table input{width:100%;min-width:0}
+.od-v316-totals{display:flex;justify-content:flex-end;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.od-v316-total{border-radius:16px;background:#f8fafc;border:1px solid #e5eef6;padding:10px 14px;font-weight:900;color:#0f2f44}
+.od-v316-total.ok{background:#ecfdf5;border-color:#bbf7d0;color:#047857}
+.od-v316-total.warn{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
+.version-pill{font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e5eef6;border-radius:999px;padding:5px 8px;margin-left:8px}
+
 </style>
 </head>
 <body>
@@ -14598,6 +14622,355 @@
     } catch(e) {}
 
     boot().then(() => { if (window.v25RunInitialUi) window.v25RunInitialUi(); updateTopbarContext(); updateSidebarButtons(); if (window.decorateV26Icons) window.decorateV26Icons(); });
-  </script>
+  
+
+// ===================== V31.6 STABLE PATCH =====================
+// Objectif : repartir de V31.5 stable et réintégrer uniquement les nouveautés sûres :
+// dashboard copro/global, codes tiers, dédoublonnage tiers, opérations diverses plus propres.
+window.WAPI_ONE_VERSION = 'V31.6 stable';
+
+function v316Norm(value){
+  return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+function v316Digits(value){ return String(value || '').replace(/\D/g,''); }
+function ownerCode(owner){ return owner?.owner_code || owner?.code || (owner?.id ? `C-${String((state.owners||[]).findIndex(o=>o.id===owner.id)+1).padStart(4,'0')}` : 'C-0000'); }
+function supplierCode(supplier){ return supplier?.supplier_code || supplier?.code || (supplier?.id ? `F-${String((state.suppliers||[]).findIndex(s=>s.id===supplier.id)+1).padStart(4,'0')}` : 'F-0000'); }
+function ownerLabel(owner){ return `${ownerCode(owner)} - ${owner?.display_name || ''}`; }
+function supplierLabel(s){ return `${supplierCode(s)} - ${s?.name || ''}`; }
+function v316ScopedLots(){
+  const scoped = state.activeCoproId ? state.lots.filter(l=>l.copro_id===state.activeCoproId) : state.lots;
+  return scoped || [];
+}
+function v316ScopedBankAccounts(){
+  return state.activeCoproId ? state.bankAccounts.filter(a=>a.copro_id===state.activeCoproId) : state.bankAccounts;
+}
+function v316BankBalanceForAccounts(accounts){
+  const ids = new Set((accounts||[]).map(a=>a.id));
+  return (state.bankTransactions||[]).filter(tx=>ids.has(tx.bank_account_id)).reduce((s,tx)=>s+Number(tx.amount||0),0);
+}
+function v316LotTypeCounts(lots){
+  const normType = (v)=>v316Norm(v);
+  const apt = lots.filter(l=>/appart|studio|flat|logement/.test(normType(l.lot_type))).length;
+  const garage = lots.filter(l=>/garage|parking|park|emplacement|box/.test(normType(l.lot_type))).length;
+  const cave = lots.filter(l=>/cave/.test(normType(l.lot_type))).length;
+  return { apt, garage, cave, other: Math.max(0, lots.length-apt-garage-cave) };
+}
+function renderDashboard(){
+  const lots = v316ScopedLots();
+  const counts = v316LotTypeCounts(lots);
+  const accounts = v316ScopedBankAccounts();
+  const bankBalance = v316BankBalanceForAccounts(accounts);
+  const active = activeCopro();
+  const scopedInvoices = state.activeCoproId ? (state.invoices||[]).filter(i=>i.copro_id===state.activeCoproId) : (state.invoices||[]);
+  const scopedQueue = state.activeCoproId ? (state.validationQueue||[]).filter(q=>q.copro_id===state.activeCoproId) : (state.validationQueue||[]);
+
+  if ($('statCopros')) $('statCopros').textContent = state.activeCoproId ? '1' : (state.copros||[]).length;
+  if ($('statSuppliers')) $('statSuppliers').textContent = state.suppliers.length;
+  if ($('statLots')) $('statLots').textContent = lots.length;
+  if ($('statInvoices')) $('statInvoices').textContent = scopedInvoices.filter((i) => i.status === 'to_validate').length;
+  if ($('statAmount')) $('statAmount').textContent = money(scopedInvoices.reduce((sum, i) => sum + Number(i.amount_total || 0), 0));
+  if ($('statBankTransactions')) $('statBankTransactions').textContent = state.activeCoproId ? (state.bankTransactions||[]).filter(tx=>accounts.some(a=>a.id===tx.bank_account_id)).length : (state.bankTransactions||[]).length;
+  if ($('statProcessingQueue')) $('statProcessingQueue').textContent = scopedQueue.filter((q) => !['validated','rejected'].includes(q.status)).length;
+
+  const dash = $('dashboardView');
+  if (!dash) return;
+  let detail = $('dashboardV316Details');
+  if (!detail) {
+    detail = document.createElement('div');
+    detail.id = 'dashboardV316Details';
+    const grid = dash.querySelector('.grid');
+    if (grid) grid.insertAdjacentElement('afterend', detail); else dash.prepend(detail);
+  }
+  const title = active ? active.name : 'Vue globale toutes copropriétés';
+  const address = active?.address || active?.street || active?.city || 'Adresse non renseignée';
+  detail.innerHTML = `
+    <div class="dashboard-v316-grid">
+      <div class="dashboard-v316-card dashboard-v316-wide">
+        <div>
+          <div class="label">Contexte actif</div>
+          <div class="value">${escapeHtml(title)}</div>
+          <div class="sub">${escapeHtml(address)}</div>
+        </div>
+        <div><div class="label">Total lots</div><div class="value">${lots.length}</div><div class="sub">Tous types confondus</div></div>
+        <div><div class="label">Solde bancaire</div><div class="value">${money(bankBalance)}</div><div class="sub">Selon les mouvements encodés</div></div>
+        <div><div class="label">Comptes banque</div><div class="value">${accounts.length}</div><div class="sub">Comptes liés au contexte</div></div>
+      </div>
+      <div class="dashboard-v316-card"><div class="label">Appartements</div><div class="value">${counts.apt}</div><div class="sub">Lots principaux détectés</div></div>
+      <div class="dashboard-v316-card"><div class="label">Garages / parkings</div><div class="value">${counts.garage}</div><div class="sub">Lots secondaires détectés</div></div>
+      <div class="dashboard-v316-card"><div class="label">Caves</div><div class="value">${counts.cave}</div><div class="sub">Lots caves détectés</div></div>
+      <div class="dashboard-v316-card"><div class="label">Autres lots</div><div class="value">${counts.other}</div><div class="sub">Commerces, bureaux, divers…</div></div>
+    </div>`;
+  const h2 = dash.querySelector('.card h2');
+  if (h2 && !h2.querySelector('.version-pill')) h2.insertAdjacentHTML('beforeend', ` <span class="version-pill">${window.WAPI_ONE_VERSION}</span>`);
+}
+
+async function loadOwnerCoproLinksV316(){
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('compta_owner_copros').select('*');
+  if (error) { state.ownerCoproLinks = []; return; }
+  state.ownerCoproLinks = data || [];
+}
+async function loadSupplierCoproLinksV316(){
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('compta_supplier_copros').select('*');
+  if (error) { state.supplierCoproLinks = []; return; }
+  state.supplierCoproLinks = data || [];
+}
+if (typeof loadAll === 'function' && !window.__v316LoadAllWrapped) {
+  window.__v316LoadAllWrapped = true;
+  const __baseLoadAllV316 = loadAll;
+  loadAll = async function(){
+    await __baseLoadAllV316();
+    await Promise.all([loadOwnerCoproLinksV316(), loadSupplierCoproLinksV316()]);
+    renderAll();
+  };
+}
+
+function v316OwnerLinkedToCopro(ownerId, coproId){
+  if (!coproId) return true;
+  if ((state.owners||[]).find(o=>o.id===ownerId && o.copro_id===coproId)) return true;
+  if ((state.lots||[]).some(l=>l.copro_id===coproId && l.owner_id===ownerId)) return true;
+  if ((state.ownerCoproLinks||[]).some(l=>l.copro_id===coproId && l.owner_id===ownerId)) return true;
+  return false;
+}
+function renderOwners(){
+  if (!$('ownersTable')) return;
+  const selectedCopro = state.activeCoproId || $('ownersFilterCopro')?.value || '';
+  const owners = (state.owners||[]).filter((owner) => v316OwnerLinkedToCopro(owner.id, selectedCopro));
+  if (!owners.length) {
+    $('ownersTable').innerHTML = '<div class="notice">Aucun tiers copropriétaire pour cette copropriété.</div>';
+    return;
+  }
+  $('ownersTable').innerHTML = `
+    <div class="table-wrap"><table class="editable-table">
+      <thead><tr><th>Code</th><th>Nom</th><th>Email</th><th>Telephone</th><th>Adresse</th><th>Statut</th><th></th></tr></thead>
+      <tbody>${owners.map((owner) => `
+        <tr>
+          <td><span class="tier-code-pill">${escapeHtml(ownerCode(owner))}</span></td>
+          <td><input data-owner-id="${owner.id}" data-owner-field="display_name" value="${escapeHtml(owner.display_name)}" /></td>
+          <td><input data-owner-id="${owner.id}" data-owner-field="email" type="email" value="${escapeHtml(owner.email || '')}" /></td>
+          <td><input data-owner-id="${owner.id}" data-owner-field="phone" value="${escapeHtml(owner.phone || '')}" /></td>
+          <td><input data-owner-id="${owner.id}" data-owner-field="address" value="${escapeHtml(owner.address || '')}" /></td>
+          <td>${owner.active !== false ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'}</td>
+          <td><button class="btn secondary" type="button" data-save-owner-id="${owner.id}">Enregistrer</button></td>
+        </tr>`).join('')}</tbody></table></div>`;
+}
+async function v316EnsureOwnerLink(ownerId, coproId){
+  if (!ownerId || !coproId) return;
+  if ((state.ownerCoproLinks||[]).some(l=>l.owner_id===ownerId && l.copro_id===coproId)) return;
+  await supabaseClient.from('compta_owner_copros').upsert({ owner_id: ownerId, copro_id: coproId, active: true }, { onConflict: 'owner_id,copro_id' });
+}
+function v316FindExistingOwner(name, email=''){
+  const n = v316Norm(name);
+  const e = v316Norm(email);
+  return (state.owners||[]).find(o => (e && v316Norm(o.email)===e) || (n && v316Norm(o.display_name)===n));
+}
+async function saveOwner(){
+  const coproId = state.activeCoproId || $('ownersFilterCopro')?.value || state.copros[0]?.id;
+  const name = $('ownerName')?.value.trim() || '';
+  const email = $('ownerEmail')?.value.trim() || '';
+  if (!coproId) return alert('Choisis une copropriete.');
+  if (!name) return alert('Indique le nom du coproprietaire.');
+  const existing = v316FindExistingOwner(name, email);
+  if (existing) {
+    await v316EnsureOwnerLink(existing.id, coproId);
+    const patch = {};
+    if (email && !existing.email) patch.email = email;
+    if ($('ownerPhone')?.value.trim() && !existing.phone) patch.phone = $('ownerPhone').value.trim();
+    if ($('ownerAddress')?.value.trim() && !existing.address) patch.address = $('ownerAddress').value.trim();
+    if (Object.keys(patch).length) await supabaseClient.from('compta_owners').update(patch).eq('id', existing.id);
+  } else {
+    const { data, error } = await supabaseClient.from('compta_owners').insert({
+      copro_id: coproId,
+      display_name: name,
+      email: email || null,
+      phone: $('ownerPhone')?.value.trim() || null,
+      address: $('ownerAddress')?.value.trim() || null,
+      created_by: currentUser.id
+    }).select('id').single();
+    if (error) return alert(error.message);
+    await v316EnsureOwnerLink(data.id, coproId);
+  }
+  ['ownerName','ownerEmail','ownerPhone','ownerAddress'].forEach(id=>{ if($(id)) $(id).value=''; });
+  await loadAll();
+}
+async function findOrCreateOwner(coproId, ownerName){
+  const cleanName = String(ownerName||'').trim();
+  if (!cleanName) return null;
+  const existing = v316FindExistingOwner(cleanName);
+  if (existing) { await v316EnsureOwnerLink(existing.id, coproId); return existing.id; }
+  const { data, error } = await supabaseClient.from('compta_owners').insert({ copro_id: coproId, display_name: cleanName, created_by: currentUser.id }).select('id').single();
+  if (error) throw error;
+  await v316EnsureOwnerLink(data.id, coproId);
+  return data.id;
+}
+function renderSuppliers(){
+  if (!$('suppliersTable')) return;
+  $('suppliersTable').innerHTML = table(['Code','Nom','Email','TVA','Statut'], (state.suppliers||[]).map((s)=>[
+    `<span class="tier-code-pill">${escapeHtml(supplierCode(s))}</span>`, escapeHtml(s.name), escapeHtml(s.email||''), escapeHtml(s.vat_number||''), s.active !== false ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'
+  ]));
+}
+async function saveSupplier(){
+  const name = $('supplierName')?.value.trim() || '';
+  const email = $('supplierEmail')?.value.trim() || '';
+  const vat = $('supplierVat')?.value.trim() || '';
+  if (!name) return alert('Indique le nom du fournisseur.');
+  const existing = (state.suppliers||[]).find(s => (vat && v316Norm(s.vat_number)===v316Norm(vat)) || (email && v316Norm(s.email)===v316Norm(email)) || v316Norm(s.name)===v316Norm(name));
+  if (existing) {
+    const patch={}; if(email&&!existing.email) patch.email=email; if(vat&&!existing.vat_number) patch.vat_number=vat;
+    if(Object.keys(patch).length) await supabaseClient.from('compta_suppliers').update(patch).eq('id',existing.id);
+  } else {
+    const { error } = await supabaseClient.from('compta_suppliers').insert({ name, email: email || null, vat_number: vat || null, created_by: currentUser.id });
+    if (error) return alert(error.message);
+  }
+  ['supplierName','supplierEmail','supplierVat'].forEach(id=>{ if($(id)) $(id).value=''; });
+  await loadAll();
+}
+function supplierOptions(selected='') { return optionList(state.suppliers, 'id', (s) => supplierLabel(s), selected); }
+function ownerOptionsForCopro(coproId, selected='') { return optionList(state.owners.filter((o)=>v316OwnerLinkedToCopro(o.id,coproId)), 'id', (o) => ownerLabel(o), selected); }
+function renderInvoiceSelects(){
+  if (!$('invoiceCopro') || !$('invoiceSupplier')) return;
+  $('invoiceCopro').innerHTML = '<option value="">Choisir...</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if (state.activeCoproId) $('invoiceCopro').value = state.activeCoproId;
+  $('invoiceSupplier').innerHTML = '<option value="">Choisir...</option>' + state.suppliers.map((s)=>`<option value="${s.id}">${escapeHtml(supplierLabel(s))}</option>`).join('');
+}
+function renderInvoices(){
+  if (!$('invoicesTable')) return;
+  $('invoicesTable').innerHTML = table(['Date','Copropriete','Fournisseur','Numero','Montant','Statut'], (state.invoices||[]).map((i)=>{
+    const s = state.suppliers.find(x=>x.id===i.supplier_id);
+    return [i.invoice_date||'', i.compta_copros?.name||'', s ? supplierLabel(s) : (i.compta_suppliers?.name||''), i.invoice_number||'', money(i.amount_total), statusBadge(i.status)];
+  }));
+}
+
+function ensureOdV316Dom(){
+  const view = $('odView');
+  if (!view || $('odLinesV316')) return;
+  const card = view.querySelector('.card');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="toolbar"><h2>Opérations diverses</h2><span class="badge warn">Journal OD</span></div>
+    <div class="notice">Encode une opération diverse équilibrée : total débit = total crédit. Les lignes de classe 6 seront reprises dans les états et listes de charges.</div>
+    <div class="od-v316-head">
+      <label>Copropriété <select id="odCopro"></select></label>
+      <label>Date <input id="odDate" type="date" /></label>
+      <label>Référence <input id="odReference" placeholder="OD-2026-001" /></label>
+    </div>
+    <label>Libellé <textarea id="odLabel" placeholder="Ex : reprise, régularisation, correction, transfert..."></textarea></label>
+    <h3 style="margin-top:18px;">Lignes opération diverse</h3>
+    <div class="table-wrap"><table class="od-v316-table"><thead><tr><th style="width:42%">Compte comptable</th><th>Débit</th><th>Crédit</th><th style="width:70px"></th></tr></thead><tbody id="odLinesV316"></tbody></table></div>
+    <div class="od-v316-totals"><span id="odTotalDebitV316" class="od-v316-total">Débit : 0,00 EUR</span><span id="odTotalCreditV316" class="od-v316-total">Crédit : 0,00 EUR</span><span id="odBalanceV316" class="od-v316-total warn">Écart : 0,00 EUR</span></div>
+    <div class="toolbar" style="margin-top:14px"><button class="btn secondary" type="button" id="addOdLineV316">+ Ajouter une ligne</button><div><button class="btn secondary" type="button" id="cancelOdEditV316">Nouveau</button><button class="btn" type="button" id="saveOdV316">Enregistrer l’OD</button></div></div>
+    <h3 style="margin-top:22px;">Journal OD récent</h3><div id="odEntriesTable"></div>`;
+  state.odDraftLinesV316 = state.odDraftLinesV316 || [v316EmptyOdLine(), v316EmptyOdLine()];
+}
+function v316EmptyOdLine(){ return { account_id:'', debit:'', credit:'' }; }
+function v316AccountOptions(selected=''){
+  return '<option value="">Sélectionner...</option>' + (state.accounts||[]).map(a=>`<option value="${a.id}" ${a.id===selected?'selected':''}>${escapeHtml((a.code||'')+' - '+(a.label||''))}</option>`).join('');
+}
+function renderOdLinesV316(){
+  if (!$('odLinesV316')) return;
+  if (!state.odDraftLinesV316 || !state.odDraftLinesV316.length) state.odDraftLinesV316=[v316EmptyOdLine(),v316EmptyOdLine()];
+  $('odLinesV316').innerHTML = state.odDraftLinesV316.map((line,idx)=>`
+    <tr>
+      <td><select data-od-line="${idx}" data-od-field="account_id">${v316AccountOptions(line.account_id)}</select></td>
+      <td><input type="number" step="0.01" data-od-line="${idx}" data-od-field="debit" value="${escapeHtml(line.debit)}" /></td>
+      <td><input type="number" step="0.01" data-od-line="${idx}" data-od-field="credit" value="${escapeHtml(line.credit)}" /></td>
+      <td><button class="btn danger" type="button" data-remove-od-line="${idx}">×</button></td>
+    </tr>`).join('');
+  recalcOdTotalsV316();
+}
+function recalcOdTotalsV316(){
+  const lines = state.odDraftLinesV316 || [];
+  const d = lines.reduce((s,l)=>s+Number(l.debit||0),0), c=lines.reduce((s,l)=>s+Number(l.credit||0),0), diff=d-c;
+  if($('odTotalDebitV316')) $('odTotalDebitV316').textContent = `Débit : ${money(d)}`;
+  if($('odTotalCreditV316')) $('odTotalCreditV316').textContent = `Crédit : ${money(c)}`;
+  if($('odBalanceV316')) { $('odBalanceV316').textContent = `Écart : ${money(Math.abs(diff))}`; $('odBalanceV316').className = 'od-v316-total ' + (Math.abs(diff)<0.005 ? 'ok' : 'warn'); }
+}
+function renderODModule(){
+  ensureOdV316Dom();
+  if (!$('odCopro')) return;
+  const current = $('odCopro').value || '';
+  $('odCopro').innerHTML = '<option value="">Choisir...</option>' + state.copros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  $('odCopro').value = state.activeCoproId || current || state.copros[0]?.id || '';
+  if (!$('odDate').value) $('odDate').value = new Date().toISOString().slice(0,10);
+  renderOdLinesV316();
+  const odEntries = (state.entries||[]).filter(e=>String(e.journal_code||'').toUpperCase()==='OD');
+  $('odEntriesTable').innerHTML = table(['Date','Référence','Copropriété','Libellé','Montant','Statut','Actions'], odEntries.map(e=>{
+    const meta = e.metadata || {};
+    const amount = Number(meta.total_debit || meta.amount || 0);
+    return [e.entry_date||'', e.reference||'', e.compta_copros?.name||'', escapeHtml(e.label||''), amount?money(amount):'', statusBadge(e.status), `<button class="btn secondary" type="button" data-edit-od-v316="${e.id}">Modifier</button>`];
+  }));
+}
+function resetOdFormV316(){
+  state.selectedOdEntryIdV316=''; state.odDraftLinesV316=[v316EmptyOdLine(),v316EmptyOdLine()];
+  ['odReference','odLabel'].forEach(id=>{ if($(id)) $(id).value=''; });
+  if($('odDate')) $('odDate').value = new Date().toISOString().slice(0,10);
+  renderODModule();
+}
+function editOdV316(id){
+  const e = (state.entries||[]).find(x=>x.id===id); if(!e) return;
+  state.selectedOdEntryIdV316=id;
+  if($('odCopro')) $('odCopro').value=e.copro_id||'';
+  if($('odDate')) $('odDate').value=e.entry_date||'';
+  if($('odReference')) $('odReference').value=e.reference||'';
+  if($('odLabel')) $('odLabel').value=(e.metadata?.plain_label || e.label || '');
+  state.odDraftLinesV316 = (e.metadata?.lines || []).map(l=>({account_id:l.account_id||'', debit:l.debit||'', credit:l.credit||''}));
+  if(!state.odDraftLinesV316.length) state.odDraftLinesV316=[v316EmptyOdLine(),v316EmptyOdLine()];
+  renderOdLinesV316();
+}
+async function saveOD(){
+  const coproId = state.activeCoproId || $('odCopro')?.value;
+  const entryDate = $('odDate')?.value;
+  const reference = $('odReference')?.value.trim() || `OD-${new Date().toISOString().slice(0,10)}`;
+  const label = $('odLabel')?.value.trim() || '';
+  const lines = (state.odDraftLinesV316||[]).filter(l=>l.account_id && (Number(l.debit||0)||Number(l.credit||0)));
+  if(!coproId) return alert('Choisis la copropriété.');
+  if(!entryDate) return alert("Indique la date de l'OD.");
+  if(!label) return alert('Indique le libellé de l’OD.');
+  if(lines.length < 2) return alert('Encode au moins deux lignes.');
+  const debit = lines.reduce((s,l)=>s+Number(l.debit||0),0), credit = lines.reduce((s,l)=>s+Number(l.credit||0),0);
+  if(Math.abs(debit-credit)>0.005) return alert('L’OD doit être équilibrée : total débit = total crédit.');
+  const payload = { copro_id:coproId, journal_code:'OD', entry_date:entryDate, reference, label, status:'draft', created_by:currentUser.id, metadata:{ plain_label:label, lines, total_debit:debit, total_credit:credit, amount:debit } };
+  let error;
+  if(state.selectedOdEntryIdV316){ ({error}=await supabaseClient.from('compta_entries').update(payload).eq('id', state.selectedOdEntryIdV316)); }
+  else { ({error}=await supabaseClient.from('compta_entries').insert(payload)); }
+  if(error) return alert(error.message);
+  resetOdFormV316();
+  await loadAll();
+  alert('Opération diverse enregistrée.');
+}
+
+document.addEventListener('input',(e)=>{
+  const t=e.target;
+  if(t?.dataset?.odLine!==undefined){
+    const idx=Number(t.dataset.odLine), field=t.dataset.odField;
+    state.odDraftLinesV316 = state.odDraftLinesV316 || [];
+    state.odDraftLinesV316[idx] = state.odDraftLinesV316[idx] || v316EmptyOdLine();
+    state.odDraftLinesV316[idx][field]=t.value;
+    recalcOdTotalsV316();
+  }
+});
+document.addEventListener('change',(e)=>{
+  const t=e.target;
+  if(t?.dataset?.odLine!==undefined){
+    const idx=Number(t.dataset.odLine), field=t.dataset.odField;
+    state.odDraftLinesV316 = state.odDraftLinesV316 || [];
+    state.odDraftLinesV316[idx] = state.odDraftLinesV316[idx] || v316EmptyOdLine();
+    state.odDraftLinesV316[idx][field]=t.value;
+    recalcOdTotalsV316();
+  }
+});
+document.addEventListener('click',(e)=>{
+  const t=e.target;
+  if(t?.id==='addOdLineV316'){ state.odDraftLinesV316.push(v316EmptyOdLine()); renderOdLinesV316(); }
+  if(t?.dataset?.removeOdLine!==undefined){ state.odDraftLinesV316.splice(Number(t.dataset.removeOdLine),1); renderOdLinesV316(); }
+  if(t?.id==='saveOdV316') saveOD();
+  if(t?.id==='cancelOdEditV316') resetOdFormV316();
+  if(t?.dataset?.editOdV316) editOdV316(t.dataset.editOdV316);
+});
+
+// =================== FIN PATCH V31.6 ===================
+
+</script>
 </body>
 </html>
