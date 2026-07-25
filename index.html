@@ -2426,30 +2426,6 @@
 .v30-row-click,[data-v31-account-code]{cursor:pointer}.v30-row-click:hover,[data-v31-account-code]:hover{background:#F6F8FF!important}
 @media(max-width:900px){.v31-od-card{grid-template-columns:1fr}.v31-od-card .btn{width:100%}}
 
-
-
-/* --- V31.6 : dashboard copro, codes tiers, OD propre --- */
-.dashboard-v316-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
-.dashboard-v316-card{background:rgba(255,255,255,.86);border:1px solid rgba(148,163,184,.22);border-radius:22px;padding:18px;box-shadow:0 16px 38px rgba(15,23,42,.08)}
-.dashboard-v316-card .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800;margin-bottom:8px}
-.dashboard-v316-card .value{font-size:28px;font-weight:900;color:#0f2f44;line-height:1.05}
-.dashboard-v316-card .sub{margin-top:8px;color:#64748b;font-size:13px;line-height:1.35}
-.dashboard-v316-wide{grid-column:1 / -1;display:grid;grid-template-columns:minmax(260px,1.1fr) repeat(3,minmax(160px,.7fr));gap:14px}
-@media(max-width:1100px){.dashboard-v316-wide{grid-template-columns:1fr}}
-.tier-code-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:#eef2ff;color:#263b80;border:1px solid #dbe4ff;padding:5px 9px;font-size:12px;font-weight:900;letter-spacing:.03em;white-space:nowrap}
-.od-v316-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:14px 0 18px}
-.od-v316-table{width:100%;border-collapse:separate;border-spacing:0 8px}
-.od-v316-table th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;text-align:left;padding:0 8px}
-.od-v316-table td{background:#fff;border-top:1px solid #e5eef6;border-bottom:1px solid #e5eef6;padding:8px}
-.od-v316-table td:first-child{border-left:1px solid #e5eef6;border-radius:14px 0 0 14px}
-.od-v316-table td:last-child{border-right:1px solid #e5eef6;border-radius:0 14px 14px 0}
-.od-v316-table select,.od-v316-table input{width:100%;min-width:0}
-.od-v316-totals{display:flex;justify-content:flex-end;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap}
-.od-v316-total{border-radius:16px;background:#f8fafc;border:1px solid #e5eef6;padding:10px 14px;font-weight:900;color:#0f2f44}
-.od-v316-total.ok{background:#ecfdf5;border-color:#bbf7d0;color:#047857}
-.od-v316-total.warn{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
-.version-pill{font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e5eef6;border-radius:999px;padding:5px 8px;margin-left:8px}
-
 </style>
 </head>
 <body>
@@ -14624,353 +14600,264 @@
     boot().then(() => { if (window.v25RunInitialUi) window.v25RunInitialUi(); updateTopbarContext(); updateSidebarButtons(); if (window.decorateV26Icons) window.decorateV26Icons(); });
   
 
-// ===================== V31.6 STABLE PATCH =====================
-// Objectif : repartir de V31.5 stable et réintégrer uniquement les nouveautés sûres :
-// dashboard copro/global, codes tiers, dédoublonnage tiers, opérations diverses plus propres.
-window.WAPI_ONE_VERSION = 'V31.6 stable';
+/* ============================================================
+   V31.7 - Correctifs stables : icônes, Tiers/Fournisseurs,
+   Bilan cliquable, OD façon Optipro
+   ============================================================ */
+(function(){
+  const $id = (id)=>document.getElementById(id);
+  const safeHtml = (v)=> typeof escapeHtml === 'function' ? escapeHtml(v ?? '') : String(v ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const fmtMoney = (v)=> typeof money === 'function' ? money(Number(v||0)) : new Intl.NumberFormat('fr-BE',{style:'currency',currency:'EUR'}).format(Number(v||0));
+  const todayIso = ()=> new Date().toISOString().slice(0,10);
+  const uid = ()=> (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('od-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  const normalize = (v)=> String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 
-function v316Norm(value){
-  return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
-}
-function v316Digits(value){ return String(value || '').replace(/\D/g,''); }
-function ownerCode(owner){ return owner?.owner_code || owner?.code || (owner?.id ? `C-${String((state.owners||[]).findIndex(o=>o.id===owner.id)+1).padStart(4,'0')}` : 'C-0000'); }
-function supplierCode(supplier){ return supplier?.supplier_code || supplier?.code || (supplier?.id ? `F-${String((state.suppliers||[]).findIndex(s=>s.id===supplier.id)+1).padStart(4,'0')}` : 'F-0000'); }
-function ownerLabel(owner){ return `${ownerCode(owner)} - ${owner?.display_name || ''}`; }
-function supplierLabel(s){ return `${supplierCode(s)} - ${s?.name || ''}`; }
-function v316ScopedLots(){
-  const scoped = state.activeCoproId ? state.lots.filter(l=>l.copro_id===state.activeCoproId) : state.lots;
-  return scoped || [];
-}
-function v316ScopedBankAccounts(){
-  return state.activeCoproId ? state.bankAccounts.filter(a=>a.copro_id===state.activeCoproId) : state.bankAccounts;
-}
-function v316BankBalanceForAccounts(accounts){
-  const ids = new Set((accounts||[]).map(a=>a.id));
-  return (state.bankTransactions||[]).filter(tx=>ids.has(tx.bank_account_id)).reduce((s,tx)=>s+Number(tx.amount||0),0);
-}
-function v316LotTypeCounts(lots){
-  const normType = (v)=>v316Norm(v);
-  const apt = lots.filter(l=>/appart|studio|flat|logement/.test(normType(l.lot_type))).length;
-  const garage = lots.filter(l=>/garage|parking|park|emplacement|box/.test(normType(l.lot_type))).length;
-  const cave = lots.filter(l=>/cave/.test(normType(l.lot_type))).length;
-  return { apt, garage, cave, other: Math.max(0, lots.length-apt-garage-cave) };
-}
-function renderDashboard(){
-  const lots = v316ScopedLots();
-  const counts = v316LotTypeCounts(lots);
-  const accounts = v316ScopedBankAccounts();
-  const bankBalance = v316BankBalanceForAccounts(accounts);
-  const active = activeCopro();
-  const scopedInvoices = state.activeCoproId ? (state.invoices||[]).filter(i=>i.copro_id===state.activeCoproId) : (state.invoices||[]);
-  const scopedQueue = state.activeCoproId ? (state.validationQueue||[]).filter(q=>q.copro_id===state.activeCoproId) : (state.validationQueue||[]);
-
-  if ($('statCopros')) $('statCopros').textContent = state.activeCoproId ? '1' : (state.copros||[]).length;
-  if ($('statSuppliers')) $('statSuppliers').textContent = state.suppliers.length;
-  if ($('statLots')) $('statLots').textContent = lots.length;
-  if ($('statInvoices')) $('statInvoices').textContent = scopedInvoices.filter((i) => i.status === 'to_validate').length;
-  if ($('statAmount')) $('statAmount').textContent = money(scopedInvoices.reduce((sum, i) => sum + Number(i.amount_total || 0), 0));
-  if ($('statBankTransactions')) $('statBankTransactions').textContent = state.activeCoproId ? (state.bankTransactions||[]).filter(tx=>accounts.some(a=>a.id===tx.bank_account_id)).length : (state.bankTransactions||[]).length;
-  if ($('statProcessingQueue')) $('statProcessingQueue').textContent = scopedQueue.filter((q) => !['validated','rejected'].includes(q.status)).length;
-
-  const dash = $('dashboardView');
-  if (!dash) return;
-  let detail = $('dashboardV316Details');
-  if (!detail) {
-    detail = document.createElement('div');
-    detail.id = 'dashboardV316Details';
-    const grid = dash.querySelector('.grid');
-    if (grid) grid.insertAdjacentElement('afterend', detail); else dash.prepend(detail);
+  function installV317Css(){
+    if($id('v317Style')) return;
+    const css = `
+      .main-module-icon,.module-tab .v317-svg-wrap{font-size:0!important;line-height:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important;}
+      .v317-svg-icon{width:18px;height:18px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+      .module-tab .v317-svg-icon{width:16px;height:16px;}
+      .main-module-btn .main-module-icon{width:32px!important;height:32px!important;min-width:32px!important;border-radius:12px!important;}
+      .v317-od-page{display:flex;flex-direction:column;gap:18px;}
+      .v317-od-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+      .v317-od-header h2{margin:0;font-size:24px;letter-spacing:-.04em;color:#123241;}
+      .v317-od-box{border:1px solid #E7EBF3;background:#fff;border-radius:22px;padding:18px;box-shadow:0 12px 28px rgba(23,27,43,.05);}
+      .v317-od-section-title{font-size:14px;font-weight:950;color:#2B73D6;border-bottom:1px solid #2B73D6;padding-bottom:8px;margin:0 0 14px;}
+      .v317-od-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px 28px;align-items:end;}
+      .v317-od-grid label,.v317-od-lines label{font-size:12px;text-transform:none;letter-spacing:0;color:#1F2A44;font-weight:800;}
+      .v317-od-lines{overflow:auto;}
+      .v317-od-table{width:100%;border-collapse:collapse;min-width:980px;}
+      .v317-od-table th{background:#F3F4F6!important;color:#172033!important;font-size:12px;text-transform:none;letter-spacing:0;border-bottom:1px solid #C7CCD6;padding:10px;}
+      .v317-od-table td{padding:8px;border-bottom:1px solid #E6EAF2;vertical-align:middle;}
+      .v317-od-table input,.v317-od-table select{min-height:38px!important;border-radius:10px!important;}
+      .v317-od-account{min-width:360px;}
+      .v317-od-amount{min-width:150px;text-align:right;}
+      .v317-od-total-row td{background:#F8FAFC;font-weight:950;}
+      .v317-od-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+      .v317-od-list-card{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;border:1px solid #E8ECF3;border-radius:18px;padding:14px;margin:8px 0;background:#fff;}
+      .v317-od-list-card strong{color:#172033;}
+      .v317-clickable{cursor:pointer;}
+      .v317-clickable:hover{background:#F2F7FF!important;}
+      .v317-code-badge{display:inline-flex;align-items:center;border-radius:999px;background:#EEF0FF;color:#363BD2;border:1px solid #DDE1FF;font-weight:950;font-size:12px;padding:5px 9px;white-space:nowrap;}
+      @media(max-width:900px){.v317-od-grid{grid-template-columns:1fr}.v317-od-list-card{grid-template-columns:1fr}.v317-od-header{align-items:flex-start}}
+    `;
+    const s=document.createElement('style'); s.id='v317Style'; s.textContent=css; document.head.appendChild(s);
   }
-  const title = active ? active.name : 'Vue globale toutes copropriétés';
-  const address = active?.address || active?.street || active?.city || 'Adresse non renseignée';
-  detail.innerHTML = `
-    <div class="dashboard-v316-grid">
-      <div class="dashboard-v316-card dashboard-v316-wide">
-        <div>
-          <div class="label">Contexte actif</div>
-          <div class="value">${escapeHtml(title)}</div>
-          <div class="sub">${escapeHtml(address)}</div>
-        </div>
-        <div><div class="label">Total lots</div><div class="value">${lots.length}</div><div class="sub">Tous types confondus</div></div>
-        <div><div class="label">Solde bancaire</div><div class="value">${money(bankBalance)}</div><div class="sub">Selon les mouvements encodés</div></div>
-        <div><div class="label">Comptes banque</div><div class="value">${accounts.length}</div><div class="sub">Comptes liés au contexte</div></div>
-      </div>
-      <div class="dashboard-v316-card"><div class="label">Appartements</div><div class="value">${counts.apt}</div><div class="sub">Lots principaux détectés</div></div>
-      <div class="dashboard-v316-card"><div class="label">Garages / parkings</div><div class="value">${counts.garage}</div><div class="sub">Lots secondaires détectés</div></div>
-      <div class="dashboard-v316-card"><div class="label">Caves</div><div class="value">${counts.cave}</div><div class="sub">Lots caves détectés</div></div>
-      <div class="dashboard-v316-card"><div class="label">Autres lots</div><div class="value">${counts.other}</div><div class="sub">Commerces, bureaux, divers…</div></div>
-    </div>`;
-  const h2 = dash.querySelector('.card h2');
-  if (h2 && !h2.querySelector('.version-pill')) h2.insertAdjacentHTML('beforeend', ` <span class="version-pill">${window.WAPI_ONE_VERSION}</span>`);
-}
 
-async function loadOwnerCoproLinksV316(){
-  if (!supabaseClient) return;
-  const { data, error } = await supabaseClient.from('compta_owner_copros').select('*');
-  if (error) { state.ownerCoproLinks = []; return; }
-  state.ownerCoproLinks = data || [];
-}
-async function loadSupplierCoproLinksV316(){
-  if (!supabaseClient) return;
-  const { data, error } = await supabaseClient.from('compta_supplier_copros').select('*');
-  if (error) { state.supplierCoproLinks = []; return; }
-  state.supplierCoproLinks = data || [];
-}
-if (typeof loadAll === 'function' && !window.__v316LoadAllWrapped) {
-  window.__v316LoadAllWrapped = true;
-  const __baseLoadAllV316 = loadAll;
-  loadAll = async function(){
-    await __baseLoadAllV316();
-    await Promise.all([loadOwnerCoproLinksV316(), loadSupplierCoproLinksV316()]);
-    renderAll();
+  const ICONS={
+    home:'M3 12 12 3l9 9v8a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-8Z',
+    dashboard:'M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z',
+    inbox:'M22 12h-6l-2 3h-4l-2-3H2m20 0-3.5-7h-13L2 12v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-7Z',
+    search:'M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z',
+    card:'M3 6h18v12H3V6Zm0 4h18M7 15h3', send:'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z', receipt:'M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .67V2H4Zm4 6h8M8 12h8M8 16h5',
+    megaphone:'M3 11v2a2 2 0 0 0 2 2h2l4 5v-5l8-3V8l-8-3v6H5a2 2 0 0 0-2 2Z', bank:'M3 10h18M5 10V8l7-4 7 4v2M6 10v8M10 10v8M14 10v8M18 10v8M4 18h16',
+    building:'M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M9 21v-4h2v4M8 7h.01M12 7h.01M8 11h.01M12 11h.01M18 21V9h2v12',
+    hash:'M5 9h14M5 15h14M10 3 8 21M16 3l-2 18', users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+    puzzle:'M10 3h4v4h3a2 2 0 1 1 0 4h-3v3h-4v-3H7a2 2 0 1 1 0-4h3V3Z', wrench:'M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-3 3-3-3 3-3Z',
+    book:'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V6H6.5A2.5 2.5 0 0 0 4 8.5v11ZM20 2H6.5A2.5 2.5 0 0 0 4 4.5v14',
+    euro:'M17 5a7 7 0 1 0 0 14M3 10h10M3 14h10', speaker:'M5 9v6h4l5 4V5L9 9H5Zm12 1a4 4 0 0 1 0 4', file:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M8 13h8M8 17h6',
+    calendar:'M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z', chart:'M3 3v18h18M7 16v-5M12 16V8M17 16v-9',
+    archive:'M21 8v13H3V8M1 3h22v5H1V3Zm9 8h4', vote:'M9 11h6M12 8v6M5 21h14M7 17h10l2-10H5l2 10ZM9 3h6l2 4H7l2-4Z', list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+    settings:'M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.07a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.24.62.8 1 1.55 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.55 1Z',
+    shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z', tag:'M20.5 13.5 13 21l-10-10V3h8l9.5 9.5a1.4 1.4 0 0 1 0 2ZM7 7h.01', calculator:'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm2 4h6M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01',
+    edit:'M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3Z', dot:'M4 12h16'
   };
-}
+  const svg = (name)=>`<svg class="v317-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[name]||ICONS.dot}"></path></svg>`;
 
-function v316OwnerLinkedToCopro(ownerId, coproId){
-  if (!coproId) return true;
-  if ((state.owners||[]).find(o=>o.id===ownerId && o.copro_id===coproId)) return true;
-  if ((state.lots||[]).some(l=>l.copro_id===coproId && l.owner_id===ownerId)) return true;
-  if ((state.ownerCoproLinks||[]).some(l=>l.copro_id===coproId && l.owner_id===ownerId)) return true;
-  return false;
-}
-function renderOwners(){
-  if (!$('ownersTable')) return;
-  const selectedCopro = state.activeCoproId || $('ownersFilterCopro')?.value || '';
-  const owners = (state.owners||[]).filter((owner) => v316OwnerLinkedToCopro(owner.id, selectedCopro));
-  if (!owners.length) {
-    $('ownersTable').innerHTML = '<div class="notice">Aucun tiers copropriétaire pour cette copropriété.</div>';
-    return;
+  const MODULES = [
+    { id:'home', label:'Accueil', icon:'home', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord','dashboard']] },
+    { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre traitement','inbox'],['invoiceOcr','OCR factures','search'],['codaPilot','Validation CODA','bank'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt']] },
+    { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['coproSettings','Réglages copro','settings'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
+    { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['od','Opérations diverses','edit'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
+    { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
+    { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
+    { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
+    { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['journalCodes','Journaux','receipt'],['importsConfig','Imports','archive'],['auditTrail','Audit','list'],['isabel','Isabel','card']] }
+  ];
+  const viewToModule = new Map(); MODULES.forEach(m=>m.tabs.forEach(t=>{ if(!viewToModule.has(t[0])) viewToModule.set(t[0], m.id); }));
+  function currentView(){ const v=[...document.querySelectorAll('.view')].find(x=>!x.classList.contains('hidden')); return v ? v.id.replace(/View$/,'') : 'dashboard'; }
+  function renderNav(){
+    installV317Css();
+    const nav=document.querySelector('.nav'); const tabs=$id('moduleTabs'); if(!nav||!tabs) return;
+    const view=currentView(); const moduleId=viewToModule.get(view)||'home'; const mod=MODULES.find(m=>m.id===moduleId)||MODULES[0]; const currentSyndic=state.syndicBillingTab||'campaigns';
+    nav.innerHTML=MODULES.map(m=>`<button type="button" class="main-module-btn ${m.id===moduleId?'active':''}" data-v317-module="${m.id}" title="${safeHtml(m.label)}"><span class="main-module-icon">${svg(m.icon)}</span><span class="main-module-label">${safeHtml(m.label)}</span></button>`).join('');
+    tabs.innerHTML=mod.tabs.map(t=>{ const [viewId,label,ic,syndicTab]=t; const active=viewId===view && (!syndicTab || currentSyndic===syndicTab); const attr=syndicTab?` data-v25-syndic-tab="${syndicTab}" data-v23-syndic-tab="${syndicTab}"`:''; return `<button type="button" class="module-tab ${active?'active':''}" data-view="${viewId}" data-title="${safeHtml(label)}"${attr}><span class="v317-svg-wrap">${svg(ic)}</span><span>${safeHtml(label)}</span></button>`; }).join('');
   }
-  $('ownersTable').innerHTML = `
-    <div class="table-wrap"><table class="editable-table">
-      <thead><tr><th>Code</th><th>Nom</th><th>Email</th><th>Telephone</th><th>Adresse</th><th>Statut</th><th></th></tr></thead>
-      <tbody>${owners.map((owner) => `
-        <tr>
-          <td><span class="tier-code-pill">${escapeHtml(ownerCode(owner))}</span></td>
-          <td><input data-owner-id="${owner.id}" data-owner-field="display_name" value="${escapeHtml(owner.display_name)}" /></td>
-          <td><input data-owner-id="${owner.id}" data-owner-field="email" type="email" value="${escapeHtml(owner.email || '')}" /></td>
-          <td><input data-owner-id="${owner.id}" data-owner-field="phone" value="${escapeHtml(owner.phone || '')}" /></td>
-          <td><input data-owner-id="${owner.id}" data-owner-field="address" value="${escapeHtml(owner.address || '')}" /></td>
-          <td>${owner.active !== false ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'}</td>
-          <td><button class="btn secondary" type="button" data-save-owner-id="${owner.id}">Enregistrer</button></td>
-        </tr>`).join('')}</tbody></table></div>`;
-}
-async function v316EnsureOwnerLink(ownerId, coproId){
-  if (!ownerId || !coproId) return;
-  if ((state.ownerCoproLinks||[]).some(l=>l.owner_id===ownerId && l.copro_id===coproId)) return;
-  await supabaseClient.from('compta_owner_copros').upsert({ owner_id: ownerId, copro_id: coproId, active: true }, { onConflict: 'owner_id,copro_id' });
-}
-function v316FindExistingOwner(name, email=''){
-  const n = v316Norm(name);
-  const e = v316Norm(email);
-  return (state.owners||[]).find(o => (e && v316Norm(o.email)===e) || (n && v316Norm(o.display_name)===n));
-}
-async function saveOwner(){
-  const coproId = state.activeCoproId || $('ownersFilterCopro')?.value || state.copros[0]?.id;
-  const name = $('ownerName')?.value.trim() || '';
-  const email = $('ownerEmail')?.value.trim() || '';
-  if (!coproId) return alert('Choisis une copropriete.');
-  if (!name) return alert('Indique le nom du coproprietaire.');
-  const existing = v316FindExistingOwner(name, email);
-  if (existing) {
-    await v316EnsureOwnerLink(existing.id, coproId);
-    const patch = {};
-    if (email && !existing.email) patch.email = email;
-    if ($('ownerPhone')?.value.trim() && !existing.phone) patch.phone = $('ownerPhone').value.trim();
-    if ($('ownerAddress')?.value.trim() && !existing.address) patch.address = $('ownerAddress').value.trim();
-    if (Object.keys(patch).length) await supabaseClient.from('compta_owners').update(patch).eq('id', existing.id);
-  } else {
-    const { data, error } = await supabaseClient.from('compta_owners').insert({
-      copro_id: coproId,
-      display_name: name,
-      email: email || null,
-      phone: $('ownerPhone')?.value.trim() || null,
-      address: $('ownerAddress')?.value.trim() || null,
-      created_by: currentUser.id
-    }).select('id').single();
-    if (error) return alert(error.message);
-    await v316EnsureOwnerLink(data.id, coproId);
-  }
-  ['ownerName','ownerEmail','ownerPhone','ownerAddress'].forEach(id=>{ if($(id)) $(id).value=''; });
-  await loadAll();
-}
-async function findOrCreateOwner(coproId, ownerName){
-  const cleanName = String(ownerName||'').trim();
-  if (!cleanName) return null;
-  const existing = v316FindExistingOwner(cleanName);
-  if (existing) { await v316EnsureOwnerLink(existing.id, coproId); return existing.id; }
-  const { data, error } = await supabaseClient.from('compta_owners').insert({ copro_id: coproId, display_name: cleanName, created_by: currentUser.id }).select('id').single();
-  if (error) throw error;
-  await v316EnsureOwnerLink(data.id, coproId);
-  return data.id;
-}
-function renderSuppliers(){
-  if (!$('suppliersTable')) return;
-  $('suppliersTable').innerHTML = table(['Code','Nom','Email','TVA','Statut'], (state.suppliers||[]).map((s)=>[
-    `<span class="tier-code-pill">${escapeHtml(supplierCode(s))}</span>`, escapeHtml(s.name), escapeHtml(s.email||''), escapeHtml(s.vat_number||''), s.active !== false ? '<span class="badge ok">Actif</span>' : '<span class="badge">Inactif</span>'
-  ]));
-}
-async function saveSupplier(){
-  const name = $('supplierName')?.value.trim() || '';
-  const email = $('supplierEmail')?.value.trim() || '';
-  const vat = $('supplierVat')?.value.trim() || '';
-  if (!name) return alert('Indique le nom du fournisseur.');
-  const existing = (state.suppliers||[]).find(s => (vat && v316Norm(s.vat_number)===v316Norm(vat)) || (email && v316Norm(s.email)===v316Norm(email)) || v316Norm(s.name)===v316Norm(name));
-  if (existing) {
-    const patch={}; if(email&&!existing.email) patch.email=email; if(vat&&!existing.vat_number) patch.vat_number=vat;
-    if(Object.keys(patch).length) await supabaseClient.from('compta_suppliers').update(patch).eq('id',existing.id);
-  } else {
-    const { error } = await supabaseClient.from('compta_suppliers').insert({ name, email: email || null, vat_number: vat || null, created_by: currentUser.id });
-    if (error) return alert(error.message);
-  }
-  ['supplierName','supplierEmail','supplierVat'].forEach(id=>{ if($(id)) $(id).value=''; });
-  await loadAll();
-}
-function supplierOptions(selected='') { return optionList(state.suppliers, 'id', (s) => supplierLabel(s), selected); }
-function ownerOptionsForCopro(coproId, selected='') { return optionList(state.owners.filter((o)=>v316OwnerLinkedToCopro(o.id,coproId)), 'id', (o) => ownerLabel(o), selected); }
-function renderInvoiceSelects(){
-  if (!$('invoiceCopro') || !$('invoiceSupplier')) return;
-  $('invoiceCopro').innerHTML = '<option value="">Choisir...</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  if (state.activeCoproId) $('invoiceCopro').value = state.activeCoproId;
-  $('invoiceSupplier').innerHTML = '<option value="">Choisir...</option>' + state.suppliers.map((s)=>`<option value="${s.id}">${escapeHtml(supplierLabel(s))}</option>`).join('');
-}
-function renderInvoices(){
-  if (!$('invoicesTable')) return;
-  $('invoicesTable').innerHTML = table(['Date','Copropriete','Fournisseur','Numero','Montant','Statut'], (state.invoices||[]).map((i)=>{
-    const s = state.suppliers.find(x=>x.id===i.supplier_id);
-    return [i.invoice_date||'', i.compta_copros?.name||'', s ? supplierLabel(s) : (i.compta_suppliers?.name||''), i.invoice_number||'', money(i.amount_total), statusBadge(i.status)];
-  }));
-}
+  window.v28RenderNav = renderNav;
+  window.decorateV26Icons = renderNav;
 
-function ensureOdV316Dom(){
-  const view = $('odView');
-  if (!view || $('odLinesV316')) return;
-  const card = view.querySelector('.card');
-  if (!card) return;
-  card.innerHTML = `
-    <div class="toolbar"><h2>Opérations diverses</h2><span class="badge warn">Journal OD</span></div>
-    <div class="notice">Encode une opération diverse équilibrée : total débit = total crédit. Les lignes de classe 6 seront reprises dans les états et listes de charges.</div>
-    <div class="od-v316-head">
-      <label>Copropriété <select id="odCopro"></select></label>
-      <label>Date <input id="odDate" type="date" /></label>
-      <label>Référence <input id="odReference" placeholder="OD-2026-001" /></label>
-    </div>
-    <label>Libellé <textarea id="odLabel" placeholder="Ex : reprise, régularisation, correction, transfert..."></textarea></label>
-    <h3 style="margin-top:18px;">Lignes opération diverse</h3>
-    <div class="table-wrap"><table class="od-v316-table"><thead><tr><th style="width:42%">Compte comptable</th><th>Débit</th><th>Crédit</th><th style="width:70px"></th></tr></thead><tbody id="odLinesV316"></tbody></table></div>
-    <div class="od-v316-totals"><span id="odTotalDebitV316" class="od-v316-total">Débit : 0,00 EUR</span><span id="odTotalCreditV316" class="od-v316-total">Crédit : 0,00 EUR</span><span id="odBalanceV316" class="od-v316-total warn">Écart : 0,00 EUR</span></div>
-    <div class="toolbar" style="margin-top:14px"><button class="btn secondary" type="button" id="addOdLineV316">+ Ajouter une ligne</button><div><button class="btn secondary" type="button" id="cancelOdEditV316">Nouveau</button><button class="btn" type="button" id="saveOdV316">Enregistrer l’OD</button></div></div>
-    <h3 style="margin-top:22px;">Journal OD récent</h3><div id="odEntriesTable"></div>`;
-  state.odDraftLinesV316 = state.odDraftLinesV316 || [v316EmptyOdLine(), v316EmptyOdLine()];
-}
-function v316EmptyOdLine(){ return { account_id:'', debit:'', credit:'' }; }
-function v316AccountOptions(selected=''){
-  return '<option value="">Sélectionner...</option>' + (state.accounts||[]).map(a=>`<option value="${a.id}" ${a.id===selected?'selected':''}>${escapeHtml((a.code||'')+' - '+(a.label||''))}</option>`).join('');
-}
-function renderOdLinesV316(){
-  if (!$('odLinesV316')) return;
-  if (!state.odDraftLinesV316 || !state.odDraftLinesV316.length) state.odDraftLinesV316=[v316EmptyOdLine(),v316EmptyOdLine()];
-  $('odLinesV316').innerHTML = state.odDraftLinesV316.map((line,idx)=>`
-    <tr>
-      <td><select data-od-line="${idx}" data-od-field="account_id">${v316AccountOptions(line.account_id)}</select></td>
-      <td><input type="number" step="0.01" data-od-line="${idx}" data-od-field="debit" value="${escapeHtml(line.debit)}" /></td>
-      <td><input type="number" step="0.01" data-od-line="${idx}" data-od-field="credit" value="${escapeHtml(line.credit)}" /></td>
-      <td><button class="btn danger" type="button" data-remove-od-line="${idx}">×</button></td>
-    </tr>`).join('');
-  recalcOdTotalsV316();
-}
-function recalcOdTotalsV316(){
-  const lines = state.odDraftLinesV316 || [];
-  const d = lines.reduce((s,l)=>s+Number(l.debit||0),0), c=lines.reduce((s,l)=>s+Number(l.credit||0),0), diff=d-c;
-  if($('odTotalDebitV316')) $('odTotalDebitV316').textContent = `Débit : ${money(d)}`;
-  if($('odTotalCreditV316')) $('odTotalCreditV316').textContent = `Crédit : ${money(c)}`;
-  if($('odBalanceV316')) { $('odBalanceV316').textContent = `Écart : ${money(Math.abs(diff))}`; $('odBalanceV316').className = 'od-v316-total ' + (Math.abs(diff)<0.005 ? 'ok' : 'warn'); }
-}
-function renderODModule(){
-  ensureOdV316Dom();
-  if (!$('odCopro')) return;
-  const current = $('odCopro').value || '';
-  $('odCopro').innerHTML = '<option value="">Choisir...</option>' + state.copros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  $('odCopro').value = state.activeCoproId || current || state.copros[0]?.id || '';
-  if (!$('odDate').value) $('odDate').value = new Date().toISOString().slice(0,10);
-  renderOdLinesV316();
-  const odEntries = (state.entries||[]).filter(e=>String(e.journal_code||'').toUpperCase()==='OD');
-  $('odEntriesTable').innerHTML = table(['Date','Référence','Copropriété','Libellé','Montant','Statut','Actions'], odEntries.map(e=>{
-    const meta = e.metadata || {};
-    const amount = Number(meta.total_debit || meta.amount || 0);
-    return [e.entry_date||'', e.reference||'', e.compta_copros?.name||'', escapeHtml(e.label||''), amount?money(amount):'', statusBadge(e.status), `<button class="btn secondary" type="button" data-edit-od-v316="${e.id}">Modifier</button>`];
-  }));
-}
-function resetOdFormV316(){
-  state.selectedOdEntryIdV316=''; state.odDraftLinesV316=[v316EmptyOdLine(),v316EmptyOdLine()];
-  ['odReference','odLabel'].forEach(id=>{ if($(id)) $(id).value=''; });
-  if($('odDate')) $('odDate').value = new Date().toISOString().slice(0,10);
-  renderODModule();
-}
-function editOdV316(id){
-  const e = (state.entries||[]).find(x=>x.id===id); if(!e) return;
-  state.selectedOdEntryIdV316=id;
-  if($('odCopro')) $('odCopro').value=e.copro_id||'';
-  if($('odDate')) $('odDate').value=e.entry_date||'';
-  if($('odReference')) $('odReference').value=e.reference||'';
-  if($('odLabel')) $('odLabel').value=(e.metadata?.plain_label || e.label || '');
-  state.odDraftLinesV316 = (e.metadata?.lines || []).map(l=>({account_id:l.account_id||'', debit:l.debit||'', credit:l.credit||''}));
-  if(!state.odDraftLinesV316.length) state.odDraftLinesV316=[v316EmptyOdLine(),v316EmptyOdLine()];
-  renderOdLinesV316();
-}
-async function saveOD(){
-  const coproId = state.activeCoproId || $('odCopro')?.value;
-  const entryDate = $('odDate')?.value;
-  const reference = $('odReference')?.value.trim() || `OD-${new Date().toISOString().slice(0,10)}`;
-  const label = $('odLabel')?.value.trim() || '';
-  const lines = (state.odDraftLinesV316||[]).filter(l=>l.account_id && (Number(l.debit||0)||Number(l.credit||0)));
-  if(!coproId) return alert('Choisis la copropriété.');
-  if(!entryDate) return alert("Indique la date de l'OD.");
-  if(!label) return alert('Indique le libellé de l’OD.');
-  if(lines.length < 2) return alert('Encode au moins deux lignes.');
-  const debit = lines.reduce((s,l)=>s+Number(l.debit||0),0), credit = lines.reduce((s,l)=>s+Number(l.credit||0),0);
-  if(Math.abs(debit-credit)>0.005) return alert('L’OD doit être équilibrée : total débit = total crédit.');
-  const payload = { copro_id:coproId, journal_code:'OD', entry_date:entryDate, reference, label, status:'draft', created_by:currentUser.id, metadata:{ plain_label:label, lines, total_debit:debit, total_credit:credit, amount:debit } };
-  let error;
-  if(state.selectedOdEntryIdV316){ ({error}=await supabaseClient.from('compta_entries').update(payload).eq('id', state.selectedOdEntryIdV316)); }
-  else { ({error}=await supabaseClient.from('compta_entries').insert(payload)); }
-  if(error) return alert(error.message);
-  resetOdFormV316();
-  await loadAll();
-  alert('Opération diverse enregistrée.');
-}
-
-document.addEventListener('input',(e)=>{
-  const t=e.target;
-  if(t?.dataset?.odLine!==undefined){
-    const idx=Number(t.dataset.odLine), field=t.dataset.odField;
-    state.odDraftLinesV316 = state.odDraftLinesV316 || [];
-    state.odDraftLinesV316[idx] = state.odDraftLinesV316[idx] || v316EmptyOdLine();
-    state.odDraftLinesV316[idx][field]=t.value;
-    recalcOdTotalsV316();
+  function goToViewWithTab(btn){
+    if(!btn) return;
+    const syndicTab=btn.dataset.v25SyndicTab || btn.dataset.v23SyndicTab;
+    if(syndicTab) state.syndicBillingTab=syndicTab;
+    if(typeof activateView==='function') activateView(btn);
+    setTimeout(()=>{ renderNav(); v317RenderAllLight(); },30);
   }
-});
-document.addEventListener('change',(e)=>{
-  const t=e.target;
-  if(t?.dataset?.odLine!==undefined){
-    const idx=Number(t.dataset.odLine), field=t.dataset.odField;
-    state.odDraftLinesV316 = state.odDraftLinesV316 || [];
-    state.odDraftLinesV316[idx] = state.odDraftLinesV316[idx] || v316EmptyOdLine();
-    state.odDraftLinesV316[idx][field]=t.value;
-    recalcOdTotalsV316();
+
+  function coproId(){ return state.activeCoproId || ''; }
+  function fiscalYear(){ const yid=state.activeFiscalYearId || $id('activeFiscalYearSelect')?.value || ''; return (state.fiscalYears||[]).find(y=>String(y.id)===String(yid)) || null; }
+  function inYear(date,y){ if(!y || !date) return true; return String(date)>=String(y.starts_on||'0000-01-01') && String(date)<=String(y.ends_on||'9999-12-31'); }
+  function accountById(id){ return (state.accounts||[]).find(a=>String(a.id)===String(id)) || {}; }
+  function accountByCode(code){ return (state.accounts||[]).find(a=>String(a.code||'')===String(code)) || {}; }
+  function accountOptions(selected='', filter=''){
+    return '<option value="">Sélectionnez</option>'+(state.accounts||[]).filter(a=>!filter||String(a.code||'').startsWith(filter)).map(a=>`<option value="${a.id}" ${String(a.id)===String(selected)?'selected':''}>${safeHtml((a.code||'')+' - '+(a.label||''))}</option>`).join('');
   }
-});
-document.addEventListener('click',(e)=>{
-  const t=e.target;
-  if(t?.id==='addOdLineV316'){ state.odDraftLinesV316.push(v316EmptyOdLine()); renderOdLinesV316(); }
-  if(t?.dataset?.removeOdLine!==undefined){ state.odDraftLinesV316.splice(Number(t.dataset.removeOdLine),1); renderOdLinesV316(); }
-  if(t?.id==='saveOdV316') saveOD();
-  if(t?.id==='cancelOdEditV316') resetOdFormV316();
-  if(t?.dataset?.editOdV316) editOdV316(t.dataset.editOdV316);
-});
+  function coproOptions(selected=''){
+    return '<option value="">Choisir...</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${String(c.id)===String(selected)?'selected':''}>${safeHtml([c.code||c.optipro_ref||'',c.name||''].filter(Boolean).join(' - '))}</option>`).join('');
+  }
+  function bankCode(tx){ const b=(state.bankAccounts||[]).find(x=>String(x.id)===String(tx.bank_account_id)); return String(b?.account_code || b?.compta_accounts?.code || (b?.account_type==='savings'?'550':'551')); }
+  function callCreditCode(c){ const type=String(c.call_type||'').toLowerCase(); return String(c.accounting_account_code || (type.includes('roulement')?'100':type.includes('reserve')||type.includes('réserve')?'160':type.includes('extra')?'702':'701')); }
+  function pushEntry(rows, code, debit, credit, text, date, ref, cp, sourceType, sourceId){ const a=accountByCode(code); rows.push({code:String(code||''), label:a.label||'', debit:Number(debit||0), credit:Number(credit||0), text:text||'', date:date||'', ref:ref||'', copro_id:cp||'', source_type:sourceType||'', source_id:sourceId||''}); }
+  function accountingRows(){
+    const cp=coproId(); const y=fiscalYear(); const rows=[];
+    (state.invoices||[]).filter(i=>(!cp||i.copro_id===cp)&&inYear(i.invoice_date,y)).forEach(i=>{ const a=accountById(i.account_id); const amount=Number(i.amount_total||0); if(a.code) pushEntry(rows,a.code,amount,0,`Facture ${i.invoice_number||''}`,i.invoice_date,i.invoice_number,i.copro_id,'invoice',i.id); pushEntry(rows,'440',0,amount,i.compta_suppliers?.name||'Fournisseur',i.invoice_date,i.invoice_number,i.copro_id,'invoice',i.id); });
+    (state.ownerCalls||[]).filter(c=>(!cp||c.copro_id===cp)&&inYear(c.due_date||c.period_date,y)).forEach(c=>{ const amount=Number(c.amount_due||c.amount||0); pushEntry(rows,'410',amount,0,c.label||'Appel',c.due_date||c.period_date,c.reference,c.copro_id,'call',c.id); pushEntry(rows,callCreditCode(c),0,amount,c.label||'Appel',c.due_date||c.period_date,c.reference,c.copro_id,'call',c.id); });
+    (state.bankTransactions||[]).filter(t=>(!cp||t.copro_id===cp)&&inYear(t.transaction_date,y)).forEach(t=>{ const amount=Number(t.amount||0); const b=bankCode(t); if(amount>=0){ pushEntry(rows,b,amount,0,t.communication||t.description||'Encaissement',t.transaction_date,t.statement_number,t.copro_id,'bank',t.id); pushEntry(rows,'410',0,amount,tierName?.(t.tier_type,t.tier_id)||t.counterparty_name||'Copropriétaire',t.transaction_date,t.statement_number,t.copro_id,'bank',t.id); } else { pushEntry(rows,'440',Math.abs(amount),0,tierName?.(t.tier_type,t.tier_id)||t.counterparty_name||'Fournisseur',t.transaction_date,t.statement_number,t.copro_id,'bank',t.id); pushEntry(rows,b,0,Math.abs(amount),t.communication||t.description||'Paiement',t.transaction_date,t.statement_number,t.copro_id,'bank',t.id); } });
+    (state.entries||[]).filter(e=>String(e.journal_code||'').toUpperCase()==='OD' && e.account_id && (!cp||e.copro_id===cp)&&inYear(e.entry_date,y)).forEach(e=>{ const a=accountById(e.account_id); if(a.code) pushEntry(rows,a.code,Number(e.debit||0),Number(e.credit||0),e.description||e.label||'OD',e.entry_date,e.reference,e.copro_id,'od',e.od_group_id||e.id); });
+    return rows;
+  }
+  function groupedAccounts(){ const m=new Map(); accountingRows().forEach(r=>{ if(!m.has(r.code)) m.set(r.code,{code:r.code,label:r.label,debit:0,credit:0}); const x=m.get(r.code); x.debit+=r.debit; x.credit+=r.credit; }); return [...m.values()].sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true})); }
 
-// =================== FIN PATCH V31.6 ===================
+  function gotoAccount(code){
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    $id('accountLookupView')?.classList.remove('hidden');
+    if($id('pageTitle')) $id('pageTitle').textContent='Consultation compte comptable';
+    if($id('v28AccountLookupCode')) $id('v28AccountLookupCode').value=code||'';
+    renderAccountLookup();
+    renderNav();
+  }
+  function renderAccountLookup(){
+    const tableEl=$id('v28AccountLookupTable'); if(!tableEl) return;
+    if($id('v28AccountLookupCopro')){ const keep=$id('v28AccountLookupCopro').value || state.activeCoproId || ''; $id('v28AccountLookupCopro').innerHTML='<option value="">Toutes</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${String(c.id)===String(keep)?'selected':''}>${safeHtml(c.name||'')}</option>`).join(''); }
+    const code=($id('v28AccountLookupCode')?.value||'').trim(); const cp=state.activeCoproId || $id('v28AccountLookupCopro')?.value || ''; const from=$id('v28AccountLookupFrom')?.value || '0000-01-01'; const to=$id('v28AccountLookupTo')?.value || '9999-12-31';
+    const rows=accountingRows().filter(r=>(!code||String(r.code).startsWith(code))&&(!cp||r.copro_id===cp)&&(!r.date||(r.date>=from&&r.date<=to))).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    const debit=rows.reduce((s,r)=>s+r.debit,0), credit=rows.reduce((s,r)=>s+r.credit,0);
+    if($id('v28AccountDebit')) $id('v28AccountDebit').textContent=fmtMoney(debit); if($id('v28AccountCredit')) $id('v28AccountCredit').textContent=fmtMoney(credit); if($id('v28AccountSolde')) $id('v28AccountSolde').textContent=fmtMoney(debit-credit);
+    tableEl.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Journal</th><th>Compte</th><th>Référence</th><th>Libellé</th><th>Débit</th><th>Crédit</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${safeHtml(r.date)}</td><td>${safeHtml((r.source_type||'').toUpperCase())}</td><td><strong>${safeHtml(r.code)}</strong> ${safeHtml(r.label)}</td><td>${safeHtml(r.ref)}</td><td>${safeHtml(r.text)}</td><td>${r.debit?fmtMoney(r.debit):''}</td><td>${r.credit?fmtMoney(r.credit):''}</td></tr>`).join('')||'<tr><td colspan="7">Aucune ligne.</td></tr>'}</tbody></table></div>`;
+  }
+  function renderBilan(){
+    if(!$id('bilanActifTable')) return;
+    const rows=groupedAccounts(); const solde=(r)=>r.debit-r.credit;
+    const actif=rows.filter(r=>(['2','3','5'].includes(String(r.code)[0])&&solde(r)>=0)||String(r.code).startsWith('410'));
+    const passif=rows.filter(r=>String(r.code)[0]==='1'||String(r.code).startsWith('440')||(['4'].includes(String(r.code)[0])&&(r.credit-r.debit)>0));
+    const total=(arr,side)=>arr.reduce((s,r)=>s+(side==='actif'?Math.max(solde(r),0)||Math.abs(solde(r)):Math.max(r.credit-r.debit,0)||Math.abs(solde(r))),0);
+    const html=(arr,side)=>`<div class="table-wrap"><table><thead><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr></thead><tbody>${arr.map(r=>`<tr class="v317-clickable" data-v317-account-code="${safeHtml(r.code)}"><td><strong>${safeHtml(r.code)}</strong></td><td>${safeHtml(r.label||'Compte')}</td><td style="text-align:right;font-weight:900">${fmtMoney(Math.abs(solde(r)))}</td></tr>`).join('')||'<tr><td colspan="3">Aucune donnée</td></tr>'}</tbody></table></div><div class="v30-bilan-total"><span>Total ${side}</span><strong>${fmtMoney(total(arr,side))}</strong></div>`;
+    const at=total(actif,'actif'), pt=total(passif,'passif');
+    $id('bilanActifTable').innerHTML=html(actif,'actif'); $id('bilanPassifTable').innerHTML=html(passif,'passif');
+    if($id('bilanSummary')) $id('bilanSummary').innerHTML=`<span class="badge ok">Total actif : ${fmtMoney(at)}</span><span class="badge warn">Total passif : ${fmtMoney(pt)}</span><span class="badge ${Math.abs(at-pt)<0.01?'ok':'warn'}">Écart : ${fmtMoney(at-pt)}</span>`;
+  }
 
+  function ownerCode(o){ return o.owner_code || o.code || ''; }
+  function supplierCode(s){ return s.supplier_code || s.code || ''; }
+  const previousOwnerDisplay = typeof ownerDisplayNameById==='function' ? ownerDisplayNameById : null;
+  ownerDisplayNameById = function(id){ const o=(state.owners||[]).find(x=>String(x.id)===String(id)); if(!o) return previousOwnerDisplay ? previousOwnerDisplay(id) : ''; return [ownerCode(o), o.display_name].filter(Boolean).join(' - '); };
+  const previousFindOrCreateOwner = typeof findOrCreateOwner==='function' ? findOrCreateOwner : null;
+  findOrCreateOwner = async function(cp, ownerName){
+    const clean=String(ownerName||'').trim(); if(!clean) return null;
+    const n=normalize(clean); let existing=(state.owners||[]).find(o=>normalize(o.display_name)===n || (o.email&&normalize(o.email)===n));
+    if(existing){ try{ await supabaseClient.from('compta_owner_copros').insert({owner_id:existing.id,copro_id:cp}).select('owner_id').maybeSingle(); }catch(e){} return existing.id; }
+    if(previousFindOrCreateOwner) return previousFindOrCreateOwner(cp, clean);
+    const {data,error}=await supabaseClient.from('compta_owners').insert({copro_id:cp,display_name:clean,created_by:currentUser?.id||null}).select('id').single(); if(error) throw error; return data.id;
+  };
+  const previousIdentityRecords = typeof identityRecords==='function' ? identityRecords : null;
+  identityRecords = function(){
+    const selectedCopro = state.activeCoproId || $id('ownersFilterCopro')?.value || '';
+    return {
+      owners:(state.owners||[]).filter(o=>!selectedCopro || o.copro_id===selectedCopro || (state.lots||[]).some(l=>l.copro_id===selectedCopro&&l.owner_id===o.id)).map(o=>({...o,_type:'owner',_code:ownerCode(o),_name:o.display_name,_email:o.email,_phone:o.phone,_address:o.address,_iban:o.iban||''})),
+      suppliers:(state.suppliers||[]).map(s=>({...s,_type:'supplier',_code:supplierCode(s),_name:s.name,_email:s.email,_phone:s.phone||'',_address:s.address||'',_iban:s.iban||''})),
+      occupants:(state.occupants||[]).filter(o=>!selectedCopro||o.copro_id===selectedCopro).map(o=>({...o,_type:'occupant',_code:o.occupant_code||'',_name:o.display_name,_email:o.email,_phone:o.phone,_address:o.address,_iban:''}))
+    };
+  };
+  renderOwners = function(){
+    if(!$id('ownersTable')) return;
+    const selectedCopro=state.activeCoproId || $id('ownersFilterCopro')?.value || '';
+    const type=state.selectedIdentityType||'owner';
+    document.querySelectorAll('[data-identity-type]').forEach(btn=>btn.classList.toggle('active',btn.dataset.identityType===type));
+    const records=identityRecords()[type==='supplier'?'suppliers':type==='occupant'?'occupants':'owners']||[];
+    $id('ownersTable').innerHTML=`<div class="summary-line"><span class="badge">${records.length} tiers</span><span class="badge">Contexte : ${safeHtml(selectedCopro ? ((state.copros||[]).find(c=>c.id===selectedCopro)?.name||'') : 'global')}</span></div><div class="table-wrap"><table><thead><tr><th>Code</th><th>Nom</th><th>Email</th><th>Téléphone</th><th>Adresse</th><th>Statut</th><th>Actions</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r._code?`<span class="v317-code-badge">${safeHtml(r._code)}</span>`:'-'}</td><td><strong>${safeHtml(r._name||'')}</strong></td><td>${safeHtml(r._email||'')}</td><td>${safeHtml(r._phone||'')}</td><td>${safeHtml(r._address||'')}</td><td>${r.active===false?'<span class="badge">Inactif</span>':'<span class="badge ok">Actif</span>'}</td><td><button class="btn secondary small" type="button" data-open-identity="${r._type}|${r.id}">Ouvrir</button></td></tr>`).join('')||'<tr><td colspan="7">Aucun tiers.</td></tr>'}</tbody></table></div>`;
+    try{ if(typeof renderIdentityDetail==='function') renderIdentityDetail(); }catch(e){}
+  };
+
+  function odGroups(){
+    const cp=state.activeCoproId || $id('v317OdCoproFilter')?.value || '';
+    const rows=(state.entries||[]).filter(e=>String(e.journal_code||'').toUpperCase()==='OD' && (!cp||e.copro_id===cp));
+    const map=new Map(); rows.forEach(e=>{ const key=e.od_group_id || e.source_id || `${e.reference||''}|${e.entry_date||''}|${e.label||''}`; if(!map.has(key)) map.set(key,{id:key,reference:e.reference||'',date:e.entry_date||'',label:e.label||e.description||'',rows:[]}); map.get(key).rows.push(e); });
+    return [...map.values()].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  }
+  function ensureOdDraft(groupId=''){
+    if(groupId){ const g=odGroups().find(x=>String(x.id)===String(groupId)); if(g){ state.v317EditingOdGroup=groupId; state.v317OdDraft={copro_id:g.rows[0]?.copro_id||state.activeCoproId||'',date:g.date||todayIso(),reference:g.reference||'',label:g.label||'',is_reprise:false, lines:g.rows.map(r=>({account_id:r.account_id||'',vat_code:'',debit:Number(r.debit||0)||'',credit:Number(r.credit||0)||''}))}; return; } }
+    if(!state.v317OdDraft || !state.v317OdDraft.lines){ state.v317EditingOdGroup=''; state.v317OdDraft={copro_id:state.activeCoproId||'',date:todayIso(),reference:'',label:'',is_reprise:false, lines:[{account_id:'',vat_code:'',debit:'',credit:''}]}; }
+  }
+  function odTotals(){ const l=state.v317OdDraft?.lines||[]; return {debit:l.reduce((s,x)=>s+Number(x.debit||0),0), credit:l.reduce((s,x)=>s+Number(x.credit||0),0)}; }
+  function renderOD(){
+    const view=$id('odView'); const card=view?.querySelector('.card'); if(!card) return; installV317Css(); ensureOdDraft();
+    const d=state.v317OdDraft; const totals=odTotals(); const balanced=Math.abs(totals.debit-totals.credit)<0.01 && totals.debit>0;
+    const groups=odGroups();
+    card.innerHTML=`<div class="v317-od-page"><div class="v317-od-header"><div><h2>Opérations diverses</h2><p class="muted-note">Encodage OD façon Optipro : renseignements, lignes débit/crédit, équilibre et journal en dessous.</p></div><div class="top-actions"><button class="btn secondary" id="v317OdNewBtn" type="button">+ Nouvelle opération</button><button class="btn secondary" id="v317OdListBtn" type="button">Opérations diverses en cours</button></div></div>
+      <div class="v317-od-box"><h3 class="v317-od-section-title">Renseignements</h3><div class="v317-od-grid"><label>Copropriété<select id="v317OdCopro">${coproOptions(d.copro_id)}</select></label><label>Date de l'opération diverse<input id="v317OdDate" type="date" value="${safeHtml(d.date||todayIso())}"></label><label>Code journal<select id="v317OdJournal"><option value="OD">OD - Opérations diverses</option></select></label><label>Libellé de l'opération diverse<input id="v317OdLabel" value="${safeHtml(d.label||'')}"></label><label>Référence interne<input id="v317OdReference" placeholder="Auto si vide" value="${safeHtml(d.reference||'')}"></label><label style="display:flex;gap:10px;align-items:center;margin-top:24px;"><input id="v317OdReprise" type="checkbox" ${d.is_reprise?'checked':''} style="width:24px;min-height:24px;"> OD de reprise comptable</label></div></div>
+      <div class="v317-od-box"><h3 class="v317-od-section-title">Lignes opération diverse</h3><div class="v317-od-lines"><table class="v317-od-table"><thead><tr><th style="width:42px">★</th><th>Compte comptable</th><th>Codes TVA</th><th>Débit</th><th>Crédit</th><th>Annuler</th></tr></thead><tbody>${d.lines.map((line,i)=>`<tr><td><button class="btn secondary small" type="button" title="Favori">☆</button></td><td><select class="v317-od-account" data-v317-od-line="${i}" data-field="account_id">${accountOptions(line.account_id)}</select></td><td><select data-v317-od-line="${i}" data-field="vat_code"><option value="">Sélectionnez</option><option value="0" ${line.vat_code==='0'?'selected':''}>0%</option><option value="6" ${line.vat_code==='6'?'selected':''}>6%</option><option value="21" ${line.vat_code==='21'?'selected':''}>21%</option></select></td><td><input class="v317-od-amount" type="number" step="0.01" data-v317-od-line="${i}" data-field="debit" value="${safeHtml(line.debit)}"></td><td><input class="v317-od-amount" type="number" step="0.01" data-v317-od-line="${i}" data-field="credit" value="${safeHtml(line.credit)}"></td><td><button class="btn danger small" type="button" data-v317-remove-od-line="${i}">🗑</button></td></tr>`).join('')}<tr class="v317-od-total-row"><td colspan="3" style="text-align:right">Totaux</td><td>${fmtMoney(totals.debit)}</td><td>${fmtMoney(totals.credit)}</td><td>${balanced?'<span class="badge ok">Équilibrée</span>':'<span class="badge warn">À équilibrer</span>'}</td></tr></tbody></table></div><div class="v317-od-actions" style="margin-top:12px;"><button class="btn secondary" id="v317AddOdLineBtn" type="button">+ Ajouter une ligne</button><div class="top-actions"><button class="btn secondary" id="v317ResetOdBtn" type="button">Annuler</button><button class="btn" id="v317SaveOdBtn" type="button">Enregistrer l'OD</button></div></div></div>
+      <div class="v317-od-box"><h3 class="v317-od-section-title">Pièce(s) jointe(s)</h3><button class="btn secondary" type="button">Ajouter un fichier</button><span class="muted-note" style="margin-left:10px;">La gestion des pièces sera raccordée au stockage documents.</span></div>
+      <div class="v317-od-box"><div class="toolbar"><h3>Journal des opérations diverses</h3><label style="max-width:280px">Filtrer copropriété<select id="v317OdCoproFilter">${'<option value="">Toutes</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${String(c.id)===String(state.activeCoproId||'')?'selected':''}>${safeHtml(c.name||'')}</option>`).join('')}</select></label></div>${groups.map(g=>{ const debit=g.rows.reduce((s,r)=>s+Number(r.debit||0),0); const credit=g.rows.reduce((s,r)=>s+Number(r.credit||0),0); return `<div class="v317-od-list-card"><div><strong>${safeHtml(g.reference||'OD')}</strong><div class="muted-note">${safeHtml(g.date||'')} · ${safeHtml(g.label||'')}</div></div><div><span class="badge">Débit ${fmtMoney(debit)}</span> <span class="badge">Crédit ${fmtMoney(credit)}</span></div><button class="btn secondary small" type="button" data-v317-edit-od="${safeHtml(g.id)}">Modifier</button></div>`; }).join('')||'<div class="notice">Aucune opération diverse.</div>'}</div></div>`;
+  }
+  function readOdDraft(){
+    const d=state.v317OdDraft || {}; d.copro_id=$id('v317OdCopro')?.value||''; d.date=$id('v317OdDate')?.value||todayIso(); d.reference=($id('v317OdReference')?.value||'').trim(); d.label=($id('v317OdLabel')?.value||'').trim(); d.is_reprise=!!$id('v317OdReprise')?.checked; state.v317OdDraft=d;
+  }
+  async function saveOD(){
+    readOdDraft(); const d=state.v317OdDraft; const lines=(d.lines||[]).filter(l=>l.account_id&&(Number(l.debit||0)>0||Number(l.credit||0)>0)); const debit=lines.reduce((s,l)=>s+Number(l.debit||0),0), credit=lines.reduce((s,l)=>s+Number(l.credit||0),0);
+    if(!d.copro_id) return alert('Choisis la copropriété.'); if(!d.date) return alert('Indique la date.'); if(!d.label) return alert('Indique le libellé.'); if(!lines.length) return alert('Ajoute au moins une ligne.'); if(Math.abs(debit-credit)>0.01) return alert('L’opération diverse doit être équilibrée : total débit = total crédit.');
+    const groupId=state.v317EditingOdGroup || uid(); const reference=d.reference || `OD-${d.date.replaceAll('-','')}-${String(Date.now()).slice(-4)}`;
+    if(state.v317EditingOdGroup){ await supabaseClient.from('compta_entries').delete().eq('od_group_id', state.v317EditingOdGroup); }
+    const payload=lines.map(l=>({copro_id:d.copro_id,journal_code:'OD',entry_date:d.date,reference,label:d.label,description:d.label,status:'posted',account_id:l.account_id,debit:Number(l.debit||0),credit:Number(l.credit||0),od_group_id:groupId,source_type:'od',source_id:groupId,metadata:{vat_code:l.vat_code||null,is_reprise:!!d.is_reprise},created_by:currentUser?.id||null,updated_at:new Date().toISOString()}));
+    const {error}=await supabaseClient.from('compta_entries').insert(payload); if(error) return alert(error.message);
+    state.v317EditingOdGroup=''; state.v317OdDraft=null; if(typeof loadAll==='function') await loadAll(); renderOD(); alert('Opération diverse enregistrée.');
+  }
+
+  function renderDashboardV317(){
+    if(!$id('dashboardView')) return;
+    const cp=state.activeCoproId || ''; const copro=(state.copros||[]).find(c=>c.id===cp); const lots=(state.lots||[]).filter(l=>!cp||l.copro_id===cp); const banks=(state.bankAccounts||[]).filter(b=>!cp||b.copro_id===cp); const tx=(state.bankTransactions||[]).filter(t=>banks.some(b=>b.id===t.bank_account_id)||(!cp&&true)); const bankBalance=cp?tx.reduce((s,t)=>s+Number(t.amount||0),0):(state.bankTransactions||[]).reduce((s,t)=>s+Number(t.amount||0),0);
+    if($id('statCopros')){ $id('statCopros').textContent=cp?'1':String((state.copros||[]).length); $id('statCopros').previousElementSibling.textContent=cp?'Copropriété active':'Copropriétés'; }
+    if($id('statLots')){ $id('statLots').textContent=String(lots.length); $id('statLots').previousElementSibling.textContent='Total lots'; }
+    let dash=$id('v317DashboardContext');
+    if(!dash){ dash=document.createElement('div'); dash.id='v317DashboardContext'; dash.className='card'; $id('dashboardView').prepend(dash); }
+    const countType=(names)=>lots.filter(l=>names.some(n=>normalize(l.lot_type).includes(n))).length;
+    dash.innerHTML=`<div class="toolbar"><div><h2>${cp?safeHtml(copro?.name||'Copropriété'):'Vue globale'}</h2><p class="muted-note">${cp?safeHtml(copro?.address||'Adresse non renseignée'):'Toutes les copropriétés'}</p></div><span class="badge ok">Solde banque : ${fmtMoney(bankBalance)}</span></div><div class="v28-kpi-row"><div class="v28-kpi"><small>Lots totaux</small><strong>${lots.length}</strong></div><div class="v28-kpi"><small>Appartements</small><strong>${countType(['appart'])}</strong></div><div class="v28-kpi"><small>Garages / parkings</small><strong>${countType(['garage','parking'])}</strong></div><div class="v28-kpi"><small>Caves</small><strong>${countType(['cave'])}</strong></div><div class="v28-kpi"><small>Comptes bancaires</small><strong>${banks.length}</strong></div></div>`;
+  }
+
+  function v317RenderAllLight(){
+    try{installV317Css();}catch(e){}
+    try{renderNav();}catch(e){}
+    try{renderDashboardV317();}catch(e){console.warn('V31.7 dashboard',e)}
+    try{renderOD();}catch(e){console.warn('V31.7 OD',e)}
+    try{renderBilan();}catch(e){console.warn('V31.7 bilan',e)}
+    try{renderAccountLookup();}catch(e){console.warn('V31.7 compte',e)}
+    try{ if(currentView()==='owners') renderOwners(); }catch(e){console.warn('V31.7 tiers',e)}
+  }
+  const prevRenderAll = typeof renderAll==='function' ? renderAll : null;
+  renderAll = function(){ if(prevRenderAll) prevRenderAll(); v317RenderAllLight(); };
+  const prevInitial = window.v25RunInitialUi;
+  window.v25RunInitialUi = function(){ if(prevInitial) prevInitial(); setTimeout(v317RenderAllLight,150); setTimeout(v317RenderAllLight,800); setTimeout(v317RenderAllLight,1800); };
+
+  document.addEventListener('click',(e)=>{
+    const main=e.target.closest?.('[data-v317-module]');
+    if(main){ e.preventDefault(); e.stopImmediatePropagation(); const mod=MODULES.find(m=>m.id===main.dataset.v317Module); if(!mod) return; renderNav(); const first=mod.tabs[0]; if(first?.[3]) state.syndicBillingTab=first[3]; document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden')); $id(mod.defaultView+'View')?.classList.remove('hidden'); setTimeout(()=>{ renderNav(); const btn=document.querySelector(`#moduleTabs [data-view="${first[0]}"]${first[3]?`[data-v25-syndic-tab="${first[3]}"]`:''}`) || document.querySelector(`#moduleTabs [data-view="${first[0]}"]`); goToViewWithTab(btn); },0); return; }
+    const tab=e.target.closest?.('#moduleTabs .module-tab');
+    if(tab){ e.preventDefault(); e.stopImmediatePropagation(); goToViewWithTab(tab); return; }
+    const idTab=e.target.closest?.('[data-identity-type]');
+    if(idTab){ e.preventDefault(); e.stopImmediatePropagation(); state.selectedIdentityType=idTab.dataset.identityType; state.selectedIdentityId=null; renderOwners(); return; }
+    const acc=e.target.closest?.('[data-v317-account-code],[data-v31-account-code],[data-v30-account-code]');
+    if(acc){ const code=acc.dataset.v317AccountCode||acc.dataset.v31AccountCode||acc.dataset.v30AccountCode; if(code){ e.preventDefault(); e.stopImmediatePropagation(); gotoAccount(code); return; } }
+    const edit=e.target.closest?.('[data-v317-edit-od]'); if(edit){ e.preventDefault(); e.stopImmediatePropagation(); ensureOdDraft(edit.dataset.v317EditOd); renderOD(); return; }
+    const remove=e.target.closest?.('[data-v317-remove-od-line]'); if(remove){ e.preventDefault(); e.stopImmediatePropagation(); readOdDraft(); const idx=Number(remove.dataset.v317RemoveOdLine); state.v317OdDraft.lines.splice(idx,1); if(!state.v317OdDraft.lines.length) state.v317OdDraft.lines.push({account_id:'',vat_code:'',debit:'',credit:''}); renderOD(); return; }
+    if(e.target.closest?.('#v317AddOdLineBtn')){ e.preventDefault(); e.stopImmediatePropagation(); readOdDraft(); state.v317OdDraft.lines.push({account_id:'',vat_code:'',debit:'',credit:''}); renderOD(); return; }
+    if(e.target.closest?.('#v317ResetOdBtn') || e.target.closest?.('#v317OdNewBtn')){ e.preventDefault(); e.stopImmediatePropagation(); state.v317EditingOdGroup=''; state.v317OdDraft=null; renderOD(); return; }
+    if(e.target.closest?.('#v317SaveOdBtn')){ e.preventDefault(); e.stopImmediatePropagation(); saveOD(); return; }
+  }, true);
+  document.addEventListener('input',(e)=>{ const el=e.target; if(!el?.dataset?.v317OdLine) return; const i=Number(el.dataset.v317OdLine); ensureOdDraft(); state.v317OdDraft.lines[i]=state.v317OdDraft.lines[i]||{}; state.v317OdDraft.lines[i][el.dataset.field]=el.value; if(el.dataset.field==='debit' && Number(el.value)>0) state.v317OdDraft.lines[i].credit=''; if(el.dataset.field==='credit' && Number(el.value)>0) state.v317OdDraft.lines[i].debit=''; }, true);
+  document.addEventListener('change',(e)=>{ const el=e.target; if(el?.dataset?.v317OdLine){ const i=Number(el.dataset.v317OdLine); ensureOdDraft(); state.v317OdDraft.lines[i]=state.v317OdDraft.lines[i]||{}; state.v317OdDraft.lines[i][el.dataset.field]=el.value; renderOD(); return; } if(['v317OdCopro','v317OdDate','v317OdReference','v317OdLabel','v317OdReprise'].includes(el?.id)){ readOdDraft(); return; } if(el?.id==='v317OdCoproFilter'){ renderOD(); return; } if(['v28AccountLookupCode','v28AccountLookupFrom','v28AccountLookupTo','v28AccountLookupCopro'].includes(el?.id)){ renderAccountLookup(); return; } }, true);
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(v317RenderAllLight,300)); else setTimeout(v317RenderAllLight,300);
+})();
 </script>
 </body>
 </html>
