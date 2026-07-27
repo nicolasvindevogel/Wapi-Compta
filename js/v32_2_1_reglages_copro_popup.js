@@ -6,7 +6,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  window.WAPI_ONE_VERSION = 'V32.3 - multi-utilisateurs';
+  window.WAPI_ONE_VERSION = 'V32.2.1 - réglages copro en popup';
 
   const $id = (x) => document.getElementById(x);
   const esc = (v) => typeof escapeHtml === 'function'
@@ -100,8 +100,6 @@
     }).join('');
 
     const bankRows = banks.map(b => `<tr><td>${esc(b.label || '')}</td><td>${esc(b.iban || '')}</td><td>${esc(b.bic || '')}</td><td>${esc(b.account_code || '')}</td><td>${b.account_type === 'savings' ? 'Épargne' : 'Vue'}</td></tr>`).join('') || '<tr><td colspan="5">Aucun compte bancaire spécifique encodé.</td></tr>';
-    const managers = (state.userProfiles || []).filter(u => u.active !== false);
-    const managerOptions = options(managers, c.manager_user_id || '', u => `${u.display_name || u.email || 'Utilisateur'}${u.email ? ' — ' + u.email : ''}`, 'Aucun gestionnaire');
 
     return `
       <div class="v3221-settings-popup">
@@ -110,7 +108,7 @@
           <label>Code copropriété <input id="v3221CoproCode" value="${esc(c.code || c.copro_code || '')}" placeholder="Ex. ALB"></label>
           <label>Nom copropriété <input id="v3221CoproName" value="${esc(c.name || '')}"></label>
           <label>BCE <input id="v3221CoproBce" value="${esc(c.bce || '')}" placeholder="BE...."></label>
-          <label>Gestionnaire <select id="v3221CoproManagerUser">${managerOptions}</select><small class="muted-note">Liste issue des utilisateurs Supabase Auth.</small></label>
+          <label>Gestionnaire <input id="v3221CoproManager" value="${esc(c.manager_name || '')}" placeholder="Nicolas, Julien, ..."></label>
           <label style="grid-column:1/-1;">Adresse <textarea id="v3221CoproAddress" rows="2">${esc(c.address || '')}</textarea></label>
           <label>Exercice <select id="v3221FiscalYearSelect">${options(years, y.id || selectedYear, yearLabel, 'Exercice')}</select></label>
           <label>Code exercice <input id="v3221FiscalYearCode" value="${esc(y.code || y.year_code || '')}" placeholder="EX26"></label>
@@ -163,15 +161,12 @@
 
   async function saveSettingsPopup(coproId){
     if (!supabaseClient) return alert('Supabase non connecté.');
-    const managerId = ($id('v3221CoproManagerUser')?.value || '').trim();
-    const manager = (state.userProfiles || []).find(u => String(u.id) === String(managerId)) || null;
     const payload = {
       code: ($id('v3221CoproCode')?.value || '').trim(),
       name: ($id('v3221CoproName')?.value || '').trim(),
       bce: ($id('v3221CoproBce')?.value || '').trim(),
       address: ($id('v3221CoproAddress')?.value || '').trim(),
-      manager_user_id: managerId || null,
-      manager_name: manager ? (manager.display_name || manager.email || '') : ''
+      manager_name: ($id('v3221CoproManager')?.value || '').trim()
     };
     if (!payload.name) return alert('Le nom de la copropriété est obligatoire.');
     let res = await supabaseClient.from('compta_copros').update(payload).eq('id', coproId);
