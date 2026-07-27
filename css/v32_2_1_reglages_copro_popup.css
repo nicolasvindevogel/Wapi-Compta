@@ -1,0 +1,49 @@
+/* V32.2.1 — Réglages copro en popup */
+.module-tab[data-view="coproSettings"],
+button[data-view="coproSettings"] {
+  display: none !important;
+}
+.v3221-settings-popup hr {
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, .08);
+  margin: 18px 0;
+}
+.v3221-settings-popup .toolbar.compact {
+  margin-bottom: 10px;
+  align-items: center;
+}
+.v3221-inline-bank {
+  background: rgba(248, 250, 252, .96);
+  border: 1px solid rgba(148, 163, 184, .25);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.v3221-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.v3221-folder-card {
+  min-height: 82px;
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  border: 1px solid rgba(148, 163, 184, .22);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.v3221-folder-card strong {
+  color: #18233f;
+}
+.v3221-folder-card span {
+  color: #64748b;
+  font-size: .86rem;
+}
+.active-copro-settings-row .mini-btn,
+#activeCoproSettingsBtn {
+  width: 100%;
+  justify-content: center;
+}
