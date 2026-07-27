@@ -1,5 +1,5 @@
 
-window.WAPI_ONE_VERSION = 'V32.0 - structure propre';
+window.WAPI_ONE_VERSION = 'V32.1.2 - retour stable anti-boucle';
 window.WAPI_ONE_BUILD_DATE = '2026-07-25';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";
@@ -10888,7 +10888,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
       if(!target) return;
       const badge = document.createElement('div');
       badge.className = 'app-version-badge';
-      badge.textContent = 'WAPI One — V32.0';
+      badge.textContent = 'WAPI One — V32.1.2 stable';
       target.appendChild(badge);
     }catch(e){ console.warn('Version badge non ajouté', e); }
   }
@@ -10910,4 +10910,21 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
     setTimeout(protectEmptyModal, 250);
     setTimeout(addVersionBadge, 500);
   });
+})();
+
+
+// --- V32.1.2: anti-boucle / nettoyage ponctuel des popups vides, sans observer ni intervalle ---
+(function wapiV3212NoLoop(){
+  function blank(el){ return !el || !String(el.innerHTML || '').replace(/<[^>]*>/g,'').replace(/\s+/g,'').trim(); }
+  function cleanOnce(){
+    var modal = document.getElementById('globalModalBackdrop');
+    var body = document.getElementById('globalModalBody');
+    if(modal && !modal.classList.contains('hidden') && blank(body)){
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+      modal.style.pointerEvents = 'none';
+      setTimeout(function(){ modal.style.display=''; modal.style.pointerEvents=''; }, 300);
+    }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cleanOnce, {once:true}); else cleanOnce();
 })();
