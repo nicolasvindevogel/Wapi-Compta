@@ -2,7 +2,7 @@
    Objectif : appliquer le filtre gestionnaire dans les modules multi-copro utiles,
    sans MutationObserver ni boucle de rendu. */
 (function(){
-  const VERSION = 'WAPI One — V32.3.1';
+  const VERSION = 'WAPI One — V32.3.2';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const patched = new Set();
   const coproSelectIds = [
@@ -161,10 +161,23 @@
     const main = $('activeManagerFilter');
     if (main) main.value = currentManagerId();
   }
+  function managerOptionsHtml(selected=''){
+    const users = ((typeof state !== 'undefined' && state.userProfiles) || []).filter(u => u.active !== false);
+    return `<option value="">Tous les gestionnaires</option>` + users.map(u => {
+      const label = [u.display_name || u.email || 'Utilisateur', u.email && u.display_name ? u.email : ''].filter(Boolean).join(' — ');
+      return `<option value="${esc(u.id)}" ${String(selected||'')===String(u.id)?'selected':''}>${esc(label)}</option>`;
+    }).join('');
+  }
+
   function refreshInlineManagerSelects(){
+    const cur = currentManagerId();
     document.querySelectorAll('[data-v3231-manager-filter] select').forEach(sel => {
-      const cur = currentManagerId();
-      if (sel.value !== cur) sel.value = cur;
+      const previous = sel.value || cur || '';
+      // Les filtres créés avant le chargement des utilisateurs étaient bloqués sur
+      // "Tous les gestionnaires". On reconstruit donc les options à chaque refresh,
+      // sans observer ni boucle.
+      sel.innerHTML = managerOptionsHtml(previous);
+      sel.value = previous && Array.from(sel.options).some(o => String(o.value) === String(previous)) ? previous : cur;
     });
   }
   function applyCoproSelectFilter(id){
@@ -215,4 +228,19 @@
   setTimeout(patchAll, 0);
   setTimeout(patchAll, 500);
   document.addEventListener('DOMContentLoaded', () => setTimeout(patchAll, 50));
+
+  // Rechargement ponctuel des profils : si les filtres inline ont été rendus avant
+  // que Supabase ait renvoyé les utilisateurs, on recharge les options une fois les
+  // profils disponibles. Pas de MutationObserver / pas de boucle.
+  setTimeout(() => {
+    try {
+      if (typeof window.loadUserProfilesV323 === 'function') {
+        window.loadUserProfilesV323().then(() => {
+          refreshManagerFiltersUi();
+        });
+      } else {
+        refreshManagerFiltersUi();
+      }
+    } catch(e) { console.warn('[V32.3.2] refresh profils gestionnaires', e); }
+  }, 900);
 })();
