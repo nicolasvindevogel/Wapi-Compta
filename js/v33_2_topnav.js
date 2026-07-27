@@ -12,6 +12,7 @@
   };
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const iconPaths = {
+    Accueil:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5M9 21v-6h6v6"/>',
     Pilotage:'<path d="M4 19V9m8 10V5m8 14v-7"/><path d="M2 19h20"/>',
     Infrastructures:'<path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/>',
     Comptabilite:'<path d="M4 3h16v18H4zM8 7h8M8 11h2m3 0h3M8 15h2m3 0h3"/>',
@@ -22,6 +23,16 @@
   };
   const plain = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s/’-]/g,'').trim();
   const icon = name => `<span class="w332-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${iconPaths[name] || iconPaths.Configuration}</svg></span>`;
+  const mainModules = [
+    ['home','Accueil','Accueil'],
+    ['pilotage','Pilotage','Pilotage'],
+    ['copros','Copropriétés','Infrastructures'],
+    ['compta','Comptabilité','Comptabilite'],
+    ['states','États comptables','Etats comptables'],
+    ['ag','Assemblées générales','Assemblees generales'],
+    ['syndic','Facturation syndic','Facturation syndic'],
+    ['config','Configuration','Configuration']
+  ];
 
   function buildTopNavigation(){
     const app = $('appScreen'), sidebar = app?.querySelector('.sidebar'), topbar = app?.querySelector('.topbar');
@@ -45,26 +56,22 @@
     const nav = document.createElement('nav');
     nav.id = 'w332PrimaryNav';
     nav.className = 'w332-primary-nav';
-    sidebar.querySelectorAll('.menu-group').forEach(group => {
-      const rawName = group.querySelector('.menu-group__text')?.textContent || 'Menu';
-      const name = plain(rawName);
-      const wrap = document.createElement('div');
-      wrap.className = 'w332-nav-menu';
-      wrap.innerHTML = `<button type="button" class="w332-nav-trigger">${icon(name)}<span>${esc(rawName)}</span></button><div class="w332-dropdown"></div>`;
-      const dropdown = wrap.querySelector('.w332-dropdown');
-      group.querySelectorAll('.menu-group__body > button[data-view]').forEach(button => dropdown.appendChild(button));
-      wrap.querySelector('.w332-nav-trigger').addEventListener('click', event => {
-        event.stopPropagation();
-        document.querySelectorAll('.w332-nav-menu.open').forEach(item => { if (item !== wrap) item.classList.remove('open'); });
-        wrap.classList.toggle('open');
+    mainModules.forEach(([id,label,iconName], index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `w332-nav-trigger${index === 0 ? ' active' : ''}`;
+      button.dataset.w332Module = id;
+      button.innerHTML = `${icon(iconName)}<span>${esc(label)}</span>`;
+      button.addEventListener('click', () => {
+        const source = document.querySelector(`.nav [data-v331-module="${id}"]`);
+        if (source) source.click();
+        nav.querySelectorAll('.w332-nav-trigger').forEach(item => item.classList.toggle('active', item === button));
       });
-      dropdown.addEventListener('click', () => wrap.classList.remove('open'));
-      nav.appendChild(wrap);
+      nav.appendChild(button);
     });
     left?.insertAdjacentElement('afterend', nav);
     buildContext(topbar);
     document.addEventListener('click', event => {
-      if (!event.target.closest('.w332-nav-menu')) document.querySelectorAll('.w332-nav-menu.open').forEach(x => x.classList.remove('open'));
       if (!event.target.closest('.w332-user-wrap')) document.querySelector('.w332-user-wrap.open')?.classList.remove('open');
     });
   }
@@ -90,7 +97,11 @@
     if (fiscalSelect) context.querySelector('#w332FiscalHost')?.appendChild(fiscalSelect);
     oldActions?.replaceWith(context);
     const coproHost = $('w332CoproHost'), coproSelect = $('activeCoproSelect');
-    if (coproHost && coproSelect) coproHost.appendChild(coproSelect);
+    if (coproHost && coproSelect) {
+      coproSelect.classList.remove('smart-combo-source');
+      coproSelect.removeAttribute('data-smart-combo-ready');
+      coproHost.appendChild(coproSelect);
+    }
     if (coproSelect) {
       coproSelect.addEventListener('change', () => {
         const coproId = coproSelect.value || '';
@@ -274,10 +285,14 @@
   }, true);
 
   function init(){
+    const st = appState();
+    if (st) st.managerFilterUserId = '';
+    try { localStorage.removeItem('wapi_one_manager_filter_user_id'); } catch (_) {}
     buildTopNavigation();
+    try { if (typeof renderActiveCoproContext === 'function') renderActiveCoproContext(); } catch (_) {}
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V33.2.1'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V33.2.2'; document.querySelector('.w332-page-head')?.appendChild(version);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init,0), {once:true});
   else setTimeout(init,0);

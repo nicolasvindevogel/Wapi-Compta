@@ -43,7 +43,7 @@ body[data-wapi-v332="ready"] #userPill{display:none!important}
   border:0;border-radius:9px;background:transparent;color:#40475d;
   font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;
 }
-.w332-nav-trigger:hover,.w332-nav-menu.open>.w332-nav-trigger{
+.w332-nav-trigger:hover,.w332-nav-trigger.active{
   color:var(--w33-accent);background:#f0edff;
 }
 .w332-icon{width:17px;height:17px;display:inline-flex;color:currentColor}
@@ -67,6 +67,8 @@ body[data-wapi-v332="ready"] #userPill{display:none!important}
 .w332-context-field{display:flex;align-items:center;gap:7px;margin:0;color:#737b90;font-size:10px;font-weight:700}
 .w332-context-field>span:first-child{text-transform:uppercase;letter-spacing:.04em}
 .w332-context select{height:36px;max-width:210px;padding:0 30px 0 9px;border-radius:9px;font-size:11px}
+.w332-context select.smart-combo-source,
+#w332CoproHost #activeCoproSelect{display:block!important;position:static!important;opacity:1!important;pointer-events:auto!important}
 .w332-copro-field select{min-width:190px}
 .w332-year-control{display:flex!important;align-items:center!important;gap:7px!important}
 .w332-fiscal-dot{display:block;width:10px;height:10px;border-radius:50%;background:#a7adba;box-shadow:0 0 0 3px #eef0f4}

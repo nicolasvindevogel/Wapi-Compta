@@ -1,4 +1,4 @@
-WAPI ONE — V33.2.1
+WAPI ONE — V33.2.2
 ===================
 
 Cette version conserve les modules et les données de la V33.1.
@@ -32,4 +32,4 @@ CONTRÔLES CONSEILLÉS
 - Le PDF du bilan présente l'actif et le passif côte à côte.
 
 VERSION
-WAPI One V33.2.1
+WAPI One V33.2.2
