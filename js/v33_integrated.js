@@ -1240,3 +1240,258 @@
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true}); else init();
 })();
+
+/* ============================================================
+   V33.1 — Navigation définitivement stable + contexte de travail
+   ============================================================ */
+(function(){
+  'use strict';
+  const VERSION = 'WAPI One — V33.1';
+  const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const hasState = () => typeof state !== 'undefined' && state;
+  const arr = (key) => hasState() && Array.isArray(state[key]) ? state[key] : [];
+  const norm = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+  const MODULES = [
+    { id:'home', badge:'AC', label:'Accueil', hint:'Vue générale', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord']] },
+    { id:'pilotage', badge:'PI', label:'Pilotage', hint:'Traitement & envois', defaultView:'processing', tabs:[['processing','Centre traitement'],['invoiceOcr','OCR factures'],['codaPilot','Validation CODA'],['payments','Paiement factures'],['callDispatch','Envoi appels'],['inform','J’informe'],['sendJournal','Journal envois']] },
+    { id:'copros', badge:'CP', label:'Copropriétés', hint:'Structure immeubles', defaultView:'copros', tabs:[['copros','Liste'],['lots','Lots'],['owners','Tiers copropriétaires'],['suppliers','Fournisseurs'],['distribution','Répartitions'],['buildings','Bâtiments'],['works','Travaux']] },
+    { id:'compta', badge:'CO', label:'Comptabilité', hint:'Achats, banque, OD', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs'],['bank','Encodage financier'],['od','Opérations diverses'],['meters','Relevés compteurs'],['budgets','Budgets'],['calls','Appels'],['statements','Décomptes'],['expensesList','Liste dépenses'],['exercises','Exercices']] },
+    { id:'states', badge:'ET', label:'États comptables', hint:'Contrôles & rapports', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable'],['ledger','Grand livre'],['financialLedger','Grand livre financier'],['balance','Balance générale'],['thirdBalance','Balance tiers'],['journals','Journaux'],['bilan','Bilan'],['heldFunds','Fonds détenus'],['multicoproConsultation','Consultation multi-copro']] },
+    { id:'ag', badge:'AG', label:'Assemblées', hint:'AG & résolutions', defaultView:'meetings', tabs:[['meetings','Assemblées'],['resolutions','Catalogue résolutions']] },
+    { id:'syndic', badge:'SY', label:'Facturation syndic', hint:'Honoraires & exports', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','campaigns'],['syndicBilling','Contrats','contracts'],['syndicBilling','Prestations / mutations','services'],['syndicBilling','Factures','invoices'],['syndicBilling','Export Clearfact','exports'],['syndicBilling','Réglages','settings']] },
+    { id:'config', badge:'CF', label:'Configuration', hint:'Paramètres', defaultView:'agency', tabs:[['agency','Agence'],['accounts','Plan comptable'],['templates','Modèles'],['users','Utilisateurs'],['journalCodes','Journaux'],['bankInstitutions','Banques'],['vatCodes','Codes TVA'],['defaultExpenseTypes','Natures dépenses'],['accessControl','Accès'],['auditTrail','Audit'],['importsConfig','Imports'],['isabel','Isabel']] }
+  ];
+  const VIEW_TO_MODULE = new Map();
+  MODULES.forEach(m => m.tabs.forEach(t => { if(!VIEW_TO_MODULE.has(t[0])) VIEW_TO_MODULE.set(t[0], m.id); }));
+
+  function currentView(){
+    const visible = Array.from(document.querySelectorAll('.view')).find(v => !v.classList.contains('hidden'));
+    return visible ? visible.id.replace(/View$/,'') : 'dashboard';
+  }
+  function currentSyndicTab(){ return hasState() ? (state.syndicBillingTab || 'campaigns') : 'campaigns'; }
+  function moduleFor(view){ return MODULES.find(m => m.id === (VIEW_TO_MODULE.get(view) || 'home')) || MODULES[0]; }
+  function tabLabel(view, syndicTab){
+    const m = moduleFor(view);
+    const found = m.tabs.find(t => t[0] === view && (!t[2] || !syndicTab || t[2] === syndicTab)) || m.tabs.find(t => t[0] === view);
+    return found ? found[1] : m.label;
+  }
+  function managerId(){ return hasState() ? (state.managerFilterUserId || localStorage.getItem(STORAGE_KEY) || '') : (localStorage.getItem(STORAGE_KEY) || ''); }
+  function coproManagerId(c){ return c?.manager_user_id || c?.manager_id || ''; }
+  function filteredCopros(){
+    const list = arr('copros');
+    const m = managerId();
+    return m ? list.filter(c => String(coproManagerId(c)) === String(m)) : list;
+  }
+  function managerLabel(u){ return u?.display_name || u?.email || 'Utilisateur'; }
+  function coproLabel(c){ return [c?.code || c?.copro_code || c?.optipro_ref || '', c?.name || ''].filter(Boolean).join(' - ') || 'Copropriété'; }
+  function yearLabel(y){ return [y?.code || y?.year_code || '', y?.label || y?.name || ''].filter(Boolean).join(' - ') || 'Exercice'; }
+  function setTextButtons(){
+    const toggle = $('toggleSidebarBtn');
+    const app = $('appScreen');
+    if(toggle){
+      const collapsed = app?.classList.contains('sidebar-collapsed');
+      toggle.innerHTML = '<span class="wapi-btn-text">' + (collapsed ? 'Étendre le menu' : 'Réduire le menu') + '</span>';
+      toggle.title = collapsed ? 'Repasser au menu large' : 'Passer au rail compact';
+    }
+    const hide = $('hideSidebarBtn');
+    if(hide){ hide.innerHTML = '<span class="wapi-btn-text">Masquer</span>'; hide.title = 'Masquer complètement la barre latérale'; }
+  }
+
+  function renderNavigationStable(viewName){
+    viewName = viewName || currentView();
+    const mod = moduleFor(viewName);
+    const nav = document.querySelector('.nav');
+    const tabs = $('moduleTabs');
+    document.body.dataset.wapiNav = 'v331';
+    window.WAPI_ONE_VERSION = VERSION;
+    document.title = VERSION;
+    const badge = document.querySelector('.app-version-badge') || document.querySelector('.wapi-version-badge');
+    if(badge) badge.textContent = VERSION;
+    if(nav){
+      nav.innerHTML = MODULES.map(m => {
+        const active = m.id === mod.id;
+        return '<button type="button" class="wapi-nav-btn ' + (active ? 'active' : '') + '" data-v331-module="' + esc(m.id) + '" title="' + esc(m.label + ' — ' + m.hint) + '">' +
+          '<span class="wapi-nav-badge">' + esc(m.badge) + '</span>' +
+          '<span class="wapi-nav-label"><strong>' + esc(m.label) + '</strong><span>' + esc(m.hint) + '</span></span>' +
+        '</button>';
+      }).join('');
+    }
+    if(tabs){
+      tabs.innerHTML = mod.tabs.map(t => {
+        const view = t[0], label = t[1], syndicTab = t[2] || '';
+        const active = view === viewName && (!syndicTab || currentSyndicTab() === syndicTab);
+        const attr = syndicTab ? ' data-v331-syndic-tab="' + esc(syndicTab) + '" data-v25-syndic-tab="' + esc(syndicTab) + '" data-v23-syndic-tab="' + esc(syndicTab) + '"' : '';
+        return '<button type="button" class="wapi-tab ' + (active ? 'active' : '') + '" data-v331-tab="1" data-view="' + esc(view) + '" data-title="' + esc(label) + '"' + attr + '>' + esc(label) + '</button>';
+      }).join('');
+    }
+    setTextButtons();
+    ensureContextBar();
+    refreshContextBar();
+  }
+
+  function refreshViewRender(viewName){
+    try{
+      if(viewName === 'accountLookup' && typeof window.renderAccountLookupV33 === 'function') setTimeout(window.renderAccountLookupV33, 0);
+      if(viewName === 'codaPilot' && typeof window.v33RenderCodaPilotV322 === 'function') setTimeout(window.v33RenderCodaPilotV322, 0);
+      if(viewName === 'invoices' && typeof window.v33RenderInvoicesV322 === 'function') setTimeout(window.v33RenderInvoicesV322, 0);
+      if(viewName === 'copros' && typeof window.v33RenderCoprosV322 === 'function') setTimeout(window.v33RenderCoprosV322, 0);
+      if(viewName === 'syndicBilling' && typeof renderSyndicBillingV25 === 'function') setTimeout(renderSyndicBillingV25, 0);
+    }catch(e){ console.warn('V33.1 rendu vue', e); }
+  }
+  function activateStable(viewName, title, syndicTab){
+    if(!viewName) return;
+    if(hasState() && syndicTab) state.syndicBillingTab = syndicTab;
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    const target = $(viewName + 'View');
+    if(target) target.classList.remove('hidden');
+    const m = moduleFor(viewName);
+    const h = $('pageTitle'); if(h) h.textContent = title || tabLabel(viewName, syndicTab);
+    const sub = $('pageSubtitle');
+    if(sub){
+      const c = hasState() && state.activeCoproId ? arr('copros').find(x => String(x.id) === String(state.activeCoproId)) : null;
+      sub.textContent = m.label + ' • ' + (c ? coproLabel(c) : (managerId() ? 'Mode global filtré par gestionnaire' : 'Mode global'));
+    }
+    refreshViewRender(viewName);
+    renderNavigationStable(viewName);
+  }
+
+  function ensureContextBar(){
+    const tabs = $('moduleTabs'); if(!tabs || $('wapiContextBar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'wapiContextBar';
+    bar.className = 'wapi-context-bar';
+    bar.innerHTML = '<label class="wapi-context-field"><span>Gestionnaire</span><select id="wapiCtxManager"></select></label>' +
+      '<label class="wapi-context-field"><span>Copropriété</span><select id="wapiCtxCopro"></select></label>' +
+      '<label class="wapi-context-field"><span>Exercice</span><span id="wapiCtxYearSlot"></span></label>' +
+      '<label class="wapi-context-field"><span>Module</span><select id="wapiCtxModule"></select></label>' +
+      '<div class="wapi-context-actions"><button class="btn secondary small" type="button" id="wapiCtxSettingsBtn">Réglages copro</button><button class="btn secondary small" type="button" id="wapiCtxAdvancedBtn">Filtres avancés</button></div>' +
+      '<div class="wapi-context-hint" id="wapiCtxHint">Choisis le périmètre de travail une seule fois : gestionnaire, copropriété et exercice. Les filtres répétés dans les modules sont masqués par défaut.</div>';
+    tabs.parentElement.insertBefore(bar, tabs);
+    const year = $('activeFiscalYearSelect');
+    const slot = $('wapiCtxYearSlot');
+    if(year && slot && year.parentElement !== slot){ slot.appendChild(year); }
+    $('wapiCtxManager')?.addEventListener('change', function(){
+      if(hasState()) state.managerFilterUserId = this.value || '';
+      if(this.value) localStorage.setItem(STORAGE_KEY, this.value); else localStorage.removeItem(STORAGE_KEY);
+      const side = $('activeManagerFilter'); if(side) side.value = this.value || '';
+      if(hasState() && state.activeCoproId && !filteredCopros().some(c => String(c.id) === String(state.activeCoproId))){
+        if(typeof setActiveCopro === 'function') setActiveCopro(''); else state.activeCoproId = '';
+      }
+      try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+      setTimeout(() => { refreshContextBar(); renderNavigationStable(currentView()); }, 0);
+    });
+    $('wapiCtxCopro')?.addEventListener('change', function(){
+      if(typeof setActiveCopro === 'function') setActiveCopro(this.value || '');
+      else if(hasState()) state.activeCoproId = this.value || '';
+      const side = $('activeCoproSelect'); if(side) side.value = this.value || '';
+      try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+      setTimeout(() => { refreshContextBar(); renderNavigationStable(currentView()); }, 0);
+    });
+    $('wapiCtxModule')?.addEventListener('change', function(){
+      const m = MODULES.find(x => x.id === this.value);
+      if(!m) return;
+      const t = m.tabs[0];
+      activateStable(m.defaultView, t[1], t[2] || '');
+    });
+    $('wapiCtxSettingsBtn')?.addEventListener('click', function(){
+      const cid = hasState() ? (state.activeCoproId || $('wapiCtxCopro')?.value || '') : ($('wapiCtxCopro')?.value || '');
+      if(!cid){ alert('Choisis d’abord une copropriété.'); return; }
+      if(typeof window.openCoproSettingsPopupV33 === 'function') window.openCoproSettingsPopupV33(cid);
+      else if(typeof window.openCoproSettingsPopupV3234 === 'function') window.openCoproSettingsPopupV3234(cid);
+    });
+    $('wapiCtxAdvancedBtn')?.addEventListener('click', function(){
+      document.body.classList.toggle('wapi-show-module-filters');
+      this.textContent = document.body.classList.contains('wapi-show-module-filters') ? 'Masquer filtres avancés' : 'Filtres avancés';
+    });
+  }
+  function optionsHtml(list, selected, labelFn, empty){
+    return '<option value="">' + esc(empty) + '</option>' + (list || []).map(item => '<option value="' + esc(item.id) + '" ' + (String(selected || '') === String(item.id) ? 'selected' : '') + '>' + esc(labelFn(item)) + '</option>').join('');
+  }
+  function refreshContextBar(){
+    ensureContextBar();
+    const managers = arr('userProfiles').filter(u => u.active !== false);
+    const selectedManager = managerId();
+    const managerSelect = $('wapiCtxManager');
+    if(managerSelect){
+      const value = managerSelect.value;
+      managerSelect.innerHTML = optionsHtml(managers, selectedManager || value, managerLabel, 'Tous les gestionnaires');
+      managerSelect.value = selectedManager || '';
+    }
+    const copros = filteredCopros();
+    const selectedCopro = hasState() ? (state.activeCoproId || '') : '';
+    const coproSelect = $('wapiCtxCopro');
+    if(coproSelect){
+      coproSelect.innerHTML = optionsHtml(copros, selectedCopro, coproLabel, selectedManager ? 'Aucune copropriété sélectionnée' : 'Mode global');
+      coproSelect.value = copros.some(c => String(c.id) === String(selectedCopro)) ? selectedCopro : '';
+    }
+    const moduleSelect = $('wapiCtxModule');
+    if(moduleSelect){
+      const currentModuleId = moduleFor(currentView()).id;
+      moduleSelect.innerHTML = MODULES.map(m => '<option value="' + esc(m.id) + '" ' + (m.id === currentModuleId ? 'selected' : '') + '>' + esc(m.label) + '</option>').join('');
+    }
+    const sideManager = $('activeManagerFilter'); if(sideManager) sideManager.value = selectedManager || '';
+    setTextButtons();
+  }
+
+  function installStableHooks(){
+    window.v33RenderNavigation = renderNavigationStable;
+    window.v28RenderNav = renderNavigationStable;
+    window.decorateV26Icons = function(){ renderNavigationStable(currentView()); };
+    window.switchToView = function(view){ activateStable(view); };
+
+    document.addEventListener('click', function(e){
+      const main = e.target.closest?.('[data-v331-module]');
+      if(main){
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        const m = MODULES.find(x => x.id === main.dataset.v331Module) || MODULES[0];
+        const t = m.tabs[0];
+        activateStable(m.defaultView, t[1], t[2] || '');
+        return;
+      }
+      const tab = e.target.closest?.('[data-v331-tab]');
+      if(tab){
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        activateStable(tab.dataset.view, tab.dataset.title, tab.dataset.v331SyndicTab || '');
+      }
+    }, true);
+
+    const delayed = () => { setTimeout(() => renderNavigationStable(currentView()), 0); setTimeout(() => renderNavigationStable(currentView()), 120); };
+    $('toggleSidebarBtn')?.addEventListener('click', delayed, true);
+    $('hideSidebarBtn')?.addEventListener('click', delayed, true);
+    document.querySelector('.sidebar')?.addEventListener('click', function(){ setTimeout(() => renderNavigationStable(currentView()), 80); }, true);
+
+    try{
+      if(typeof renderAll === 'function' && !renderAll.__v331){
+        const old = renderAll;
+        const wrapped = function(){
+          const result = old.apply(this, arguments);
+          setTimeout(() => { refreshContextBar(); renderNavigationStable(currentView()); }, 0);
+          return result;
+        };
+        wrapped.__v331 = true;
+        renderAll = wrapped;
+      }
+      if(typeof loadAll === 'function' && !loadAll.__v331){
+        const oldLoad = loadAll;
+        const wrappedLoad = async function(){
+          const result = await oldLoad.apply(this, arguments);
+          setTimeout(() => { refreshContextBar(); renderNavigationStable(currentView()); }, 0);
+          return result;
+        };
+        wrappedLoad.__v331 = true;
+        loadAll = wrappedLoad;
+      }
+    }catch(e){ console.warn('V33.1 hooks', e); }
+  }
+
+  function init(){
+    installStableHooks();
+    renderNavigationStable(currentView());
+    setTimeout(() => renderNavigationStable(currentView()), 300);
+    setTimeout(() => { if(typeof window.loadUserProfilesV323 === 'function') window.loadUserProfilesV323().then(() => { refreshContextBar(); renderNavigationStable(currentView()); }); }, 900);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true}); else init();
+})();

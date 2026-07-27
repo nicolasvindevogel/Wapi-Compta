@@ -128,3 +128,231 @@
 .v33-account-picker .v33-account-help{grid-column:1/-1;}
 .v33-account-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 12px;}
 @media (max-width:700px){.v33-account-picker{grid-template-columns:1fr!important;}}
+
+/* ============================================================
+   V33.1 — Navigation stable + interface plus lisible
+   - plus aucune dépendance aux emojis/SVG pour le rail de navigation
+   - mode réduit stabilisé par badges texte
+   - barre de contexte unique pour Gestionnaire / Copro / Exercice
+   ============================================================ */
+body[data-wapi-nav="v331"] .nav{
+  display:grid!important;
+  gap:8px!important;
+}
+body[data-wapi-nav="v331"] .nav .menu-group,
+body[data-wapi-nav="v331"] .nav .menu-group__header,
+body[data-wapi-nav="v331"] .nav .menu-group__body,
+body[data-wapi-nav="v331"] .nav .nav-icon,
+body[data-wapi-nav="v331"] .nav .nav-label,
+body[data-wapi-nav="v331"] .nav .nav__item{
+  all:unset!important;
+  display:none!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-btn{
+  width:100%!important;
+  min-height:46px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:7px 9px!important;
+  border-radius:16px!important;
+  border:1px solid transparent!important;
+  background:transparent!important;
+  color:#293046!important;
+  cursor:pointer!important;
+  text-align:left!important;
+  box-sizing:border-box!important;
+  transition:background .12s ease, color .12s ease, border-color .12s ease!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-btn:hover{
+  background:#f4f7fb!important;
+  border-color:rgba(38,48,70,.08)!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-btn.active{
+  background:#171B2B!important;
+  color:#fff!important;
+  border-color:#171B2B!important;
+  box-shadow:0 10px 24px rgba(23,27,43,.16)!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-badge{
+  width:36px!important;
+  height:36px!important;
+  min-width:36px!important;
+  min-height:36px!important;
+  border-radius:14px!important;
+  display:grid!important;
+  place-items:center!important;
+  font-family:Arial, Helvetica, sans-serif!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:.03em!important;
+  background:#eef2f7!important;
+  color:#2c344b!important;
+  border:1px solid rgba(35,45,70,.08)!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+  text-indent:0!important;
+  flex:0 0 36px!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-btn.active .wapi-nav-badge{
+  background:rgba(255,255,255,.16)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.22)!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-label{
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-label strong{
+  font-size:14px!important;
+  font-weight:900!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-label span{
+  margin-top:3px!important;
+  font-size:10.5px!important;
+  font-weight:700!important;
+  color:#7a8396!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body[data-wapi-nav="v331"] .wapi-nav-btn.active .wapi-nav-label span{color:rgba(255,255,255,.74)!important;}
+
+/* Mode réduit : le rail est uniquement composé des badges. Aucun pseudo-élément, aucun emoji. */
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed{
+  grid-template-columns:82px minmax(0,1fr)!important;
+}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .sidebar{
+  padding-left:12px!important;
+  padding-right:12px!important;
+  overflow-x:hidden!important;
+}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .brand-copy,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .wapi-nav-label,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .active-copro-box,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .manager-filter-box,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed #activeCoproSettingsBtn{
+  display:none!important;
+}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .active-copro-box::before,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .active-copro-box::after,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .wapi-nav-badge::before,
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .wapi-nav-badge::after{
+  content:none!important;
+  display:none!important;
+}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .brand{
+  justify-content:center!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .wapi-nav-btn{
+  justify-content:center!important;
+  padding:7px 0!important;
+  min-height:48px!important;
+}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .wapi-nav-badge{
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  border-radius:16px!important;
+  font-size:12px!important;
+}
+body[data-wapi-nav="v331"] .sidebar-toggle{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  font-size:13px!important;
+  line-height:1!important;
+  min-height:36px!important;
+}
+body[data-wapi-nav="v331"] .sidebar-toggle .wapi-btn-text{display:inline!important;}
+body[data-wapi-nav="v331"] #appScreen.sidebar-collapsed .sidebar-toggle .wapi-btn-text{display:none!important;}
+
+/* Sous-navigation simplifiée */
+body[data-wapi-nav="v331"] .module-tabs{
+  display:flex!important;
+  gap:8px!important;
+  padding:0 24px 12px!important;
+  overflow-x:auto!important;
+}
+body[data-wapi-nav="v331"] .wapi-tab{
+  border:1px solid rgba(35,45,70,.10)!important;
+  background:#fff!important;
+  color:#35405b!important;
+  border-radius:999px!important;
+  padding:8px 12px!important;
+  font-weight:850!important;
+  font-size:13px!important;
+  white-space:nowrap!important;
+  cursor:pointer!important;
+}
+body[data-wapi-nav="v331"] .wapi-tab.active{
+  background:#171B2B!important;
+  border-color:#171B2B!important;
+  color:#fff!important;
+}
+
+/* Barre de contexte : le collaborateur choisit d'abord le périmètre de travail. */
+.wapi-context-bar{
+  margin:12px 24px 10px!important;
+  padding:12px!important;
+  border-radius:18px!important;
+  border:1px solid rgba(35,45,70,.10)!important;
+  background:linear-gradient(180deg,#fff,#f8fafc)!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(150px,1fr)) auto!important;
+  gap:10px!important;
+  align-items:end!important;
+  box-shadow:0 10px 26px rgba(20,22,36,.045)!important;
+}
+.wapi-context-field{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important;}
+.wapi-context-field span{
+  font-size:10px!important;
+  text-transform:uppercase!important;
+  letter-spacing:.05em!important;
+  font-weight:900!important;
+  color:#697386!important;
+}
+.wapi-context-field select{
+  width:100%!important;
+  height:36px!important;
+  border-radius:12px!important;
+  border:1px solid rgba(35,45,70,.15)!important;
+  background:#fff!important;
+  color:#20263d!important;
+  padding:0 10px!important;
+  font-weight:750!important;
+}
+.wapi-context-actions{display:flex!important;align-items:end!important;gap:8px!important;justify-content:flex-end!important;}
+.wapi-context-actions .btn{min-height:36px!important;white-space:nowrap!important;}
+.wapi-context-hint{
+  grid-column:1/-1!important;
+  color:#7a8396!important;
+  font-size:12px!important;
+  font-weight:650!important;
+}
+body:not(.wapi-show-module-filters) .v3231-manager-filter-row,
+body:not(.wapi-show-module-filters) .manager-filter-box{
+  display:none!important;
+}
+body.wapi-show-module-filters .v3231-manager-filter-row,
+body.wapi-show-module-filters .manager-filter-box{
+  display:flex!important;
+}
+@media (max-width:1100px){
+  .wapi-context-bar{grid-template-columns:repeat(2,minmax(150px,1fr))!important;}
+  .wapi-context-actions{justify-content:flex-start!important;}
+}
+@media (max-width:760px){
+  .wapi-context-bar{grid-template-columns:1fr!important;margin-left:12px!important;margin-right:12px!important;}
+  body[data-wapi-nav="v331"] .module-tabs{padding-left:12px!important;padding-right:12px!important;}
+}
