@@ -64,11 +64,19 @@ body[data-wapi-v332="ready"] #userPill{display:none!important}
   grid-column:2;grid-row:1;justify-self:end;
   display:flex;align-items:center;gap:7px;padding-left:10px;border-left:1px solid var(--w33-border);
 }
+.w332-legacy-controls{display:none!important}
 .w332-context-field{display:flex;align-items:center;gap:7px;margin:0;color:#737b90;font-size:10px;font-weight:700}
 .w332-context-field>span:first-child{text-transform:uppercase;letter-spacing:.04em}
 .w332-context select{height:36px;max-width:210px;padding:0 30px 0 9px;border-radius:9px;font-size:11px}
 .w332-context select.smart-combo-source,
-#w332CoproHost #activeCoproSelect{display:block!important;position:static!important;opacity:1!important;pointer-events:auto!important}
+#w332CoproHost #activeCoproSelect{
+  display:block!important;position:static!important;opacity:1!important;pointer-events:auto!important;
+  min-width:205px!important;max-width:260px!important;height:36px!important;
+  padding:0 30px 0 10px!important;border:1px solid var(--w33-border)!important;
+  border-radius:9px!important;background:#fff!important;color:#232a3d!important;
+  font-size:11px!important;font-weight:700!important;box-shadow:none!important
+}
+#w332CoproHost>.smart-combo{display:none!important}
 .w332-copro-field select{min-width:190px}
 .w332-year-control{display:flex!important;align-items:center!important;gap:7px!important}
 .w332-fiscal-dot{display:block;width:10px;height:10px;border-radius:50%;background:#a7adba;box-shadow:0 0 0 3px #eef0f4}
@@ -90,7 +98,7 @@ body[data-wapi-v332="ready"] #userPill{display:none!important}
 .w332-user-menu button{width:100%;padding:9px;border:0;border-radius:8px;background:transparent;text-align:left;cursor:pointer}
 .w332-user-menu button:hover{background:#f5f6fa}
 .w332-page-head{
-  display:flex;align-items:center;gap:12px;padding:13px 24px 0;
+  display:flex;align-items:center;gap:12px;padding:13px 24px 10px;min-height:58px;
 }
 .w332-page-head .page-title{font-size:19px!important}
 .w332-page-head .page-subtitle{font-size:11px!important}

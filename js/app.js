@@ -1594,12 +1594,18 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
       updateSidebarButtons();
     }
 
-    function updateSidebarButtons() {
+function updateSidebarButtons() {
       const mode = getSidebarMode();
-      $("toggleSidebarBtn").textContent = mode === "collapsed" ? "☰ Etendre" : "☰ Reduire";
-      $("hideSidebarBtn").textContent = mode === "hidden" ? "↠ Afficher" : "↞ Masquer";
-      $("toggleSidebarBtn").title = mode === "collapsed" ? "Repasser le menu en mode large" : "Reduire le menu en affichant principalement les icones";
-      $("hideSidebarBtn").title = mode === "hidden" ? "Afficher a nouveau la barre laterale" : "Masquer completement la barre laterale";
+      const toggle = $("toggleSidebarBtn");
+      const hide = $("hideSidebarBtn");
+      if (toggle) {
+        toggle.textContent = mode === "collapsed" ? "☰ Etendre" : "☰ Reduire";
+        toggle.title = mode === "collapsed" ? "Repasser le menu en mode large" : "Reduire le menu en affichant principalement les icones";
+      }
+      if (hide) {
+        hide.textContent = mode === "hidden" ? "↠ Afficher" : "↞ Masquer";
+        hide.title = mode === "hidden" ? "Afficher a nouveau la barre laterale" : "Masquer completement la barre laterale";
+      }
     }
 
     function restoreSidebarGroups() {

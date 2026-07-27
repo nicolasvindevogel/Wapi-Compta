@@ -24,22 +24,22 @@
   const plain = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s/’-]/g,'').trim();
   const icon = name => `<span class="w332-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${iconPaths[name] || iconPaths.Configuration}</svg></span>`;
   const mainModules = [
-    ['home','Accueil','Accueil'],
-    ['pilotage','Plan de travail','Pilotage'],
-    ['copros','Infrastructures','Infrastructures'],
-    ['compta','Comptabilité','Comptabilite'],
-    ['states','États comptables','Etats comptables'],
-    ['ag','Assemblées générales','Assemblees generales'],
-    ['syndic','Facturation syndic','Facturation syndic'],
-    ['config','Configuration','Configuration']
+    ['home','Accueil','Accueil','dashboard'],
+    ['pilotage','Plan de travail','Pilotage','processing'],
+    ['copros','Infrastructures','Infrastructures','copros'],
+    ['compta','Comptabilité','Comptabilite','invoices'],
+    ['states','États comptables','Etats comptables','accountLookup'],
+    ['ag','Assemblées générales','Assemblees generales','meetings'],
+    ['syndic','Facturation syndic','Facturation syndic','syndicBilling'],
+    ['config','Configuration','Configuration','agency']
   ];
 
   function buildTopNavigation(){
     const app = $('appScreen'), topbar = app?.querySelector('.topbar');
     if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
-    document.body.dataset.wapiVersion = '34.0';
-    document.title = 'WAPI One — V34.0';
+    document.body.dataset.wapiVersion = '34.1';
+    document.title = 'WAPI One — V34.1';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -53,20 +53,29 @@
     const brand = document.createElement('div');
     brand.className = 'w332-brand';
     brand.innerHTML = `<img src="assets/logo-wapi-one.png" alt="WAPI One"><div><strong>WAPI One</strong><small>Gestion de copropriétés</small></div>`;
-    if (left) left.replaceChildren(brand);
+    if (left) {
+      const legacy = document.createElement('div');
+      legacy.className = 'w332-legacy-controls';
+      while (left.firstChild) legacy.appendChild(left.firstChild);
+      left.append(brand, legacy);
+    }
 
     const nav = document.createElement('nav');
     nav.id = 'w332PrimaryNav';
     nav.className = 'w332-primary-nav';
-    mainModules.forEach(([id,label,iconName], index) => {
+    mainModules.forEach(([id,label,iconName,defaultView], index) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = `w332-nav-trigger${index === 0 ? ' active' : ''}`;
       button.dataset.w332Module = id;
       button.innerHTML = `${icon(iconName)}<span>${esc(label)}</span>`;
       button.addEventListener('click', () => {
-        const source = document.querySelector(`.nav [data-v331-module="${id}"]`);
-        if (source) source.click();
+        if (typeof window.switchToView === 'function') {
+          window.switchToView(defaultView);
+        } else {
+          const source = document.querySelector(`.nav [data-v331-module="${id}"]`);
+          if (source) source.click();
+        }
         nav.querySelectorAll('.w332-nav-trigger').forEach(item => item.classList.toggle('active', item === button));
       });
       nav.appendChild(button);
@@ -97,16 +106,22 @@
         </div>
       </div>`;
     if (fiscalSelect) context.querySelector('#w332FiscalHost')?.appendChild(fiscalSelect);
-    oldActions?.replaceWith(context);
+    if (oldActions) {
+      oldActions.classList.add('w332-legacy-controls');
+      oldActions.insertAdjacentElement('afterend', context);
+    } else {
+      topbar.appendChild(context);
+    }
     const coproHost = $('w332CoproHost'), coproSelect = $('activeCoproSelect');
     if (coproHost && coproSelect) {
       coproSelect.classList.remove('smart-combo-source');
-      coproSelect.removeAttribute('data-smart-combo-ready');
+      coproSelect.dataset.smartComboReady = '1';
       coproSelect.style.display = 'block';
       coproSelect.style.position = 'static';
       coproSelect.style.opacity = '1';
       coproSelect.style.pointerEvents = 'auto';
       coproHost.appendChild(coproSelect);
+      coproHost.querySelectorAll('.smart-combo').forEach(combo => combo.remove());
     }
     if (coproSelect) {
       coproSelect.addEventListener('change', () => {
@@ -153,7 +168,14 @@
   function fiscalYearsForActiveCopro(){
     const st = appState();
     const coproId = $('activeCoproSelect')?.value || st?.activeCoproId || '';
-    return (st?.fiscalYears || []).filter(year => !coproId || String(year.copro_id) === String(coproId));
+    const seen = new Set();
+    return (st?.fiscalYears || []).filter(year => {
+      if (coproId && String(year.copro_id) !== String(coproId)) return false;
+      const key = String(year.id || [year.copro_id, year.code, year.year_code, year.label].join('|'));
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
   function fiscalLabel(year){
     return [year?.year_code || year?.code || '', year?.label || ''].filter(Boolean).join(' — ') ||
@@ -190,14 +212,15 @@
   }
 
   function refreshCoproContext(){
-    document.title = 'WAPI One — V34.0';
+    document.title = 'WAPI One — V34.1';
     const st = appState(), select = $('activeCoproSelect');
     if (!st || !select) return;
     const selected = st.activeCoproId || select.value || '';
     const copros = Array.isArray(st.copros) ? st.copros : [];
     select.classList.remove('smart-combo-source');
-    select.removeAttribute('data-smart-combo-ready');
+    select.dataset.smartComboReady = '1';
     select.style.display = 'block';
+    select.parentElement?.querySelectorAll('.smart-combo').forEach(combo => combo.remove());
     select.innerHTML = '<option value="">Mode global</option>' +
       copros.map(c => {
         const label = [c.code || c.copro_code || c.optipro_ref || '', c.name || '']
@@ -375,11 +398,11 @@
     refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.0'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.1'; document.querySelector('.w332-page-head')?.appendChild(version);
     // L'ancien moteur termine un chargement différé des profils ; on réaffirme
     // une seule fois la version et le contexte, sans observateur ni intervalle.
     setTimeout(() => {
-      document.title = 'WAPI One — V34.0';
+      document.title = 'WAPI One — V34.1';
       refreshCoproContext();
       syncTopUniverse();
     }, 1600);
