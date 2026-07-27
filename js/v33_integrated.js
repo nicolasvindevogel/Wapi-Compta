@@ -62,6 +62,7 @@
   let iconPending = false;
   function applySidebarIcons(){ iconPending = false; }
   function scheduleIcons(){ /* V33: aucune mutation d’icônes ici */ }
+  function addVersionBadge(){ /* La V33.2 affiche sa version dans la barre de page. */ }
 
   function ownerCode(o){ return o?.code || o?.owner_code || ''; }
   function supplierCode(s){ return s?.code || s?.supplier_code || ''; }
