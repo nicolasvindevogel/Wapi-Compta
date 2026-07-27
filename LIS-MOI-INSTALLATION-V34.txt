@@ -1,0 +1,34 @@
+WAPI ONE — V34.0 — SOCLE OPTIPRO
+
+Cette version conserve les modules et les données Supabase existants.
+Aucune migration SQL supplémentaire n'est nécessaire.
+
+INSTALLATION DANS GITHUB
+
+1. Télécharge et décompresse le ZIP V34.
+2. Dans GitHub, utilise Add file > Upload files.
+3. Glisse tout le CONTENU du dossier décompressé à la racine du dépôt :
+   - index.html
+   - assets/
+   - css/
+   - js/
+   - sql/
+4. Les fichiers portant le même nom sont remplacés après validation du commit.
+5. Valide avec Commit changes.
+6. Attends la fin du déploiement GitHub Pages puis recharge avec CTRL + F5.
+
+Il n'est pas nécessaire de supprimer les données ni de modifier Supabase.
+
+CONTRÔLES À EFFECTUER
+
+- Les 8 univers apparaissent dans la barre supérieure.
+- La copropriété active se choisit en haut à droite.
+- Le crayon ouvre les réglages de la copropriété choisie.
+- L'exercice proposé appartient à la copropriété active.
+- Point vert : exercice ouvert. Point rouge : exercice clôturé.
+- Les sous-modules apparaissent sous la barre principale.
+- La consultation d'un compte accepte le numéro ou le libellé.
+- L'export du compte affiche le numéro et son libellé.
+- Le PDF du bilan place ACTIF et PASSIF côte à côte.
+
+VERSION AFFICHÉE : WAPI One V34.0

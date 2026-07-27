@@ -1,4 +1,4 @@
-/* WAPI One V33.2 — couche d'interface unique, sans observateur ni rerendu en boucle. */
+/* WAPI One V34 — interface unique inspirée d'Optipro, sans observateur ni boucle. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -25,8 +25,8 @@
   const icon = name => `<span class="w332-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${iconPaths[name] || iconPaths.Configuration}</svg></span>`;
   const mainModules = [
     ['home','Accueil','Accueil'],
-    ['pilotage','Pilotage','Pilotage'],
-    ['copros','Copropriétés','Infrastructures'],
+    ['pilotage','Plan de travail','Pilotage'],
+    ['copros','Infrastructures','Infrastructures'],
     ['compta','Comptabilité','Comptabilite'],
     ['states','États comptables','Etats comptables'],
     ['ag','Assemblées générales','Assemblees generales'],
@@ -35,9 +35,11 @@
   ];
 
   function buildTopNavigation(){
-    const app = $('appScreen'), sidebar = app?.querySelector('.sidebar'), topbar = app?.querySelector('.topbar');
-    if (!app || !sidebar || !topbar || $('w332PrimaryNav')) return;
+    const app = $('appScreen'), topbar = app?.querySelector('.topbar');
+    if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
+    document.body.dataset.wapiVersion = '34.0';
+    document.title = 'WAPI One — V34.0';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -100,6 +102,10 @@
     if (coproHost && coproSelect) {
       coproSelect.classList.remove('smart-combo-source');
       coproSelect.removeAttribute('data-smart-combo-ready');
+      coproSelect.style.display = 'block';
+      coproSelect.style.position = 'static';
+      coproSelect.style.opacity = '1';
+      coproSelect.style.pointerEvents = 'auto';
       coproHost.appendChild(coproSelect);
     }
     if (coproSelect) {
@@ -116,7 +122,17 @@
     $('w332CoproSettings')?.addEventListener('click', () => {
       const coproId = coproSelect?.value || appState()?.activeCoproId || '';
       if (!coproId) return alert('Sélectionnez d’abord une copropriété.');
-      try { if (typeof setActiveCopro === 'function' && String(appState()?.activeCoproId || '') !== String(coproId)) setActiveCopro(coproId); } catch (_) {}
+      const st = appState();
+      if (st) st.activeCoproId = coproId;
+      try { localStorage.setItem('wapi-compta-active-copro', coproId); } catch (_) {}
+      if (typeof window.openCoproSettingsPopupV33 === 'function') {
+        window.openCoproSettingsPopupV33(coproId);
+        return;
+      }
+      if (typeof window.openCoproSettingsPopupV3234 === 'function') {
+        window.openCoproSettingsPopupV3234(coproId);
+        return;
+      }
       const relay = document.createElement('button');
       relay.type = 'button';
       relay.hidden = true;
@@ -171,6 +187,71 @@
     dot.className = `w332-fiscal-dot ${year ? (closed ? 'closed' : 'open') : 'unknown'}`;
     dot.title = year ? (closed ? 'Exercice clôturé' : 'Exercice ouvert') : 'Aucun exercice sélectionné';
     dot.setAttribute('aria-label', dot.title);
+  }
+
+  function refreshCoproContext(){
+    document.title = 'WAPI One — V34.0';
+    const st = appState(), select = $('activeCoproSelect');
+    if (!st || !select) return;
+    const selected = st.activeCoproId || select.value || '';
+    const copros = Array.isArray(st.copros) ? st.copros : [];
+    select.classList.remove('smart-combo-source');
+    select.removeAttribute('data-smart-combo-ready');
+    select.style.display = 'block';
+    select.innerHTML = '<option value="">Mode global</option>' +
+      copros.map(c => {
+        const label = [c.code || c.copro_code || c.optipro_ref || '', c.name || '']
+          .filter(Boolean).join(' — ') || 'Copropriété';
+        return `<option value="${esc(c.id)}">${esc(label)}</option>`;
+      }).join('');
+    select.value = copros.some(c => String(c.id) === String(selected)) ? String(selected) : '';
+    if (select.value) st.activeCoproId = select.value;
+    syncFiscalContext(true);
+  }
+
+  function syncTopUniverse(){
+    const source = document.querySelector('.nav [data-v331-module].active');
+    const moduleId = source?.dataset?.v331Module || 'home';
+    document.querySelectorAll('[data-w332-module]').forEach(button => {
+      button.classList.toggle('active', button.dataset.w332Module === moduleId);
+    });
+  }
+
+  function installStableRefreshHooks(){
+    try {
+      if (typeof renderAll === 'function' && !renderAll.__v34) {
+        const previous = renderAll;
+        const wrapped = function(){
+          const result = previous.apply(this, arguments);
+          if (!wrapped.pending) {
+            wrapped.pending = true;
+            setTimeout(() => {
+              wrapped.pending = false;
+              refreshCoproContext();
+              syncUser();
+              syncTopUniverse();
+              enhanceAccountLookup();
+            }, 0);
+          }
+          return result;
+        };
+        wrapped.__v34 = true;
+        renderAll = wrapped;
+      }
+      if (typeof loadAll === 'function' && !loadAll.__v34) {
+        const previousLoad = loadAll;
+        const wrappedLoad = async function(){
+          const result = await previousLoad.apply(this, arguments);
+          refreshCoproContext();
+          syncUser();
+          return result;
+        };
+        wrappedLoad.__v34 = true;
+        loadAll = wrappedLoad;
+      }
+    } catch (error) {
+      console.warn('V34 refresh hooks', error);
+    }
   }
 
   function profileList(){
@@ -289,10 +370,19 @@
     if (st) st.managerFilterUserId = '';
     try { localStorage.removeItem('wapi_one_manager_filter_user_id'); } catch (_) {}
     buildTopNavigation();
+    installStableRefreshHooks();
     try { if (typeof renderActiveCoproContext === 'function') renderActiveCoproContext(); } catch (_) {}
+    refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V33.2.2'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.0'; document.querySelector('.w332-page-head')?.appendChild(version);
+    // L'ancien moteur termine un chargement différé des profils ; on réaffirme
+    // une seule fois la version et le contexte, sans observateur ni intervalle.
+    setTimeout(() => {
+      document.title = 'WAPI One — V34.0';
+      refreshCoproContext();
+      syncTopUniverse();
+    }, 1600);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init,0), {once:true});
   else setTimeout(init,0);
