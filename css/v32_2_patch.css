@@ -1,0 +1,69 @@
+/* ==========================================================
+   WAPI One V32.2 — patch stable navigation / factures / CODA
+   ========================================================== */
+.wapi-version-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:8px; padding:6px 10px; border-radius:999px;
+  background:#eef2ff; color:#30365f; font-size:11px; font-weight:800;
+  border:1px solid rgba(83,92,145,.14);
+}
+.v32-svg-icon, .v31-svg-icon{
+  width:18px; height:18px; display:inline-block; vertical-align:middle;
+  stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round;
+}
+.nav-icon, .menu-group__icon, .main-module-icon, .module-tab .tab-icon{
+  font-size:0 !important;
+}
+.nav-icon svg, .menu-group__icon svg, .main-module-icon svg, .module-tab .tab-icon svg{
+  width:18px; height:18px;
+}
+.active-copro-settings-row{
+  margin-top:8px;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.active-copro-settings-row .mini-btn{
+  border:1px solid rgba(79,89,130,.14);
+  background:#fff;
+}
+.invoice-sort-btn{
+  appearance:none; border:0; background:transparent; color:inherit; font:inherit; font-weight:850;
+  padding:0; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+}
+.invoice-sort-btn::after{ content:'↕'; font-size:11px; opacity:.45; }
+.invoice-sort-btn.active.asc::after{ content:'↑'; opacity:.9; }
+.invoice-sort-btn.active.desc::after{ content:'↓'; opacity:.9; }
+.code-pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:58px; padding:4px 8px; border-radius:999px;
+  background:#f0f4ff; color:#26327a; border:1px solid rgba(69,87,197,.16);
+  font-size:12px; font-weight:900; letter-spacing:.02em;
+}
+.muted-inline{ color:var(--muted); font-size:12px; }
+.v32-coda-card{
+  border:1px solid var(--line); border-radius:18px; background:#fff; overflow:hidden; margin-bottom:12px;
+  box-shadow:0 10px 28px rgba(15,23,42,.04);
+}
+.v32-coda-head{
+  display:grid; grid-template-columns: 32px minmax(220px,1fr) 120px 120px 120px; gap:12px;
+  align-items:center; padding:14px 16px; cursor:pointer;
+}
+.v32-coda-head:hover{ background:#f8fafc; }
+.v32-coda-content{ border-top:1px solid var(--line); padding:14px 16px 16px; }
+.v32-coda-lines{ display:flex; flex-direction:column; gap:8px; }
+.v32-coda-line{
+  display:grid;
+  grid-template-columns: 126px minmax(180px,1.2fr) 130px 130px minmax(160px,1fr) 150px 90px;
+  gap:8px; align-items:center; padding:8px; border:1px solid #eef2f7; border-radius:14px; background:#fbfcff;
+}
+.v32-coda-line input, .v32-coda-line select{ min-height:38px; }
+.v32-coda-summary{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.v32-coda-summary .stat-mini{ padding:8px 10px; border-radius:12px; background:#f8fafc; border:1px solid var(--line); }
+@media (max-width: 1100px){
+  .v32-coda-head{ grid-template-columns: 28px 1fr; }
+  .v32-coda-head > div:nth-child(n+3){ display:none; }
+  .v32-coda-line{ grid-template-columns:1fr; }
+}
+.copro-settings-shortcut{ margin-left:8px; }
+.table-wrap th{ white-space:nowrap; }
