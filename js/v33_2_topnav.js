@@ -2,6 +2,14 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const appState = () => {
+    try { return typeof state !== 'undefined' ? state : null; }
+    catch (_) { return null; }
+  };
+  const appUser = () => {
+    try { return typeof currentUser !== 'undefined' ? currentUser : null; }
+    catch (_) { return null; }
+  };
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const iconPaths = {
     Pilotage:'<path d="M4 19V9m8 10V5m8 14v-7"/><path d="M2 19h20"/>',
@@ -63,12 +71,13 @@
 
   function buildContext(topbar){
     const oldActions = [...topbar.querySelectorAll(':scope > .top-actions')].at(-1);
+    const fiscalSelect = $('activeFiscalYearSelect');
     const context = document.createElement('div');
     context.className = 'w332-context';
     context.innerHTML = `
-      <select id="w332ManagerSelect" aria-label="Filtrer par gestionnaire"><option value="">Toutes les copropriétés</option></select>
-      <span id="w332CoproHost"></span>
+      <label class="w332-context-field w332-copro-field"><span>Copropriété</span><span id="w332CoproHost"></span></label>
       <button class="w332-icon-btn" id="w332CoproSettings" type="button" title="Réglages de la copropriété" aria-label="Réglages de la copropriété">${icon('Configuration')}</button>
+      <label class="w332-context-field w332-year-field"><span>Exercice</span><span class="w332-year-control"><span id="w332FiscalHost"></span><i id="w332FiscalStatus" class="w332-fiscal-dot unknown" aria-label="Statut de l’exercice"></i></span></label>
       <button class="w332-icon-btn" id="w332GlobalSearch" type="button" title="Recherche globale" aria-label="Recherche globale"><span class="w332-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span></button>
       <div class="w332-user-wrap">
         <button class="w332-icon-btn" id="w332UserButton" type="button" title="Compte utilisateur" aria-label="Compte utilisateur"><span class="w332-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span></button>
@@ -78,27 +87,84 @@
           <button type="button" id="w332Logout">Déconnexion</button>
         </div>
       </div>`;
+    if (fiscalSelect) context.querySelector('#w332FiscalHost')?.appendChild(fiscalSelect);
     oldActions?.replaceWith(context);
     const coproHost = $('w332CoproHost'), coproSelect = $('activeCoproSelect');
     if (coproHost && coproSelect) coproHost.appendChild(coproSelect);
+    if (coproSelect) {
+      coproSelect.addEventListener('change', () => {
+        const coproId = coproSelect.value || '';
+        try { if (typeof setActiveCopro === 'function') setActiveCopro(coproId); } catch (_) {}
+        setTimeout(() => syncFiscalContext(true), 0);
+      });
+    }
+    fiscalSelect?.addEventListener('change', updateFiscalStatus);
+    fiscalSelect?.addEventListener('focus', () => syncFiscalContext(false));
     $('w332UserButton')?.addEventListener('click', event => { event.stopPropagation(); event.currentTarget.closest('.w332-user-wrap').classList.toggle('open'); });
     $('w332Logout')?.addEventListener('click', () => $('logoutBtn')?.click());
     $('w332CoproSettings')?.addEventListener('click', () => {
-      if (!window.state?.activeCoproId) return alert('Sélectionnez d’abord une copropriété.');
-      if (typeof window.v322OpenCoproSettings === 'function') return window.v322OpenCoproSettings(window.state.activeCoproId);
-      document.querySelector(`[data-v322-copro-settings="${CSS.escape(String(window.state.activeCoproId))}"]`)?.click();
+      const coproId = coproSelect?.value || appState()?.activeCoproId || '';
+      if (!coproId) return alert('Sélectionnez d’abord une copropriété.');
+      try { if (typeof setActiveCopro === 'function' && String(appState()?.activeCoproId || '') !== String(coproId)) setActiveCopro(coproId); } catch (_) {}
+      const relay = document.createElement('button');
+      relay.type = 'button';
+      relay.hidden = true;
+      relay.dataset.v322CoproSettings = coproId;
+      document.body.appendChild(relay);
+      relay.click();
+      relay.remove();
     });
     $('w332GlobalSearch')?.addEventListener('click', () => {
       const search = $('globalSearchInput') || $('searchInput');
       if (search) { search.focus(); search.scrollIntoView({behavior:'smooth',block:'center'}); }
       else alert('La recherche globale sera reliée ici lors de la prochaine étape.');
     });
-    populateManagers();
     syncUser();
+    setTimeout(() => syncFiscalContext(true), 50);
+  }
+
+  function fiscalYearsForActiveCopro(){
+    const st = appState();
+    const coproId = $('activeCoproSelect')?.value || st?.activeCoproId || '';
+    return (st?.fiscalYears || []).filter(year => !coproId || String(year.copro_id) === String(coproId));
+  }
+  function fiscalLabel(year){
+    return [year?.year_code || year?.code || '', year?.label || ''].filter(Boolean).join(' — ') ||
+      [year?.starts_on || '', year?.ends_on || ''].filter(Boolean).join(' → ') || 'Exercice';
+  }
+  function syncFiscalContext(selectDefault){
+    const select = $('activeFiscalYearSelect');
+    const st = appState();
+    if (!select || !st) return;
+    const years = fiscalYearsForActiveCopro();
+    const previous = select.value || st.activeFiscalYearId || '';
+    select.innerHTML = '<option value="">Choisir un exercice</option>' +
+      years.map(year => `<option value="${esc(year.id)}">${esc(fiscalLabel(year))}</option>`).join('');
+    const selected = years.some(year => String(year.id) === String(previous))
+      ? previous
+      : (selectDefault ? (years.find(year => String(year.status || '').toLowerCase() !== 'closed') || years[0])?.id || '' : '');
+    select.value = selected;
+    if (selected && String(st.activeFiscalYearId || '') !== String(selected)) {
+      st.activeFiscalYearId = selected;
+      try { localStorage.setItem('wapi-one-active-fiscal-year', selected); } catch (_) {}
+    }
+    updateFiscalStatus();
+  }
+  function updateFiscalStatus(){
+    const dot = $('w332FiscalStatus');
+    const select = $('activeFiscalYearSelect');
+    const st = appState();
+    if (!dot || !select || !st) return;
+    const year = (st.fiscalYears || []).find(item => String(item.id) === String(select.value));
+    const closed = year && (String(year.status || '').toLowerCase() === 'closed' || Boolean(year.closed_at));
+    dot.className = `w332-fiscal-dot ${year ? (closed ? 'closed' : 'open') : 'unknown'}`;
+    dot.title = year ? (closed ? 'Exercice clôturé' : 'Exercice ouvert') : 'Aucun exercice sélectionné';
+    dot.setAttribute('aria-label', dot.title);
   }
 
   function profileList(){
-    return window.state?.userProfiles || window.state?.profiles || window.state?.users || [];
+    const st = appState();
+    return st?.userProfiles || st?.profiles || st?.users || [];
   }
   function managerId(copro){ return copro?.manager_user_id || copro?.manager_id || ''; }
   function populateManagers(){
@@ -146,15 +212,16 @@
     view.insertAdjacentHTML('afterbegin','<div class="w332-manager-empty">Aucune copropriété n’est attribuée à ce gestionnaire.</div>');
   }
   function syncUser(){
-    const email = window.currentUser?.email || $('userPill')?.textContent || '';
-    const profile = profileList().find(p => String(p.id) === String(window.currentUser?.id)) || {};
+    const user = appUser();
+    const email = user?.email || $('userPill')?.textContent || '';
+    const profile = profileList().find(p => String(p.id) === String(user?.id)) || {};
     if ($('w332UserName')) $('w332UserName').textContent = profile.full_name || profile.name || 'Utilisateur connecté';
     if ($('w332UserEmail')) $('w332UserEmail').textContent = email;
   }
 
   function accountRows(){
     const code = ($('v28AccountLookupCode')?.value || '').trim().split(/\s+-\s+/)[0];
-    const coproId = window.state?.activeCoproId || $('v28AccountLookupCopro')?.value || '';
+    const coproId = appState()?.activeCoproId || $('v28AccountLookupCopro')?.value || '';
     const from = $('v28AccountLookupFrom')?.value || '0000-01-01';
     const to = $('v28AccountLookupTo')?.value || '9999-12-31';
     if (typeof window.v31AccountingRows !== 'function') return [];
@@ -172,13 +239,13 @@
     const toolbar = view.querySelector('.toolbar');
     const pdf = document.createElement('button'); pdf.type='button'; pdf.className='btn secondary'; pdf.textContent='Exporter le compte en PDF'; pdf.addEventListener('click', exportAccountPdf); toolbar?.appendChild(pdf);
     const refreshOptions = () => {
-      const accounts = window.state?.accounts || [];
+      const accounts = appState()?.accounts || [];
       list.innerHTML = accounts.map(a => `<option value="${esc(a.code)} - ${esc(a.label)}"></option>`).join('');
       select.innerHTML = '<option value="">Afficher tous les comptes…</option>' + accounts.map(a => `<option value="${esc(a.code)}">${esc(a.code)} — ${esc(a.label)}</option>`).join('');
     };
     refreshOptions();
     select.addEventListener('change', () => { input.value=select.value; input.dispatchEvent(new Event('input',{bubbles:true})); });
-    input.addEventListener('change', () => { const found=(window.state?.accounts||[]).find(a => input.value.includes(a.code)); if(found){input.value=found.code;select.value=found.code;} });
+    input.addEventListener('change', () => { const found=(appState()?.accounts||[]).find(a => input.value.includes(a.code)); if(found){input.value=found.code;select.value=found.code;} });
     setTimeout(refreshOptions,1000);
   }
   function printable(title, body, extraCss=''){
@@ -190,25 +257,27 @@
   function exportAccountPdf(){
     const raw = ($('v28AccountLookupCode')?.value || '').trim();
     const code = raw.split(/\s+-\s+/)[0];
-    const account = (window.state?.accounts || []).find(a => String(a.code) === code) || {};
+    const account = (appState()?.accounts || []).find(a => String(a.code) === code) || {};
     if (!code) return alert('Sélectionnez un compte comptable.');
     const renderedTable = $('v28AccountLookupTable')?.innerHTML || '<p>Aucune écriture.</p>';
     printable(`Compte ${code}`, `<h1>Compte ${esc(code)}</h1><h2>${esc(account.label || '')}</h2><div class="summary"><span>Débit : ${esc($('v28AccountDebit')?.textContent || '')}</span><span>Crédit : ${esc($('v28AccountCredit')?.textContent || '')}</span><span>Solde : ${esc($('v28AccountSolde')?.textContent || '')}</span></div>${renderedTable}`);
   }
   function exportBilanSideBySide(){
     const actif=$('bilanActifTable')?.innerHTML||'', passif=$('bilanPassifTable')?.innerHTML||'', summary=$('bilanSummary')?.innerHTML||'';
-    printable('Bilan comptable', `<h1>Bilan comptable</h1><h2>${esc((window.state?.copros||[]).find(c=>String(c.id)===String(window.state?.activeCoproId))?.name || 'Vue globale')}</h2><div class="bilan"><section><h3>ACTIF</h3>${actif}</section><section><h3>PASSIF</h3>${passif}</section></div><div class="summary">${summary}</div>`,'.bilan{display:grid;grid-template-columns:1fr 1fr;gap:10mm;align-items:start}.bilan h3{text-align:center;background:#172033;color:white;padding:8px;margin:0}.bilan button{display:none}.summary button{display:none}');
+    const st = appState();
+    printable('Bilan comptable', `<h1>Bilan comptable</h1><h2>${esc((st?.copros||[]).find(c=>String(c.id)===String(st?.activeCoproId))?.name || 'Vue globale')}</h2><div class="bilan"><section><h3>ACTIF</h3>${actif}</section><section><h3>PASSIF</h3>${passif}</section></div><div class="summary">${summary}</div>`,'.bilan{display:grid;grid-template-columns:1fr 1fr;gap:10mm;align-items:start}.bilan h3{text-align:center;background:#172033;color:white;padding:8px;margin:0}.bilan button{display:none}.summary button{display:none}');
   }
   document.addEventListener('click', event => {
     const bilanBtn = event.target.closest('[data-v31-bilan-pdf],[data-v30-bilan-pdf],#v29BilanPdfBtn');
     if (bilanBtn) { event.preventDefault(); event.stopImmediatePropagation(); exportBilanSideBySide(); }
+    if (event.target.closest('[data-v29-close-year]')) setTimeout(() => syncFiscalContext(false), 1200);
   }, true);
 
   function init(){
     buildTopNavigation();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V33.2'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V33.2.1'; document.querySelector('.w332-page-head')?.appendChild(version);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init,0), {once:true});
   else setTimeout(init,0);

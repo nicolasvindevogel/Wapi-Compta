@@ -1,0 +1,35 @@
+WAPI ONE — V33.2.1
+===================
+
+Cette version conserve les modules et les données de la V33.1.
+Aucune migration SQL nouvelle n'est nécessaire.
+
+INSTALLATION GITHUB
+1. Décompressez l'archive.
+2. Dans le dépôt GitHub WAPI One, remplacez les éléments suivants par ceux de cette archive :
+   - index.html
+   - assets/
+   - css/
+   - js/
+   - sql/
+3. Conservez la même structure de dossiers.
+4. Validez avec "Commit changes".
+5. Attendez la fin du déploiement GitHub Pages.
+6. Rechargez le site avec Ctrl + F5.
+
+CONTRÔLES CONSEILLÉS
+- La navigation principale est maintenant en haut.
+- Tous les grands univers restent visibles dans la barre supérieure, avec leur intitulé.
+- Les sous-menus s'ouvrent sous chaque grande rubrique.
+- Le crayon ouvre les réglages de la copropriété active.
+- Le choix d'une copropriété l'active immédiatement.
+- Le sélecteur voisin affiche les exercices de la copropriété active.
+- Le point vert indique un exercice ouvert ; le point rouge un exercice clôturé.
+- La loupe pointe vers la recherche globale existante.
+- Le menu utilisateur contient le nom, le futur réglage e-mail et la déconnexion.
+- La consultation d'un compte accepte un numéro ou un libellé et propose une liste complète.
+- Le contenu du compte peut être imprimé/enregistré en PDF.
+- Le PDF du bilan présente l'actif et le passif côte à côte.
+
+VERSION
+WAPI One V33.2.1
