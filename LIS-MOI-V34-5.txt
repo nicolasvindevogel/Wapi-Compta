@@ -1,0 +1,21 @@
+WAPI ONE V34.5 - DECOMPTES INSPIRES D'OPTIPRO
+
+INSTALLATION
+1. Dans Supabase SQL Editor, exécuter :
+   sql/032_v34_5_decomptes_optipro.sql
+2. Dans GitHub, envoyer tout le contenu du dossier/ZIP V34.5.
+3. Valider le remplacement des fichiers portant le même nom.
+4. Faire le commit.
+5. Recharger le site avec CTRL + F5.
+
+CONTROLE CONSEILLE
+- Choisir une copropriété et un exercice.
+- Comparer un copropriétaire avec Optipro.
+- Vérifier les quotités, jours de propriété, consommations et total.
+- Le bloc "Contrôle centimes" doit afficher "Équilibré".
+- Tester PDF individuel, PDF sélection et PDF tous.
+
+SECURITE COMPTABLE
+Cette version calcule et génère les décomptes mais ne passe volontairement
+aucune OD définitive. La comptabilisation sera ajoutée après validation des
+résultats sur un exercice réel, afin d'éviter toute écriture en double.
