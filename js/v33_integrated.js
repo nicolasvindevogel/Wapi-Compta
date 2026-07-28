@@ -615,7 +615,7 @@
    Objectif : appliquer le filtre gestionnaire dans les modules multi-copro utiles,
    sans MutationObserver ni boucle de rendu. */
 (function(){
-  const VERSION = 'WAPI One — V33';
+  const VERSION = 'WAPI One — V34.3';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const patched = new Set();
   const coproSelectIds = [
@@ -864,7 +864,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V33';
+  const VERSION = 'WAPI One — V34.3';
   window.WAPI_ONE_VERSION = 'V33 - socle propre stabilisé';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const ACTIVE_COPRO_KEY = 'wapi_compta_active_copro_id';
@@ -1070,7 +1070,12 @@
     if($id('globalModalSubtitle')) $id('globalModalSubtitle').textContent = 'Réglages propres à la copropriété sélectionnée.';
     $id('globalModalBody').innerHTML = body;
     $id('globalModalFooter').innerHTML = footer || '<button class="btn secondary" type="button" data-modal-close>Fermer</button>';
-    modal.classList.remove('narrow'); modal.classList.add('wide'); backdrop.classList.remove('hidden'); backdrop.style.display=''; backdrop.style.pointerEvents='';
+    modal.classList.remove('narrow');
+    modal.classList.add('wide', 'copro-settings-modal');
+    backdrop.classList.add('copro-settings-backdrop');
+    backdrop.classList.remove('hidden');
+    backdrop.style.display='';
+    backdrop.style.pointerEvents='';
   }
   function requestedCoproId(id){ return id || (stateOk() ? (state.activeCoproId || '') : '') || $id('activeCoproSelect')?.value || ''; }
   function settingsBody(coproId){
@@ -1247,7 +1252,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V33.1';
+  const VERSION = 'WAPI One — V34.3';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

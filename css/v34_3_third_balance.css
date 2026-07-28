@@ -1,0 +1,121 @@
+/* WAPI One V34.3 — Situation de compte d'un tiers en fenêtre */
+.v343-third-open {
+  min-width: 142px;
+}
+
+.v343-third-modal-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.v343-third-metric {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.v343-third-metric span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.v343-third-metric strong {
+  display: block;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.v343-third-metric.is-debit {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.v343-third-metric.is-debit strong {
+  color: #b42318;
+}
+
+.v343-third-metric.is-credit {
+  border-color: #bbf7d0;
+  background: #f4fff8;
+}
+
+.v343-third-metric.is-credit strong {
+  color: #157347;
+}
+
+.v343-third-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v343-third-code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: #eef1ff;
+  color: #414cc4;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.v343-third-table {
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.v343-third-table table {
+  margin: 0;
+}
+
+.v343-third-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.v343-third-table th:nth-child(3),
+.v343-third-table th:nth-child(4),
+.v343-third-table td:nth-child(3),
+.v343-third-table td:nth-child(4) {
+  text-align: right;
+}
+
+.v343-third-total {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  margin-top: 12px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: #171b2b;
+  color: #fff;
+  font-weight: 850;
+}
+
+.v343-third-total span {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .v343-third-modal-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .v343-third-total {
+    justify-content: space-between;
+    gap: 10px;
+  }
+}

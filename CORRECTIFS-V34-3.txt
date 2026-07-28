@@ -1,0 +1,17 @@
+WAPI ONE V34.3
+
+Cette version cumule :
+- tous les correctifs V34.2 de navigation et de popup Réglages copropriété ;
+- la barre supérieure Optipro et tous les modules existants ;
+- la situation de compte d'un tiers dans une vraie fenêtre ;
+- l'export PDF individuel depuis cette fenêtre ;
+- la préparation d'un e-mail depuis cette fenêtre ;
+- le maintien des sélections et envois groupés existants.
+
+Aucune migration SQL supplémentaire n'est nécessaire.
+
+INSTALLATION
+1. Remplacer tout le contenu du dépôt GitHub par le contenu de ce dossier.
+2. Vérifier que les dossiers css et js ont bien été envoyés.
+3. Commit.
+4. Recharger avec CTRL + F5.

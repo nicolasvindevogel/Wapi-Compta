@@ -1,0 +1,15 @@
+WAPI ONE V34.2
+
+Correctifs d'affichage :
+- popup Réglages copropriété placé au-dessus de toute l'interface ;
+- taille du popup limitée et centrée ;
+- contenu du popup défilable indépendamment de la page ;
+- formulaire réglages organisé sur deux colonnes ;
+- fermeture fiable avec la croix ou le bouton Fermer ;
+- sous-onglets masqués jusqu'à leur rendu définitif ;
+- aucune icône dans les sous-onglets ;
+- conservation des icônes SVG des huit grands univers ;
+- titre et badge de version harmonisés en V34.2.
+
+Aucune migration SQL supplémentaire.
+Aucune donnée Supabase modifiée.
