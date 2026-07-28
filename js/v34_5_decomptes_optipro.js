@@ -236,11 +236,16 @@
     if(!(ids||[]).length)return alert('Sélectionne au moins un copropriétaire.');
     openPrintWindowV16('Décomptes',ids.map(pdfHtml).join(''));
   };
+  window.WapiSettlementV345={buildOwner,ownerRows,selectedContext,pdfHtml,pdf,render,renderDetail};
 
   document.addEventListener('click',e=>{
     const open=e.target.closest('[data-v345-open-owner]');if(open){state.selectedSettlementOwnerId=open.dataset.v345OpenOwner;renderDetail(state.selectedSettlementOwnerId);}
     if(e.target.closest('[data-close-settlement-detail]')){state.selectedSettlementOwnerId='';byId('settlementDetail')?.classList.remove('is-open');render();}
     const one=e.target.closest('[data-v345-pdf-owner]');if(one)pdf(one.dataset.v345PdfOwner);
-  });
+  },true);
+  document.addEventListener('change',e=>{
+    const check=e.target.closest?.('[data-settlement-select]');
+    if(check && check.checked){state.selectedSettlementOwnerId=check.dataset.settlementSelect;renderDetail(state.selectedSettlementOwnerId);}
+  },true);
   window.addEventListener('load',()=>{installSettlementOptions();setTimeout(render,250);});
 })();

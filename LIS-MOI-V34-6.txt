@@ -1,0 +1,32 @@
+WAPI ONE V34.6 - DECOMPTES, DEPENSES ET COPROPRIETAIRES
+
+INSTALLATION
+1. Exécuter dans Supabase SQL Editor :
+   sql/032_v34_5_decomptes_optipro.sql (si pas encore exécuté)
+   sql/033_v34_6_decomptes_depenses_tiers.sql
+2. Envoyer tout le contenu du ZIP dans GitHub.
+3. Accepter le remplacement des fichiers existants.
+4. Faire le commit puis recharger avec CTRL + F5.
+
+DECOMPTES
+- Clic sur la ligne, Consulter ou une coche : ouverture du décompte.
+- Vérifier le contrôle des centimes.
+- Cliquer "Valider les soldes de clôture" après contrôle.
+- Aucun solde n'est reporté à ce moment.
+- Le report au 01/01 de l'exercice suivant se produit uniquement au clic
+  "Clôturer" dans Exercices comptables.
+- La clôture est bloquée si les décomptes n'ont pas été validés ou si
+  l'exercice suivant n'existe pas.
+
+LISTE DES DEPENSES
+- Filtres exercice, compte, clé et recherche.
+- Regroupement Compte > Clé > lignes.
+- Référence interne, fournisseur, montant et parts propriétaire/occupant.
+- Edition de la facture depuis la ligne.
+- Export PDF WAPI One.
+
+COPROPRIETAIRES
+- Par défaut : copropriétaires actifs possédant un lot actif.
+- Cocher "Afficher les copropriétaires non actifs" pour voir les anciens.
+- Le statut est recalculé quand l'attribution d'un lot change.
+- Suppression possible seulement en l'absence de lot et de comptabilité liée.
