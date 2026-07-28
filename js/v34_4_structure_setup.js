@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '34.4';
+  const VERSION = '34.4.1';
   const byId = (id) => document.getElementById(id);
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const appState = () => typeof state !== 'undefined' ? state : null;
@@ -297,7 +297,20 @@
     const host=byId('ownersTable');if(!host)return;
     const type=state.selectedIdentityType||'owner', copro=currentCoproId();
     let rows=type==='supplier'?list('suppliers').map(x=>({...x,_name:x.name,_type:'supplier'})):type==='occupant'?list('occupants').filter(x=>!copro||x.copro_id===copro).map(x=>({...x,_name:x.display_name,_type:'occupant'})):list('owners').filter(x=>!copro||x.copro_id===copro||list('lots').some(l=>l.copro_id===copro&&l.owner_id===x.id)).map(x=>({...x,_name:x.display_name,_type:'owner'}));
-    host.innerHTML=`<div class="summary-line"><span class="badge">${rows.length} tiers</span></div><div class="table-wrap"><table><thead><tr><th>Code</th><th>Nom</th>${type==='owner'?'<th>Communication VCS</th>':''}<th>Email</th><th>Adresse</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(x=>`<tr><td><span class="code-pill">${esc(type==='supplier'?x.supplier_code:x.owner_code||'—')}</span></td><td>${esc(x._name)}</td>${type==='owner'?`<td><code>${esc(x.vcs||'À générer')}</code></td>`:''}<td>${esc(x.email||'')}</td><td>${esc(fullAddress(x)||x.address||'')}</td><td>${x.active===false?'<span class="badge">Inactif</span>':'<span class="badge ok">Actif</span>'}</td><td><button class="btn secondary small" data-open-identity="${x._type}|${x.id}">Ouvrir</button></td></tr>`).join('')||`<tr><td colspan="${type==='owner'?7:6}">Aucun tiers.</td></tr>`}</tbody></table></div>`;
+    const vcsToolbar = type === 'owner' ? `<div class="v344-vcs-actions"><span class="v344-vcs-help">Les communications existantes sont conservées.</span><button class="btn secondary" id="v344GenerateAllVcs" type="button">Générer les VCS manquantes</button></div>` : '';
+    host.innerHTML=`<div class="v344-tier-toolbar"><div class="summary-line"><span class="badge">${rows.length} tiers</span></div>${vcsToolbar}</div><div class="table-wrap"><table><thead><tr><th>Code</th><th>Nom</th>${type==='owner'?'<th>Communication VCS</th>':''}<th>Email</th><th>Adresse</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(x=>`<tr><td><span class="code-pill">${esc(type==='supplier'?x.supplier_code:x.owner_code||'—')}</span></td><td>${esc(x._name)}</td>${type==='owner'?`<td><code>${esc(x.vcs||'À générer')}</code></td>`:''}<td>${esc(x.email||'')}</td><td>${esc(fullAddress(x)||x.address||'')}</td><td>${x.active===false?'<span class="badge">Inactif</span>':'<span class="badge ok">Actif</span>'}</td><td><button class="btn secondary small" data-open-identity="${x._type}|${x.id}">Ouvrir</button></td></tr>`).join('')||`<tr><td colspan="${type==='owner'?7:6}">Aucun tiers.</td></tr>`}</tbody></table></div>`;
+  }
+  async function generateMissingVcs() {
+    const button = byId('v344GenerateAllVcs');
+    if (button) { button.disabled = true; button.textContent = 'Génération…'; }
+    const {data,error} = await db().rpc('wapi_generate_missing_owner_vcs', {p_copro_id: currentCoproId() || null});
+    if(error) {
+      if(button){button.disabled=false;button.textContent='Générer les VCS manquantes';}
+      return alert(error.message + '\n\nExécute la migration SQL 031 de la V34.4.1.');
+    }
+    await reload();
+    renderOwnersV344();
+    alert(`${Number(data?.generated || 0)} VCS générée(s). ${Number(data?.already_present || 0)} communication(s) déjà présente(s) ont été conservées.`);
   }
 
   /* Copropriétés actives / archivées. */
@@ -330,6 +343,7 @@
 
   document.addEventListener('click',(e)=>{
     if(e.target.closest('#saveCoproBtn')){e.preventDefault();e.stopImmediatePropagation();wizard=newWizard();showWizard();return;}
+    if(e.target.closest('#v344GenerateAllVcs')){e.preventDefault();e.stopImmediatePropagation();generateMissingVcs();return;}
     const remove=e.target.closest('[data-v344-remove-lot]');if(remove){saveWizardScreen();wizard.lots.splice(Number(remove.dataset.v344RemoveLot),1);showWizard();return;}
     const tab=e.target.closest('[data-v344-copro-tab]');if(tab){coproTab=tab.dataset.v344CoproTab;renderCoprosV344();return;}
     const archive=e.target.closest('[data-v344-archive]');if(archive){const[id,action]=archive.dataset.v344Archive.split('|');archiveCopro(id,action==='restore');return;}

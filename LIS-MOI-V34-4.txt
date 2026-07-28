@@ -1,10 +1,13 @@
-WAPI ONE — V34.4
+WAPI ONE — V34.4.1
 =================
 
 INSTALLATION
 
-1. Dans Supabase > SQL Editor, exécuter :
-   sql/030_v34_4_structure_copro_tiers.sql
+1. Dans Supabase > SQL Editor :
+   - si la V34.4 n'a jamais été installée, exécuter d'abord :
+     sql/030_v34_4_structure_copro_tiers.sql
+   - dans tous les cas, exécuter ensuite :
+     sql/031_v34_4_1_vcs_correctifs_visuels.sql
 
 2. Dans GitHub, envoyer tout le contenu de ce dossier en conservant
    exactement les dossiers index.html, css, js, assets et sql.
@@ -28,3 +31,6 @@ TEST RAPIDE
 3. Ouvrir Réglages sur la copro et vérifier les champs d'adresse.
 4. Dans Tiers, ouvrir un copropriétaire et vérifier la VCS.
 5. Essayer d'archiver puis désarchiver une copropriété de test.
+6. Dans Tiers copropriétaires, cliquer sur
+   « Générer les VCS manquantes » et vérifier que les VCS existantes restent
+   inchangées.
