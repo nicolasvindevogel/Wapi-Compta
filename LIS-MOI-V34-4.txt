@@ -1,0 +1,30 @@
+WAPI ONE — V34.4
+=================
+
+INSTALLATION
+
+1. Dans Supabase > SQL Editor, exécuter :
+   sql/030_v34_4_structure_copro_tiers.sql
+
+2. Dans GitHub, envoyer tout le contenu de ce dossier en conservant
+   exactement les dossiers index.html, css, js, assets et sql.
+
+3. Valider le commit, attendre la publication GitHub Pages puis effectuer
+   CTRL + F5 dans le navigateur.
+
+IMPORTANT
+
+- La migration ajoute uniquement des colonnes et fonctions. Elle ne supprime
+  aucune copropriété, aucun tiers, aucun lot et aucune écriture existante.
+- Les adresses historiques restent dans le champ Adresse. Les nouvelles
+  modifications sont enregistrées dans Rue, Numéro, Code postal, Ville, Pays.
+- Les VCS sont générées et harmonisées par identité : un même propriétaire
+  reconnu par son e-mail, ou à défaut son nom et son adresse, garde la même VCS.
+
+TEST RAPIDE
+
+1. Copropriétés > Nouvelle copropriété : parcourir les 4 étapes.
+2. Créer un exercice et quelques lots de test.
+3. Ouvrir Réglages sur la copro et vérifier les champs d'adresse.
+4. Dans Tiers, ouvrir un copropriétaire et vérifier la VCS.
+5. Essayer d'archiver puis désarchiver une copropriété de test.

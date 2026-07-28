@@ -38,8 +38,8 @@
     const app = $('appScreen'), topbar = app?.querySelector('.topbar');
     if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
-    document.body.dataset.wapiVersion = '34.3.1';
-    document.title = 'WAPI One — V34.3.1';
+    document.body.dataset.wapiVersion = '34.4';
+    document.title = 'WAPI One — V34.4';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -212,7 +212,7 @@
   }
 
   function refreshCoproContext(){
-    document.title = 'WAPI One — V34.3.1';
+    document.title = 'WAPI One — V34.4';
     const st = appState(), select = $('activeCoproSelect');
     if (!st || !select) return;
     const selected = st.activeCoproId || select.value || '';
@@ -419,11 +419,11 @@
     refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.3.1'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.4'; document.querySelector('.w332-page-head')?.appendChild(version);
     // L'ancien moteur termine un chargement différé des profils ; on réaffirme
     // une seule fois la version et le contexte, sans observateur ni intervalle.
     setTimeout(() => {
-      document.title = 'WAPI One — V34.3.1';
+      document.title = 'WAPI One — V34.4';
       refreshCoproContext();
       syncTopUniverse();
     }, 1600);
