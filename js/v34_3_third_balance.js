@@ -1,4 +1,4 @@
-/* WAPI One V34.3 — Balance des tiers : détail en fenêtre */
+/* WAPI One V34.3.1 — Balance des tiers et mémorisation de l'écran */
 (() => {
   'use strict';
 
@@ -105,6 +105,11 @@
       <button class="btn secondary" type="button" data-v343-third-pdf="${htmlEscape(key)}">Exporter en PDF</button>
       <button class="btn" type="button" data-v343-third-mail="${htmlEscape(key)}" ${hasEmail ? '' : 'disabled'}>${mailLabel}</button>`;
 
+    const backdrop = byId('globalModalBackdrop');
+    if (backdrop) {
+      backdrop.style.removeProperty('display');
+      backdrop.style.removeProperty('pointer-events');
+    }
     openAppModal('Situation de compte', body, footer, {
       subtitle: `${row.labelType || 'Tiers'} — ${row.name || ''}`,
       size: 'wide'
@@ -217,6 +222,45 @@
   if (typeof renderThirdBalance === 'function') renderThirdBalance = renderThirdBalanceV343;
   window.renderThirdBalanceV343 = renderThirdBalanceV343;
 
+  const LAST_VIEW_KEY = 'wapi-one-last-view-v3431';
+  const LAST_SYNDIC_TAB_KEY = 'wapi-one-last-syndic-tab-v3431';
+  let lastViewRestored = false;
+
+  function visibleViewV3431() {
+    const view = [...document.querySelectorAll('.view')].find((item) => !item.classList.contains('hidden'));
+    return view?.id?.replace(/View$/, '') || '';
+  }
+
+  function saveCurrentViewV3431() {
+    const view = visibleViewV3431();
+    if (!view || !byId(`${view}View`)) return;
+    try {
+      localStorage.setItem(LAST_VIEW_KEY, view);
+      if (view === 'syndicBilling' && state?.syndicBillingTab) {
+        localStorage.setItem(LAST_SYNDIC_TAB_KEY, String(state.syndicBillingTab));
+      }
+    } catch (_) {}
+  }
+
+  function restoreLastViewV3431() {
+    if (lastViewRestored || typeof window.switchToView !== 'function') return;
+    let view = '';
+    let syndicTab = '';
+    try {
+      view = localStorage.getItem(LAST_VIEW_KEY) || '';
+      syndicTab = localStorage.getItem(LAST_SYNDIC_TAB_KEY) || '';
+    } catch (_) {}
+    if (!view || !byId(`${view}View`)) {
+      lastViewRestored = true;
+      return;
+    }
+    if (view === 'syndicBilling' && syndicTab && typeof state === 'object') {
+      state.syndicBillingTab = syndicTab;
+    }
+    lastViewRestored = true;
+    window.switchToView(view);
+  }
+
   document.addEventListener('click', (event) => {
     const openButton = event.target.closest?.('[data-v343-third-open]');
     if (openButton) {
@@ -236,11 +280,20 @@
     }
   }, true);
 
+  document.addEventListener('click', (event) => {
+    if (event.target.closest?.('[data-view], [data-w332-module], [data-v331-module], [data-v33-module]')) {
+      setTimeout(saveCurrentViewV3431, 0);
+    }
+  });
+  window.addEventListener('beforeunload', saveCurrentViewV3431);
+
   const previousRenderAll = typeof renderAll === 'function' ? renderAll : null;
   if (previousRenderAll) {
     renderAll = function renderAllV343() {
       previousRenderAll();
       try { renderThirdBalanceV343(); } catch (error) { console.warn('V34.3 balance tiers', error); }
+      setTimeout(restoreLastViewV3431, 0);
     };
   }
+  setTimeout(restoreLastViewV3431, 1200);
 })();

@@ -38,8 +38,8 @@
     const app = $('appScreen'), topbar = app?.querySelector('.topbar');
     if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
-    document.body.dataset.wapiVersion = '34.3';
-    document.title = 'WAPI One — V34.3';
+    document.body.dataset.wapiVersion = '34.3.1';
+    document.title = 'WAPI One — V34.3.1';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -212,7 +212,7 @@
   }
 
   function refreshCoproContext(){
-    document.title = 'WAPI One — V34.3';
+    document.title = 'WAPI One — V34.3.1';
     const st = appState(), select = $('activeCoproSelect');
     if (!st || !select) return;
     const selected = st.activeCoproId || select.value || '';
@@ -340,8 +340,10 @@
     if (!backdrop) return;
     backdrop.classList.add('hidden');
     backdrop.classList.remove('copro-settings-backdrop');
-    backdrop.style.display = 'none';
-    backdrop.style.pointerEvents = 'none';
+    /* Ne jamais conserver display:none/pointer-events:none en style inline :
+       openAppModal retire la classe hidden lors de la prochaine ouverture. */
+    backdrop.style.removeProperty('display');
+    backdrop.style.removeProperty('pointer-events');
     modal?.classList.remove('copro-settings-modal');
   }
 
@@ -417,11 +419,11 @@
     refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.3'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.3.1'; document.querySelector('.w332-page-head')?.appendChild(version);
     // L'ancien moteur termine un chargement différé des profils ; on réaffirme
     // une seule fois la version et le contexte, sans observateur ni intervalle.
     setTimeout(() => {
-      document.title = 'WAPI One — V34.3';
+      document.title = 'WAPI One — V34.3.1';
       refreshCoproContext();
       syncTopUniverse();
     }, 1600);

@@ -1,0 +1,10 @@
+WAPI ONE V34.3.1
+
+Cette version contient tout le contenu de V34.3, plus :
+- correction définitive de la réouverture des situations de compte ;
+- suppression des styles inline qui rendaient la fenêtre définitivement invisible ;
+- mémorisation du dernier écran/module affiché ;
+- restauration de cet écran après actualisation ;
+- mémorisation du sous-onglet actif dans Facturation syndic.
+
+Aucune migration SQL supplémentaire n'est nécessaire.

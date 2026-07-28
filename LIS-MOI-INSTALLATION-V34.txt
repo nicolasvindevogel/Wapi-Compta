@@ -1,4 +1,4 @@
-WAPI ONE — V34.3 — SOCLE OPTIPRO STABILISÉ
+WAPI ONE — V34.3.1 — SOCLE OPTIPRO STABILISÉ
 
 Cette version conserve les modules et les données Supabase existants.
 Aucune migration SQL supplémentaire n'est nécessaire.
@@ -31,4 +31,4 @@ CONTRÔLES À EFFECTUER
 - L'export du compte affiche le numéro et son libellé.
 - Le PDF du bilan place ACTIF et PASSIF côte à côte.
 
-VERSION AFFICHÉE : WAPI One V34.3
+VERSION AFFICHÉE : WAPI One V34.3.1
