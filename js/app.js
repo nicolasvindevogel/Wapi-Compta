@@ -7860,18 +7860,18 @@ function updateSidebarButtons() {
           const extracted = extractInvoiceFieldsV19(rawText || '', file.name);
           const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 8;
           const confidence = Math.min(98, Math.max(coproDetection.confidence || 0, supplierDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + (rawText ? 8 : 0));
-          const itemStatus = extracted.amount && extracted.reference && supplierDetection.supplier && (coproDetection.copro || state.activeCoproId) ? 'to_validate' : 'to_verify';
+          const itemStatus = extracted.amount && extracted.reference && supplierDetection.supplier && coproDetection.copro ? 'to_validate' : 'to_verify';
           const rawData = { file_name:file.name, file_size:file.size, mime_type:file.type || null, file_data_url:fileDataUrl, extracted, ocr_mode:ocrMode, ocr_text_length:(rawText || '').length, v19:true };
           const { data:item, error:itemError } = await supabaseClient.from('compta_import_items').insert({
             batch_id:batch.id, import_type:importType, file_name:file.name, file_size:file.size, mime_type:file.type || null,
             raw_text:rawText || null, raw_data:rawData,
-            detected_copro_id:coproDetection.copro?.id || state.activeCoproId || null,
+            detected_copro_id:coproDetection.copro?.id || null,
             detected_supplier_id:supplierDetection.supplier?.id || null,
             detected_bank_account_id:bankDetection.account?.id || null,
             confidence, status:itemStatus, created_by:currentUser.id
           }).select('id').single();
           if (itemError) throw itemError;
-          const corrected = { copro_id:coproDetection.copro?.id || state.activeCoproId || null, supplier_id:supplierDetection.supplier?.id || null, bank_account_id:bankDetection.account?.id || null, ...extracted };
+          const corrected = { copro_id:coproDetection.copro?.id || null, supplier_id:supplierDetection.supplier?.id || null, bank_account_id:bankDetection.account?.id || null, ...extracted };
           await supabaseClient.from('compta_validation_queue').insert({ item_id:item.id, target_type:importType, status:itemStatus, copro_id:corrected.copro_id || null, extracted_data:extracted, corrected_data:corrected, notes: confidence >= 75 ? 'Reconnaissance automatique renforcée à confirmer.' : 'Reconnaissance incomplète : vérifie les champs signalés.', created_by:currentUser.id });
         }
         $('importFiles').value = '';
@@ -7908,7 +7908,6 @@ function updateSidebarButtons() {
       const corrected = { ...(q.corrected_data || {}), ...extracted };
       if (supplierDetection.supplier) corrected.supplier_id = supplierDetection.supplier.id;
       if (coproDetection.copro) corrected.copro_id = coproDetection.copro.id;
-      if (!corrected.copro_id && state.activeCoproId) corrected.copro_id = state.activeCoproId;
       if (bankDetection.account) corrected.bank_account_id = bankDetection.account.id;
       const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 9;
       const confidence = Math.min(98, Math.max(Number(item.confidence || 0), supplierDetection.confidence || 0, coproDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + 10);

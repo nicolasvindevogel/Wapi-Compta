@@ -1,0 +1,23 @@
+WAPI ONE — V34.8 OCR INTELLIGENT
+
+Cette version complète la V34.7.
+
+INSTALLATION
+1. Remplacer dans GitHub tout le contenu par celui du ZIP V34.8.
+2. Aucun nouveau SQL n'est nécessaire si le SQL V34.7 a déjà été exécuté.
+3. Commit puis CTRL + F5.
+
+NOUVEAUTÉS OCR
+- distinction entre l'émetteur/fournisseur et le destinataire/copropriété ;
+- conservation du nom lu même si l'élément n'existe pas dans WAPI One ;
+- bouton de création du fournisseur détecté ;
+- sélection manuelle obligatoire si la copropriété lue n'est pas associée ;
+- distinction HTVA, montant TVA et TVAC avec contrôle de cohérence ;
+- compte comptable proposé depuis l'historique du fournisseur ;
+- à défaut, proposition depuis les mots du libellé de la facture ;
+- aucune copropriété active n'est imposée lorsque la facture ne permet pas
+  réellement de l'identifier.
+
+IMPORTANT
+Après installation, utilise « Relancer reconnaissance » sur les factures déjà
+importées afin de leur appliquer le nouveau moteur.
