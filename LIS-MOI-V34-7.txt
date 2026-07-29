@@ -1,0 +1,26 @@
+WAPI ONE — V34.7 STABILISATION FINANCIÈRE
+
+INSTALLATION
+1. Remplacer dans GitHub tout le contenu par celui du ZIP V34.7.
+2. Dans Supabase > SQL Editor, exécuter :
+   sql/034_v34_7_financier_ocr_recurrence.sql
+3. Faire le commit GitHub.
+4. Recharger le site avec CTRL + F5.
+
+CONTRÔLES À EFFECTUER
+- Tiers : cliquer successivement sur Copropriétaires, Fournisseurs et Occupants.
+- Copropriétaires : vérifier la case « Afficher aussi les copropriétaires non actifs ».
+- Liste des dépenses : vérifier la taille normale des cases à cocher.
+- Financier : sélectionner une copropriété puis créer un extrait manuel.
+- Vérifier que seuls les comptes bancaires de cette copropriété sont proposés.
+- CODA : vérifier Paiement / Encaissement et l’extrait de la copropriété concernée.
+- OCR : contrôler l’apparition du bloc « Factures récurrentes reconnues ».
+
+SÉCURITÉ
+La migration ajoute une protection en base : un extrait ou un mouvement bancaire
+ne peut plus être enregistré avec le compte bancaire d’une autre copropriété.
+
+FACTURES RÉCURRENTES
+La validation groupée est proposée uniquement si WAPI One retrouve au moins deux
+factures historiques identiques (copropriété, fournisseur, compte et montant),
+si les champs obligatoires sont présents et si le numéro de facture n’existe pas déjà.
