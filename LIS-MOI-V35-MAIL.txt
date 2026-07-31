@@ -1,0 +1,15 @@
+WAPI ONE — V35.0 OUTLOOK / MICROSOFT 365
+
+1. Remplacer le contenu GitHub par celui du ZIP.
+2. Exécuter sql/036_v35_outlook_mail.sql dans Supabase.
+3. Dans Microsoft Entra, créer une application « Single-page application ».
+4. Ajouter comme URL de redirection :
+   https://nicolasvindevogel.github.io/Wapi-Compta/
+5. Ajouter les permissions Microsoft Graph déléguées :
+   User.Read, Mail.ReadWrite, Mail.Send.
+6. Dans WAPI One : utilisateur en haut à droite > Réglages e-mail.
+7. Encoder le Client ID et le Tenant ID, activer Outlook, enregistrer.
+8. Chaque collaborateur clique ensuite sur « Connecter ma boîte Outlook ».
+
+Le mode conseillé au démarrage est « Créer un brouillon Outlook ».
+Les mots de passe Microsoft ne sont jamais stockés dans WAPI One ou Supabase.
