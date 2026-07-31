@@ -1,0 +1,29 @@
+WAPI ONE — V34.9 EAN, COMPTEURS ET OCR STRICT
+
+INSTALLATION
+1. Remplacer dans GitHub tout le contenu par celui du ZIP V34.9.
+2. Exécuter dans Supabase SQL Editor :
+   sql/035_v34_9_points_fourniture_ocr.sql
+3. Commit puis CTRL + F5.
+
+CONFIGURATION
+Dans Traitement OCR, cliquer sur « EAN et compteurs ».
+Créer un profil par point de fourniture :
+- ENGIE — Électricité : EAN + compte 61210 ;
+- ENGIE — Gaz : EAN + compte 61220 ;
+- Eau compteur 1 : numéro compteur + compte et clé ;
+- Eau compteur 2 : autre numéro compteur + compte et clé.
+
+Un seul fournisseur ENGIE est conservé. Ce sont les profils qui différencient
+les services et les comptes comptables.
+
+RÈGLES DE SÉCURITÉ OCR
+- l'IBAN du fournisseur ne sélectionne jamais une copropriété ;
+- une copropriété est sélectionnée uniquement par EAN/compteur exact ou lorsque
+  son nom/adresse est réellement présent sur la facture ;
+- le total TVAC est accepté uniquement avec un libellé explicite ou lorsqu'il
+  est confirmé par HTVA + TVA ;
+- en cas de montants incohérents, le champ reste à vérifier ;
+- le libellé automatique accepte {service}, {mois} et {année}.
+
+Pour les anciennes factures importées, utiliser « Relancer reconnaissance ».

@@ -5212,6 +5212,9 @@ function updateSidebarButtons() {
         copro_id: corrected.copro_id,
         supplier_id: corrected.supplier_id,
         account_id: corrected.account_id,
+        distribution_key_id: corrected.distribution_key_id || null,
+        charge_target: corrected.charge_target || 'common_owner',
+        supply_profile_id: corrected.supply_profile_id || null,
         invoice_number: corrected.reference || item.file_name || null,
         invoice_date: corrected.date || null,
         due_date: corrected.due_date || null,
@@ -7853,11 +7856,12 @@ function updateSidebarButtons() {
           else if (isDocx) { rawText = await extractDocxTextV131(file); ocrMode = rawText ? 'docx_text_v19' : 'docx_unread'; }
           else if (isDoc) { rawText = await extractOfficeBinaryTextV131(file); ocrMode = rawText ? 'doc_binary_best_effort_v19' : 'doc_unread'; }
           const detectionText = `${file.name}\n${rawText || ''}`;
-          const bankDetection = detectBankAccountFromText(detectionText);
-          const coproFromBank = bankDetection.account ? state.copros.find((c)=>c.id===bankDetection.account.copro_id) : null;
-          const coproDetection = coproFromBank ? { copro:coproFromBank, confidence:bankDetection.confidence } : detectCoproFromText(detectionText);
+          const bankDetection = { account:null, confidence:0 }; // L'IBAN visible sur une facture est celui du fournisseur, jamais celui de la copropriété.
           const supplierDetection = detectSupplierFromText(detectionText);
-          const extracted = extractInvoiceFieldsV19(rawText || '', file.name);
+          const baseExtracted = extractInvoiceFieldsV19(rawText || '', file.name);
+          const smartInvoice = window.WapiOcrV349?.analyze?.(detectionText,{fileName:file.name,date:baseExtracted.date||'',supplierId:supplierDetection.supplier?.id||null}) || null;
+          const coproDetection = smartInvoice?.coproId ? { copro:state.copros.find((c)=>c.id===smartInvoice.coproId)||null, confidence:smartInvoice.coproConfidence||0 } : {copro:null,confidence:0};
+          const extracted = { ...baseExtracted, ...(smartInvoice?.fields||{}) };
           const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 8;
           const confidence = Math.min(98, Math.max(coproDetection.confidence || 0, supplierDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + (rawText ? 8 : 0));
           const itemStatus = extracted.amount && extracted.reference && supplierDetection.supplier && coproDetection.copro ? 'to_validate' : 'to_verify';
@@ -7867,7 +7871,7 @@ function updateSidebarButtons() {
             raw_text:rawText || null, raw_data:rawData,
             detected_copro_id:coproDetection.copro?.id || null,
             detected_supplier_id:supplierDetection.supplier?.id || null,
-            detected_bank_account_id:bankDetection.account?.id || null,
+            detected_bank_account_id:null,
             confidence, status:itemStatus, created_by:currentUser.id
           }).select('id').single();
           if (itemError) throw itemError;
@@ -7900,11 +7904,12 @@ function updateSidebarButtons() {
       } catch (error) { console.warn('Relance OCR V19 impossible', error); }
       if (!text || text.trim().length < 8) return alert('Aucun texte exploitable reconnu. Il faudra importer un scan plus net ou corriger manuellement.');
       const detectionText = `${item.file_name || ''}\n${text}`;
-      const bankDetection = detectBankAccountFromText(detectionText);
-      const coproFromBank = bankDetection.account ? state.copros.find((c)=>c.id===bankDetection.account.copro_id) : null;
-      const coproDetection = coproFromBank ? { copro:coproFromBank, confidence:bankDetection.confidence } : detectCoproFromText(detectionText);
+      const bankDetection = {account:null,confidence:0}; // Ne jamais confondre l'IBAN fournisseur avec un compte de copropriété.
       const supplierDetection = detectSupplierFromText(detectionText);
-      const extracted = extractInvoiceFieldsV19(text, item.file_name || '');
+      const baseExtracted = extractInvoiceFieldsV19(text, item.file_name || '');
+      const smartInvoice = window.WapiOcrV349?.analyze?.(detectionText,{fileName:item.file_name||'',date:baseExtracted.date||'',supplierId:supplierDetection.supplier?.id||null}) || null;
+      const coproDetection = smartInvoice?.coproId ? {copro:state.copros.find((c)=>c.id===smartInvoice.coproId)||null,confidence:smartInvoice.coproConfidence||0}:{copro:null,confidence:0};
+      const extracted = { ...baseExtracted, ...(smartInvoice?.fields||{}) };
       const corrected = { ...(q.corrected_data || {}), ...extracted };
       if (supplierDetection.supplier) corrected.supplier_id = supplierDetection.supplier.id;
       if (coproDetection.copro) corrected.copro_id = coproDetection.copro.id;
@@ -7915,7 +7920,7 @@ function updateSidebarButtons() {
         confidence, raw_text:text,
         detected_supplier_id:supplierDetection.supplier?.id || null,
         detected_copro_id:corrected.copro_id || null,
-        detected_bank_account_id:bankDetection.account?.id || null,
+        detected_bank_account_id:null,
         raw_data:{ ...raw, extracted, ocr_mode:mode, ocr_text_length:text.length, rerun_at:new Date().toISOString(), v19:true }
       }).eq('id', item.id);
       if (error) return alert(error.message);
