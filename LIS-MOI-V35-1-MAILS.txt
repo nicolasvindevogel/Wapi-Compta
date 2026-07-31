@@ -1,0 +1,20 @@
+WAPI One V35.1 - Envois Gmail metier
+
+Cette version utilise la fonction Supabase gmail-send deja deployee.
+
+Envois reels raccordes :
+- convocations d'assemblee generale avec PDF nominatif ;
+- proces-verbaux d'assemblee generale avec PDF ;
+- decompte individuel avec situation de compte ;
+- situation de compte depuis la balance des tiers ;
+- appels de fonds avec montant, IBAN et communication ;
+- communications J'informe, avec pieces jointes ajoutees par l'utilisateur.
+
+Chaque utilisateur configure sa propre adresse Google Workspace dans le menu Utilisateur > Reglages e-mail.
+
+Installation :
+1. Remplacer les fichiers du site par le contenu du ZIP.
+2. Aucun nouveau SQL n'est necessaire si la V35 Gmail etait deja installee.
+3. Faire CTRL + F5 apres le deploiement GitHub Pages.
+
+Test conseille : envoyer d'abord un document a votre propre adresse depuis chaque module.
