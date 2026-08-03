@@ -2625,7 +2625,13 @@ function updateSidebarButtons() {
     }
 
     function periodicityCount(value){ return value==='monthly'?12:value==='semiannual'?2:value==='annual'?1:4; }
-    function addMonths(dateStr, months){ const d=new Date(dateStr); d.setMonth(d.getMonth()+months); return d.toISOString().slice(0,10); }
+    function addMonths(dateStr, months){
+      const [year,month,day]=String(dateStr||'').split('-').map(Number);
+      if(!year||!month||!day) return dateStr;
+      const first=new Date(Date.UTC(year,month-1+Number(months||0),1));
+      const lastDay=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate();
+      return new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(day,lastDay))).toISOString().slice(0,10);
+    }
     function monthLabel(dateStr){ return new Date(dateStr).toLocaleDateString('fr-BE',{month:'long', year:'numeric'}); }
 
     async function generateCallsFromModal(){
@@ -10700,10 +10706,17 @@ function updateSidebarButtons() {
   function v31PeriodCount(p){ return p==='monthly'?12:p==='quarterly'?4:p==='semiannual'?2:p==='annual'?1:1; }
   function v31PeriodStep(p){ return p==='monthly'?1:p==='quarterly'?3:p==='semiannual'?6:p==='annual'?12:0; }
   function v31MonthLabel(dateStr){ try{return new Date(dateStr).toLocaleDateString('fr-BE',{month:'long',year:'numeric'});}catch(e){return dateStr||'';} }
-  function v31AddMonths(dateStr,m){ const d=new Date(dateStr); d.setMonth(d.getMonth()+m); return d.toISOString().slice(0,10); }
+  function v31AddMonths(dateStr,m){
+    const [year,month,day]=String(dateStr||'').split('-').map(Number);
+    if(!year||!month||!day) return dateStr;
+    const first=new Date(Date.UTC(year,month-1+Number(m||0),1));
+    const lastDay=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate();
+    return new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(day,lastDay))).toISOString().slice(0,10);
+  }
   function v31OpenCallModal(){
     const coproId=state.activeCoproId || $id('callsCoproFilter')?.value || '';
     const yearId=state.activeFiscalYearId || $id('activeFiscalYearSelect')?.value || $id('callsFiscalYearFilter')?.value || '';
+    const fiscalStart=(state.fiscalYears||[]).find(y=>String(y.id)===String(yearId))?.starts_on || today31();
     const budgets=(state.budgetHeaders||[]).filter(b=>(!coproId||b.copro_id===coproId)&&(!yearId||b.fiscal_year_id===yearId)&&b.status==='validated');
     const body=`<div class="popup-form"><div class="modal-help">Pour fonds de roulement et fonds de réserve, choisis généralement <strong>Appel unique</strong>, puis la clé de répartition. La contrepartie comptable est automatiquement 100 pour le roulement et 160 pour la réserve.</div><div class="form-grid">
       <label>Copropriété <select id="v31CallCopro">${v31CoproOptions(coproId)}</select></label>
@@ -10712,7 +10725,7 @@ function updateSidebarButtons() {
       <label>Périodicité <select id="v31CallPeriodicity"><option value="quarterly">Trimestrielle</option><option value="monthly">Mensuelle</option><option value="semiannual">Semestrielle</option><option value="annual">Annuelle</option><option value="once">Appel unique</option></select></label>
       <label>Clé de répartition <select id="v31CallDistributionKey">${v31DistributionOptions(coproId)}</select></label>
       <label>Budget validé <select id="v31CallBudget"><option value="">Budget validé / automatique</option>${budgets.map(b=>`<option value="${b.id}">${esc(b.label||'Budget')}</option>`).join('')}</select></label>
-      <label>Date d'appel / échéance <input id="v31CallStart" type="date" value="${today31()}"></label>
+      <label>Date du premier appel <input id="v31CallStart" type="date" value="${fiscalStart}"></label>
       <label>Montant total à appeler <input id="v31CallManualAmount" type="number" step="0.01" value="0"></label>
       <label>Compte comptable <input id="v31CallAccountCode" value="701" readonly></label>
       <label>Libellé <input id="v31CallLabel" value="Appel de fonds"></label>
@@ -10868,6 +10881,11 @@ function updateSidebarButtons() {
     if(b.dataset.v31BalancePdf!==undefined) return v31PrintSimple('Balance générale', $id('balanceTable')?.innerHTML||'');
   }, true);
   document.addEventListener('change',(e)=>{ const t=e.target; if(!t) return; if(['v31CallCopro','v31CallYear','v31CallType'].includes(t.id)) v31RefreshCallModal(); if(t.id==='v31OdCoproFilter'){ const card=$id('odView')?.querySelector('.card'); if(card) card.dataset.v31Copro=t.value; v31RenderODModule(); } if(['v28AccountLookupCode','v28AccountLookupFrom','v28AccountLookupTo','v28AccountLookupCopro'].includes(t.id)) v31RenderAccountLookup(); if(t.id==='v28FiscalYearSettingsSelect'){ const y=(state.fiscalYears||[]).find(x=>String(x.id)===String(t.value))||{}; if($id('v28FiscalYearCode')) $id('v28FiscalYearCode').value=y.year_code||y.code||''; }});
+  document.addEventListener('change',(e)=>{
+    if(e.target?.id!=='v31CallYear') return;
+    const year=(state.fiscalYears||[]).find(x=>String(x.id)===String(e.target.value));
+    if(year?.starts_on&&$id('v31CallStart')) $id('v31CallStart').value=year.starts_on;
+  });
   document.addEventListener('input',(e)=>{ if(['v28AccountLookupCode'].includes(e.target?.id)) v31RenderAccountLookup(); });
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(v31RenderAll,800)); else setTimeout(v31RenderAll,800);
 })();
