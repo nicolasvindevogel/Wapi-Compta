@@ -10829,7 +10829,74 @@ function updateSidebarButtons() {
   }
   function v31GroupedAccounts(){ const map=new Map(); v31AccountingRows().forEach(e=>{ if(!map.has(e.code)) map.set(e.code,{code:e.code,label:v31AccLabel(e.code),debit:0,credit:0,lines:[]}); const r=map.get(e.code); r.debit+=e.debit; r.credit+=e.credit; r.lines.push(e); }); return [...map.values()].sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true})); }
   function v31RenderBalance(){ const el=$id('balanceTable'); if(!el) return; const rows=v31GroupedAccounts(); const d=rows.reduce((s,r)=>s+r.debit,0), c=rows.reduce((s,r)=>s+r.credit,0); const y=v31Year(); el.innerHTML=`<div class="v30-account-toolbar"><label>Exercice actif <input value="${esc(y?.label||'Tous exercices')}" disabled></label><button class="btn secondary" type="button" data-v31-balance-pdf>PDF balance</button></div><div class="v30-kpi-grid"><div class="v30-kpi-card"><span>Total débit</span><strong>${money31(d)}</strong></div><div class="v30-kpi-card"><span>Total crédit</span><strong>${money31(c)}</strong></div><div class="v30-kpi-card"><span>Écart</span><strong>${money31(d-c)}</strong></div></div><table class="v30-table"><thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th>Solde</th></tr></thead><tbody>${rows.map(r=>`<tr class="v30-row-click" data-v31-account-code="${esc(r.code)}"><td><strong>${esc(r.code)}</strong></td><td>${esc(r.label.replace(/^\d+\s*-\s*/,''))}</td><td>${money31(r.debit)}</td><td>${money31(r.credit)}</td><td>${money31(r.debit-r.credit)}</td></tr>`).join('')||'<tr><td colspan="5">Aucune donnée.</td></tr>'}</tbody></table>`; }
-  function v31RenderBilan(){ if(!$id('bilanActifTable')) return; const rows=v31GroupedAccounts(); const solde=r=>r.debit-r.credit; const actif=rows.filter(r=>['2','3','5'].includes(String(r.code)[0])&&solde(r)>=0).concat(rows.filter(r=>String(r.code).startsWith('410')&&solde(r)>0)); const passif=rows.filter(r=>String(r.code)[0]==='1'||(String(r.code).startsWith('440')&&(r.credit-r.debit)>0)||(['4'].includes(String(r.code)[0])&&(r.credit-r.debit)>0)); const at=actif.reduce((s,r)=>s+Math.abs(solde(r)),0), pt=passif.reduce((s,r)=>s+Math.abs(r.credit-r.debit),0); const html=(list,total,side)=>`<table class="v30-table"><thead><tr><th>Compte</th><th>Libellé</th><th>Montant</th></tr></thead><tbody>${list.map(r=>`<tr class="v30-row-click" data-v31-account-code="${esc(r.code)}"><td><strong>${esc(r.code)}</strong></td><td>${esc(r.label.replace(/^\d+\s*-\s*/,''))}</td><td>${money31(Math.abs(solde(r)))}</td></tr>`).join('')||'<tr><td colspan="3">Aucune donnée</td></tr>'}</tbody></table><div class="v30-bilan-total"><span>Total ${side}</span><strong>${money31(total)}</strong></div>`; $id('bilanActifTable').innerHTML=html(actif,at,'actif'); $id('bilanPassifTable').innerHTML=html(passif,pt,'passif'); if($id('bilanSummary')) $id('bilanSummary').innerHTML=`<span class="badge ok">Total actif : ${money31(at)}</span><span class="badge warn">Total passif : ${money31(pt)}</span><span class="badge ${Math.abs(at-pt)<0.01?'ok':'warn'}">Écart : ${money31(at-pt)}</span><button class="btn secondary small" data-v31-bilan-pdf type="button">PDF bilan</button>`; }
+  function v356OwnerAllocation(result, coproId, yearId){
+    const owners=(state.owners||[]).filter(o=>!coproId||o.copro_id===coproId);
+    if(!owners.length || Math.abs(result)<0.005) return owners.map(o=>({owner:o,amount:0}));
+    let weighted=owners.map(o=>{
+      let weight=0;
+      try{ const c=typeof settlementForOwnerV17==='function' ? settlementForOwnerV17(o.id,coproId,yearId,'owner') : null; weight=Math.abs(Number(c?.totalOwner||0)+Number(c?.totalPrivateBalance||0)+Number(c?.totalOccupant||0)); }catch(e){}
+      if(!weight) weight=(state.lots||[]).filter(l=>l.owner_id===o.id&&(!coproId||l.copro_id===coproId)&&l.active!==false).reduce((s,l)=>s+Math.abs(Number(l.quotities||0)),0);
+      return {owner:o,weight};
+    });
+    let total=weighted.reduce((s,x)=>s+x.weight,0);
+    if(!total){ weighted=weighted.map(x=>({...x,weight:1})); total=weighted.length; }
+    let cents=Math.round(result*100), used=0;
+    return weighted.map((x,i)=>{ const part=i===weighted.length-1?cents-used:Math.round(cents*x.weight/total); used+=part; return {owner:x.owner,amount:part/100}; });
+  }
+  function v356TierCode(tier,prefix,index){ return tier?.tier_code||tier?.code||tier?.owner_code||tier?.supplier_code||`${prefix}-${String(index+1).padStart(4,'0')}`; }
+  function v356BilanModel(){
+    const mode=state.v356BilanMode||'before'; const display=state.v356BilanDisplay||'summary'; const groupTiers=state.v356BilanGroupTiers!==false; const showOwners=state.v356BilanShowOwners===true; const opening=state.v356BilanOpening===true;
+    const year=v31Year(), coproId=v31CoproId();
+    let accounting=v31AccountingRows();
+    if(opening && year?.starts_on) accounting=accounting.filter(r=>!r.date||r.date<=year.starts_on);
+    const map=new Map(); accounting.forEach(e=>{ if(!map.has(e.code)) map.set(e.code,{code:e.code,label:v31AccLabel(e.code),debit:0,credit:0}); const r=map.get(e.code); r.debit+=e.debit; r.credit+=e.credit; });
+    const all=[...map.values()];
+    const result=all.filter(r=>['6','7'].includes(String(r.code)[0])).reduce((s,r)=>s+r.debit-r.credit,0);
+    let base=all.filter(r=>['1','2','3','4','5'].includes(String(r.code)[0]));
+    if(mode==='before' && Math.abs(result)>=0.005) base.push({code:'494',label:'494 - Compte de régularisation — résultat à répartir',debit:Math.max(result,0),credit:Math.max(-result,0),virtual:true});
+    const allocations=mode==='after'?v356OwnerAllocation(result,coproId,year?.id):[];
+    if(mode==='after' && Math.abs(result)>=0.005){
+      const p=base.find(r=>String(r.code)==='410');
+      if(p){ p.debit+=Math.max(result,0); p.credit+=Math.max(-result,0); }
+      else base.push({code:'410',label:v31AccLabel('410'),debit:Math.max(result,0),credit:Math.max(-result,0),virtual:true});
+    }
+    const ownerBalances=thirdRowsFor('owners',coproId,year?.id).map((r,i)=>{ const a=allocations.find(x=>x.owner.id===r.id)?.amount||0; const o=(state.owners||[]).find(x=>x.id===r.id)||{}; return {code:`410 / ${v356TierCode(o,'C',i)}`,label:r.name||'Copropriétaire',balance:Number(r.balance||0)+(mode==='after'?a:0),parent:'410'}; }).filter(r=>Math.abs(r.balance)>=0.005);
+    const supplierBalances=thirdRowsFor('suppliers',coproId,year?.id).map((r,i)=>{ const s=(state.suppliers||[]).find(x=>x.id===r.id)||{}; return {code:`440 / ${v356TierCode(s,'F',i)}`,label:r.name||'Fournisseur',balance:-Number(r.balance||0),parent:'440'}; }).filter(r=>Math.abs(r.balance)>=0.005);
+    const parentBalance=(code)=>{ const r=base.find(x=>String(x.code)===code); return r?Number(r.debit||0)-Number(r.credit||0):0; };
+    const reconcile=(details,code,label)=>{ const residual=Math.round((parentBalance(code)-details.reduce((s,x)=>s+x.balance,0))*100)/100; return Math.abs(residual)>=0.005?[...details,{code:`${code} / —`,label,balance:residual,parent:code,virtual:true}]:details; };
+    const ownersReconciled=reconcile(ownerBalances,'410','Solde non ventilé entre les copropriétaires');
+    const suppliersReconciled=reconcile(supplierBalances,'440','Solde non ventilé entre les fournisseurs');
+    const visible=[];
+    base.forEach(r=>{
+      const code=String(r.code), balance=Number(r.debit||0)-Number(r.credit||0);
+      if(code==='410'&&!groupTiers&&showOwners) ownersReconciled.forEach(x=>visible.push(x));
+      else if(code==='440'&&!groupTiers) suppliersReconciled.forEach(x=>visible.push(x));
+      else visible.push({code,label:r.label.replace(/^\d+\s*-\s*/,''),balance,virtual:r.virtual});
+    });
+    const asset=visible.filter(r=>r.balance>0.004).sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true}));
+    const liability=visible.filter(r=>r.balance<-.004).sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true}));
+    const assetTotal=asset.reduce((s,r)=>s+r.balance,0), liabilityTotal=liability.reduce((s,r)=>s-r.balance,0);
+    const trialDebit=accounting.reduce((s,r)=>s+r.debit,0), trialCredit=accounting.reduce((s,r)=>s+r.credit,0);
+    return {mode,display,year,result,asset,liability,assetTotal,liabilityTotal,trialGap:trialDebit-trialCredit,balanceGap:assetTotal-liabilityTotal,opening,groupTiers,showOwners};
+  }
+  function v356BilanTable(list,total,side){
+    const detailed=(state.v356BilanDisplay||'summary')==='detailed';
+    return `<table class="v30-table v356-bilan-table"><thead><tr><th>Compte</th><th>Libellé</th>${detailed?'<th>Débit</th><th>Crédit</th>':'<th>Montant</th>'}</tr></thead><tbody>${list.map(r=>`<tr class="${r.virtual?'v356-virtual-row':'v30-row-click'}" ${r.virtual?'':`data-v31-account-code="${esc(String(r.code).split(' / ')[0])}"`}><td><strong>${esc(r.code)}</strong></td><td>${esc(r.label)}</td>${detailed?`<td>${r.balance>0?money31(r.balance):''}</td><td>${r.balance<0?money31(-r.balance):''}</td>`:`<td>${money31(Math.abs(r.balance))}</td>`}</tr>`).join('')||`<tr><td colspan="${detailed?4:3}">Aucune donnée</td></tr>`}</tbody></table><div class="v30-bilan-total"><span>Total ${side}</span><strong>${money31(total)}</strong></div>`;
+  }
+  function v31RenderBilan(){
+    if(!$id('bilanActifTable')) return;
+    const model=v356BilanModel(); const years=(state.fiscalYears||[]).filter(y=>!v31CoproId()||y.copro_id===v31CoproId());
+    let filters=$id('v356BilanFilters');
+    if(!filters){ filters=document.createElement('div'); filters.id='v356BilanFilters'; $id('bilanActifTable').closest('.split-grid')?.insertAdjacentElement('beforebegin',filters); }
+    filters.className='v356-bilan-filters';
+    filters.innerHTML=`<label>Exercice comptable<select id="v356BilanYear">${years.map(y=>`<option value="${y.id}" ${String(y.id)===String(model.year?.id)?'selected':''}>${esc(y.label||y.year_code||'Exercice')}</option>`).join('')}</select></label><label>Répartition<select id="v356BilanMode"><option value="before" ${model.mode==='before'?'selected':''}>Avant répartition</option><option value="after" ${model.mode==='after'?'selected':''}>Après répartition</option></select></label><label>Mode d'affichage<select id="v356BilanDisplay"><option value="summary" ${model.display==='summary'?'selected':''}>Vue de synthèse</option><option value="detailed" ${model.display==='detailed'?'selected':''}>Vue détaillée</option></select></label><label class="v356-check"><input id="v356BilanOpening" type="checkbox" ${model.opening?'checked':''}> Bilan d'ouverture</label><label class="v356-check"><input id="v356BilanGroupTiers" type="checkbox" ${model.groupTiers?'checked':''}> Regrouper les tiers</label><label class="v356-check"><input id="v356BilanShowOwners" type="checkbox" ${model.showOwners?'checked':''} ${model.groupTiers?'disabled':''}> Afficher les sous-comptes copropriétaires</label><button class="btn small" data-v356-bilan-search type="button">Rechercher</button><button class="btn secondary small" data-v356-bilan-clear type="button">Vider les champs</button><button class="btn secondary small" data-v31-bilan-pdf type="button">PDF</button>`;
+    $id('bilanActifTable').innerHTML=v356BilanTable(model.asset,model.assetTotal,'actif');
+    $id('bilanPassifTable').innerHTML=v356BilanTable(model.liability,model.liabilityTotal,'passif');
+    const balanced=Math.abs(model.balanceGap)<0.01, trialOk=Math.abs(model.trialGap)<0.01;
+    const explanation=!trialOk?`La balance générale présente un déséquilibre de ${money31(model.trialGap)} : vérifie les écritures débit/crédit.`:balanced?(model.mode==='before'?`Le résultat net de ${money31(model.result)} est isolé au compte 494 avant répartition.`:`Le résultat net de ${money31(model.result)} est réparti dans les comptes individuels 410.`):`Le bilan présente encore un écart de ${money31(model.balanceGap)}. Utilise le diagnostic pour retrouver les comptes incomplets.`;
+    if($id('bilanSummary')) $id('bilanSummary').innerHTML=`<span class="badge ok">Total actif : ${money31(model.assetTotal)}</span><span class="badge ok">Total passif : ${money31(model.liabilityTotal)}</span><span class="badge ${balanced&&trialOk?'ok':'warn'}">Écart : ${money31(model.balanceGap)}</span><div class="v356-diagnostic ${balanced&&trialOk?'ok':'warn'}"><strong>${balanced&&trialOk?'Bilan équilibré':'Diagnostic comptable'}</strong><span>${esc(explanation)}</span></div>`;
+    state.v356LastBilanModel=model;
+  }
   function v31RenderAccountLookup(){ const table=$id('v28AccountLookupTable'); if(!table) return; const code=($id('v28AccountLookupCode')?.value||'').trim(); const coproId=state.activeCoproId||$id('v28AccountLookupCopro')?.value||''; const from=$id('v28AccountLookupFrom')?.value||'0000-01-01'; const to=$id('v28AccountLookupTo')?.value||'9999-12-31'; const rows=v31AccountingRows().filter(r=>(!code||String(r.code).startsWith(code))&&(!coproId||r.copro_id===coproId)&&(!r.date||(r.date>=from&&r.date<=to))).sort((a,b)=>String(a.date).localeCompare(String(b.date))); const debit=rows.reduce((s,r)=>s+r.debit,0), credit=rows.reduce((s,r)=>s+r.credit,0); if($id('v28AccountDebit')) $id('v28AccountDebit').textContent=money31(debit); if($id('v28AccountCredit')) $id('v28AccountCredit').textContent=money31(credit); if($id('v28AccountSolde')) $id('v28AccountSolde').textContent=money31(debit-credit); table.innerHTML=typeof table==='function'?'':`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Journal</th><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc((r.source_type||'').toUpperCase())}</td><td>${esc(r.code+' - '+r.label.replace(/^\d+\s*-\s*/,''))}</td><td>${esc(r.text)}</td><td>${r.debit?money31(r.debit):''}</td><td>${r.credit?money31(r.credit):''}</td></tr>`).join('')||'<tr><td colspan="6">Aucune ligne.</td></tr>'}</tbody></table></div>`; }
 
   /* Liste dépenses : factures + OD classe 6 */
@@ -10856,7 +10923,7 @@ function updateSidebarButtons() {
     if(typeof switchToView==='function') switchToView('accountLookup');
     setTimeout(()=>{ if($id('v28AccountLookupCode')) $id('v28AccountLookupCode').value=code; v31RenderAccountLookup(); if(window.v28RenderNav) window.v28RenderNav(); },150);
   }
-  function v31PrintSimple(title, html){ const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>body{font-family:Inter,Arial;margin:24px;color:#171B2B}table{width:100%;border-collapse:collapse;font-size:11px}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left}th{background:#171B2B;color:white}.btn,.actions-inline,input,select{display:none!important}</style></head><body><h1>${esc(title)}</h1>${html}<script>window.print();<\/script></body></html>`); w.document.close(); }
+  function v31PrintSimple(title, html){ const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Inter,Arial;margin:0;color:#171B2B}h1{font-size:22px;border-bottom:4px solid #1f7a8c;padding-bottom:10px}.pdf-meta{display:flex;justify-content:space-between;margin:12px 0 18px}.pdf-bilan-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.pdf-bilan-columns section{border:1px solid #dfe5ec;border-radius:10px;overflow:hidden}.pdf-bilan-columns h2{margin:0;padding:10px 12px;background:#eef7f8;color:#145d69;font-size:14px}table{width:100%;border-collapse:collapse;font-size:9px}td,th{border-bottom:1px solid #ddd;padding:5px;text-align:left}td:last-child,th:last-child{text-align:right}th{background:#171B2B;color:white}.v30-bilan-total{display:flex;justify-content:space-between;padding:10px 12px;background:#f3f6f9;font-weight:800}.btn,.actions-inline,input,select,.v356-bilan-filters{display:none!important}</style></head><body><h1>${esc(title)}</h1>${html}<script>window.print();<\/script></body></html>`); w.document.close(); }
 
   function v31RenderAll(){
     try{v31RenderNav();}catch(e){}
@@ -10886,10 +10953,12 @@ function updateSidebarButtons() {
     if(b.dataset.v31EditOd){ e.preventDefault(); return v31OpenOdModal(b.dataset.v31EditOd); }
     if(b.id==='v31SaveOdModalBtn'){ e.preventDefault(); return v31SaveOd(state.v31EditingOdGroupId||''); }
     if(b.id==='saveOdBtn'){ e.preventDefault(); e.stopImmediatePropagation(); return v31OpenOdModal(''); }
-    if(b.dataset.v31BilanPdf!==undefined) return v31PrintSimple('Bilan comptable', $id('bilanView')?.querySelector('.card')?.innerHTML||'');
+    if(b.dataset.v356BilanSearch!==undefined) return v31RenderBilan();
+    if(b.dataset.v356BilanClear!==undefined){ state.v356BilanMode='before'; state.v356BilanDisplay='summary'; state.v356BilanOpening=false; state.v356BilanGroupTiers=true; state.v356BilanShowOwners=false; return v31RenderBilan(); }
+    if(b.dataset.v31BilanPdf!==undefined){ const m=state.v356LastBilanModel||v356BilanModel(); const copro=(state.copros||[]).find(c=>c.id===v31CoproId()); const content=`<div class="pdf-meta"><strong>${esc(copro?.name||'Toutes les copropriétés')}</strong><span>${esc(m.year?.label||'Tous exercices')} — ${m.mode==='before'?'Avant répartition':'Après répartition'}</span></div><div class="pdf-bilan-columns"><section><h2>ACTIF</h2>${v356BilanTable(m.asset,m.assetTotal,'actif')}</section><section><h2>PASSIF</h2>${v356BilanTable(m.liability,m.liabilityTotal,'passif')}</section></div><p><strong>Résultat net de l'exercice :</strong> ${money31(m.result)}</p>`; return v31PrintSimple('Bilan comptable',content); }
     if(b.dataset.v31BalancePdf!==undefined) return v31PrintSimple('Balance générale', $id('balanceTable')?.innerHTML||'');
   }, true);
-  document.addEventListener('change',(e)=>{ const t=e.target; if(!t) return; if(['v31CallCopro','v31CallYear','v31CallType'].includes(t.id)) v31RefreshCallModal(); if(t.id==='v31OdCoproFilter'){ const card=$id('odView')?.querySelector('.card'); if(card) card.dataset.v31Copro=t.value; v31RenderODModule(); } if(['v28AccountLookupCode','v28AccountLookupFrom','v28AccountLookupTo','v28AccountLookupCopro'].includes(t.id)) v31RenderAccountLookup(); if(t.id==='v28FiscalYearSettingsSelect'){ const y=(state.fiscalYears||[]).find(x=>String(x.id)===String(t.value))||{}; if($id('v28FiscalYearCode')) $id('v28FiscalYearCode').value=y.year_code||y.code||''; }});
+  document.addEventListener('change',(e)=>{ const t=e.target; if(!t) return; if(['v31CallCopro','v31CallYear','v31CallType'].includes(t.id)) v31RefreshCallModal(); if(t.id==='v31OdCoproFilter'){ const card=$id('odView')?.querySelector('.card'); if(card) card.dataset.v31Copro=t.value; v31RenderODModule(); } if(['v28AccountLookupCode','v28AccountLookupFrom','v28AccountLookupTo','v28AccountLookupCopro'].includes(t.id)) v31RenderAccountLookup(); if(t.id==='v28FiscalYearSettingsSelect'){ const y=(state.fiscalYears||[]).find(x=>String(x.id)===String(t.value))||{}; if($id('v28FiscalYearCode')) $id('v28FiscalYearCode').value=y.year_code||y.code||''; } if(t.id==='v356BilanYear'){ state.activeFiscalYearId=t.value; const top=$id('activeFiscalYearSelect'); if(top) top.value=t.value; try{localStorage.setItem('wapi-one-active-fiscal-year',t.value)}catch(err){} v31RenderBilan(); } if(t.id==='v356BilanMode'){state.v356BilanMode=t.value;v31RenderBilan();} if(t.id==='v356BilanDisplay'){state.v356BilanDisplay=t.value;v31RenderBilan();} if(t.id==='v356BilanOpening'){state.v356BilanOpening=t.checked;v31RenderBilan();} if(t.id==='v356BilanGroupTiers'){state.v356BilanGroupTiers=t.checked;if(t.checked)state.v356BilanShowOwners=false;v31RenderBilan();} if(t.id==='v356BilanShowOwners'){state.v356BilanShowOwners=t.checked;v31RenderBilan();} });
   document.addEventListener('change',(e)=>{
     if(e.target?.id!=='v31CallYear') return;
     const year=(state.fiscalYears||[]).find(x=>String(x.id)===String(e.target.value));

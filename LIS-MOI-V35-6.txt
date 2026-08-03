@@ -1,0 +1,28 @@
+WAPI One — V35.6 — Bilan avant / après répartition
+
+Installation
+1. Remplacer le contenu du dépôt GitHub par le contenu de ce dossier.
+2. Conserver les dossiers et leur structure : index.html, css, js, assets et sql.
+3. Valider les changements dans GitHub.
+4. Recharger WAPI One avec CTRL + F5.
+
+Aucune nouvelle migration SQL n'est nécessaire pour cette version.
+
+Nouveautés du bilan
+- filtre Exercice comptable ;
+- vue Avant répartition / Après répartition ;
+- mode Synthèse / Détaillé ;
+- bilan d'ouverture ;
+- regroupement des tiers ;
+- affichage des sous-comptes copropriétaires ;
+- résultat net isolé en compte 494 avant répartition ;
+- transfert du résultat vers les comptes 410 après répartition ;
+- diagnostic séparant l'écart de balance d'un résultat à répartir ;
+- PDF paysage avec actif et passif côte à côte.
+
+Contrôle conseillé
+Comparer sur un exercice connu :
+- le total actif/passif avant répartition ;
+- le montant du compte 494 ;
+- la variation nette des comptes 410 après répartition ;
+- le résultat net affiché.
