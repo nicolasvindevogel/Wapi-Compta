@@ -97,9 +97,17 @@
     const batches=new Map((state.v28MeterBatches||[]).filter(b=>b.copro_id===coproId&&(!yearId||b.fiscal_year_id===yearId)&&b.status==='validated').map(b=>[b.id,b]));
     return (state.v28MeterLines||[]).filter(l=>batches.has(l.batch_id)).map(l=>({...l,batch:batches.get(l.batch_id)}));
   }
-  function balanceRow(ownerId,coproId,yearId){
-    try{return thirdRowsFor('owners',coproId,yearId).find(r=>r.id===ownerId)||{balance:0,details:[]};}
-    catch(e){return {balance:0,details:[]};}
+  function balanceRow(ownerId,coproId,yearId,year,actualCharges=0){
+    const opening=(state.thirdOpeningBalances||[]).find(b=>b.tier_type==='owner'&&String(b.tier_id)===String(ownerId)&&String(b.fiscal_year_id)===String(yearId));
+    const openingAmount=n(opening?.amount),details=[];
+    if(Math.abs(openingAmount)>=0.005) details.push({date:year?.starts_on||'',journal_code:'REP',label:'Solde reporté au début de l’exercice',debit:openingAmount>0?openingAmount:0,credit:openingAmount<0?Math.abs(openingAmount):0});
+    (state.bankTransactions||[]).filter(t=>String(t.copro_id)===String(coproId)&&t.tier_type==='owner'&&String(t.tier_id)===String(ownerId))
+      .filter(t=>!year||!t.transaction_date||(t.transaction_date>=year.starts_on&&t.transaction_date<=year.ends_on))
+      .sort((a,b)=>String(a.transaction_date||'').localeCompare(String(b.transaction_date||'')))
+      .forEach(t=>{const amount=n(t.amount);details.push({date:t.transaction_date||'',journal_code:'FIN',label:t.communication||t.description||'Mouvement financier',debit:amount<0?Math.abs(amount):0,credit:amount>0?amount:0});});
+    if(Math.abs(actualCharges)>=0.005) details.push({date:year?.ends_on||'',journal_code:'OD',label:'Votre décompte',debit:actualCharges>0?actualCharges:0,credit:actualCharges<0?Math.abs(actualCharges):0});
+    const debit=details.reduce((s,d)=>s+n(d.debit),0),credit=details.reduce((s,d)=>s+n(d.credit),0);
+    return {balanceBeforeCharges:debit-credit-actualCharges,balance:debit-credit,details,debit,credit};
   }
   function buildOwner(ownerId,coproId,yearId){
     const owner=(state.owners||[]).find(o=>o.id===ownerId)||{};
@@ -134,10 +142,10 @@
         building:n(l.batch.invoice_total),owner:n(l.amount),occupant:0,prorata:lot._prorata};
     });
     const consumptionTotal=consumptions.reduce((s,l)=>s+l.owner,0);
-    const bal=balanceRow(ownerId,coproId,yearId);
     const subtractOcc=!!byId('settlementSubtractOccupant')?.checked;
     const charged=common+privateCharges+consumptionTotal+(subtractOcc?0:occupant);
-    return {owner,year,lots,lines,consumptions,common,occupant,privateCharges,consumptionTotal,totalCharges:charged,building,balanceRow:bal,final:n(bal.balance)+charged};
+    const bal=balanceRow(ownerId,coproId,yearId,year,charged);
+    return {owner,year,lots,lines,consumptions,common,occupant,privateCharges,consumptionTotal,totalCharges:charged,building,balanceRow:bal,final:n(bal.balance)};
   }
   function ownerRows(coproId,yearId){
     const year=yearFor(coproId,yearId),search=(byId('settlementSearch')?.value||'').toLowerCase();
@@ -191,7 +199,7 @@
       <div class="settlement-section"><h3 class="settlement-section-title">Consommations <span>${money(calc.consumptionTotal)}</span></h3>${consumptionHtml(calc)}</div>
       <div class="settlement-section"><h3 class="settlement-section-title">Total charges</h3><div class="settlement-result-grid"><div class="settlement-result-card"><span>Charges communes</span><strong>${money(calc.common+calc.occupant)}</strong></div><div class="settlement-result-card"><span>Consommations et privatifs</span><strong>${money(calc.consumptionTotal+calc.privateCharges)}</strong></div><div class="settlement-result-card"><span>Total imputé</span><strong>${money(calc.totalCharges)}</strong></div></div></div>
       <div class="settlement-section"><h3 class="settlement-section-title">Situation de compte au ${esc(calc.year?.ends_on||'')}</h3>${situationHtml(calc)}</div>
-      <div class="settlement-big-result ${calc.final>=0?'positive':'negative'}"><div><strong>${calc.final>=0?'Montant à payer':'Montant à recevoir'}</strong><div class="muted-note">Solde avant décompte ${money(calc.balanceRow.balance)} + charges réelles ${money(calc.totalCharges)}</div></div><strong>${money(Math.abs(calc.final))}</strong></div>`;
+      <div class="settlement-big-result ${calc.final>=0?'positive':'negative'}"><div><strong>${calc.final>=0?'Montant à payer':'Montant à recevoir'}</strong><div class="muted-note">Solde avant décompte ${money(calc.balanceRow.balanceBeforeCharges)} + charges réelles ${money(calc.totalCharges)}</div></div><strong>${money(Math.abs(calc.final))}</strong></div>`;
   }
   function render(){
     installSettlementOptions();

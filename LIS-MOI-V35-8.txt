@@ -1,0 +1,15 @@
+WAPI One V35.8 — Décomptes, report de clôture et correctifs d'affichage
+
+Installation : remplacer le contenu du dépôt GitHub par le contenu de ce dossier,
+puis valider les changements. Aucune nouvelle migration SQL n'est nécessaire.
+
+Contrôles rapides après publication :
+1. Ouvrir un décompte et vérifier le solde final.
+2. Fermer puis rouvrir Compte comptable : une seule interface doit apparaître.
+3. Générer un PDF : le logo WAPI SYNDIK doit apparaître sans pictogramme cassé.
+
+Logique du solde final :
+solde reporté au début de l'exercice + charges réelles du décompte
++ éventuels remboursements - paiements reçus.
+Les appels provisionnels ne sont pas comptés une seconde fois.
+Le solde final n'est reporté vers l'exercice suivant qu'à la clôture.

@@ -39,7 +39,7 @@
     if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
     document.body.dataset.wapiVersion = '34.4.1';
-    document.title = 'WAPI One — V35.7';
+    document.title = 'WAPI One — V35.8';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -212,7 +212,7 @@
   }
 
   function refreshCoproContext(){
-    document.title = 'WAPI One — V35.7';
+    document.title = 'WAPI One — V35.8';
     const st = appState(), select = $('activeCoproSelect');
     if (!st || !select) return;
     const selected = st.activeCoproId || select.value || '';
@@ -363,6 +363,7 @@
     return window.v31AccountingRows().filter(r => (!code || String(r.code) === code || String(r.code).startsWith(code)) && (!coproId || String(r.copro_id) === String(coproId)) && (!r.date || (r.date >= from && r.date <= to))).sort((a,b) => String(a.date).localeCompare(String(b.date)));
   }
   function enhanceAccountLookup(){
+    if(document.querySelector('script[src*="v35_2_vcs_billing_config_accounts"]')) return;
     const input = $('v28AccountLookupCode'), view = $('accountLookupView');
     if (!input || !view || $('w332AccountSelect')) return;
     const form = input.closest('.form-grid');
@@ -419,11 +420,11 @@
     refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V35.7'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V35.8'; document.querySelector('.w332-page-head')?.appendChild(version);
     // L'ancien moteur termine un chargement différé des profils ; on réaffirme
     // une seule fois la version et le contexte, sans observateur ni intervalle.
     setTimeout(() => {
-      document.title = 'WAPI One — V35.7';
+      document.title = 'WAPI One — V35.8';
       refreshCoproContext();
       syncTopUniverse();
     }, 1600);

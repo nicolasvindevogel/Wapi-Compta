@@ -10365,7 +10365,13 @@ function updateSidebarButtons() {
     const next=(state.fiscalYears||[]).filter(n=>n.copro_id===y.copro_id && n.starts_on>y.ends_on).sort((a,b)=>String(a.starts_on).localeCompare(String(b.starts_on)))[0];
     const yearId=y.id; const rows=(typeof thirdRowsFor==='function'?thirdRowsFor('all', y.copro_id, yearId):[]);
     if(next){
-      for(const r of rows){
+      const suppliers=rows.filter(r=>r.type==='supplier');
+      const owners=(state.owners||[]).filter(o=>String(o.copro_id)===String(y.copro_id)).map(o=>{
+        let final=0;
+        try{final=Number(window.WapiSettlementV345?.buildOwner?.(o.id,y.copro_id,yearId)?.final||0);}catch(_){const row=rows.find(r=>r.type==='owner'&&String(r.id)===String(o.id));final=Number(row?.balance||0);}
+        return {type:'owner',id:o.id,balance:final};
+      });
+      for(const r of [...suppliers,...owners]){
         const amount = r.type==='supplier' ? -Number(r.balance||0) : Number(r.balance||0);
         if(Math.abs(amount)<0.01) continue;
         const existing=(state.thirdOpeningBalances||[]).find(b=>b.fiscal_year_id===next.id && b.tier_type===r.type && b.tier_id===r.id);
