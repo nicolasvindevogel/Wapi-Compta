@@ -15,12 +15,15 @@
   }
   async function syncCoproBanks(){
     const source=state?.v28CoproBankAccounts||[], target=state?.bankAccounts||[];
+    let changed=false;
     for(const b of source){
       if(!b.iban||target.some(x=>String(x.copro_id)===String(b.copro_id)&&String(x.iban||'').replace(/\s/g,'')===String(b.iban).replace(/\s/g,'')))continue;
-      const payload={copro_id:b.copro_id,label:b.label||'Compte bancaire',iban:b.iban,bic:b.bic||null,account_id:b.account_id||null,account_code:b.account_code||null,active:b.active!==false,created_by:currentUser?.id||null};
+      const payload={copro_id:b.copro_id,label:b.label||'Compte bancaire',iban:b.iban,bic:b.bic||null,active:b.active!==false,created_by:currentUser?.id||null};
       const r=await supabaseClient.from('compta_bank_accounts').insert(payload).select('*').single();
-      if(!r.error&&r.data){state.bankAccounts.push(r.data);target.push(r.data);}
+      if(!r.error&&r.data){state.bankAccounts.push(r.data);target.push(r.data);changed=true;}
+      else if(r.error) console.error('Liaison compte bancaire financier:',r.error.message);
     }
+    if(changed&&typeof loadBankAccounts==='function')await loadBankAccounts();
   }
   function issuerOptions(selected=''){return `<option value="">Choisir la société émettrice…</option>`+issuers.filter(x=>x.active!==false).map(x=>`<option value="${x.id}" ${String(x.id)===String(selected)?'selected':''}>${esc(x.company_name)} (${esc(x.invoice_prefix||x.code)})</option>`).join('');}
   function supplierOptions(selected=''){return `<option value="">Choisir le fournisseur correspondant…</option>`+(state.suppliers||[]).map(x=>`<option value="${x.id}" ${String(x.id)===String(selected)?'selected':''}>${esc((x.supplier_code?x.supplier_code+' · ':'')+(x.name||''))}</option>`).join('');}

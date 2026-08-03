@@ -1897,7 +1897,12 @@ function updateSidebarButtons() {
       return '<option value="">Choisir...</option>' + state.accounts.map((a) => `<option value="${a.id}" ${selected === a.id ? 'selected' : ''}>${escapeHtml((a.code || '') + ' - ' + (a.label || ''))}</option>`).join('');
     }
     function bankAccountOptions(selected, includeAll = false) {
-      return (includeAll ? '<option value="">Tous les comptes</option>' : '<option value="">Choisir...</option>') + state.bankAccounts.map((b) => `<option value="${b.id}" ${selected === b.id ? 'selected' : ''}>${escapeHtml((b.compta_copros?.name || '') + ' - ' + (b.label || '') + (b.iban ? ' (' + b.iban + ')' : ''))}</option>`).join('');
+      const coproId = state.activeCoproId || '';
+      const accounts = state.bankAccounts.filter((b) => b.active !== false && (!coproId || String(b.copro_id) === String(coproId)));
+      const empty = coproId
+        ? (includeAll ? '<option value="">Tous les comptes bancaires de la copropriété</option>' : '<option value="">Choisir le compte bancaire de cette copropriété…</option>')
+        : '<option value="">Sélectionne d’abord une copropriété</option>';
+      return empty + accounts.map((b) => `<option value="${b.id}" ${String(selected||'') === String(b.id) ? 'selected' : ''}>${escapeHtml((b.label || 'Compte bancaire') + (b.iban ? ' · ' + b.iban : ''))}</option>`).join('');
     }
     function tierName(type, id) {
       if (type === 'owner') return state.owners.find((o) => o.id === id)?.display_name || '';
@@ -10296,7 +10301,11 @@ function updateSidebarButtons() {
     try{
       const keepCopro=state.activeCoproId||$id('financialLedgerCopro')?.value||'';
       if($id('financialLedgerCopro')){ $id('financialLedgerCopro').innerHTML='<option value="">Toutes</option>'+(state.copros||[]).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(''); $id('financialLedgerCopro').value=keepCopro; }
-      if($id('financialLedgerAccount') && typeof bankAccountOptions==='function') $id('financialLedgerAccount').innerHTML=bankAccountOptions(null,true);
+      const keepAccount=$id('financialLedgerAccount')?.value||'';
+      if($id('financialLedgerAccount') && typeof bankAccountOptions==='function'){
+        $id('financialLedgerAccount').innerHTML=bankAccountOptions(keepAccount,true);
+        if([...$id('financialLedgerAccount').options].some(o=>String(o.value)===String(keepAccount))) $id('financialLedgerAccount').value=keepAccount;
+      }
       const accountId=$id('financialLedgerAccount')?.value||''; const coproId=state.activeCoproId||$id('financialLedgerCopro')?.value||''; const lettering=$id('financialLedgerLettering')?.value||''; const search=($id('financialLedgerSearch')?.value||'').toLowerCase();
       let rows=(state.bankTransactions||[]).filter(t=>{ if(accountId&&t.bank_account_id!==accountId)return false; if(coproId&&t.copro_id!==coproId)return false; if(lettering==='lettered'&&!t.reconciled)return false; if(lettering==='unlettered'&&t.reconciled)return false; if(search&&![t.statement_number,t.communication,t.description,t.counterparty_name,(typeof tierName==='function'?tierName(t.tier_type,t.tier_id):'')].join(' ').toLowerCase().includes(search))return false; return true; });
       const total=rows.reduce((s,t)=>s+Number(t.amount||0),0); if($id('financialLedgerBankSummary')) $id('financialLedgerBankSummary').innerHTML=`<span class="badge">Solde total banque : ${safeMoney(total)}</span><span class="badge">Lignes : ${rows.length}</span>`;

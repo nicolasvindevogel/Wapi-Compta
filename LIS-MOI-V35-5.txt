@@ -1,0 +1,26 @@
+WAPI One V35.5 — navigation facturation et cohérence bancaire
+
+1. Dans Supabase > SQL Editor, exécuter :
+   sql/043_v35_5_navigation_comptes_bancaires.sql
+
+2. Dans GitHub, remplacer le contenu du site avec celui du ZIP V35.5 :
+   - index.html
+   - assets/
+   - css/
+   - js/
+   - sql/
+
+3. Valider les changements dans GitHub puis actualiser WAPI One avec CTRL + F5.
+
+Contrôles rapides après installation :
+- Facturation syndic : cliquer successivement sur Tableau mensuel, Contrats,
+  Factures et Export Clearfact. Le contenu doit réellement changer.
+- Sélectionner CONCORDE puis ouvrir Comptabilité > Encodage financier >
+  Nouvel extrait manuel. Le compte courant de CONCORDE doit être proposé.
+- Ouvrir États comptables > Grand livre financier. Le même compte doit être
+  disponible et aucun compte d'une autre copropriété ne doit apparaître.
+- En mode global, l'encodage financier exige d'abord la sélection d'une copropriété.
+
+La migration SQL rattache automatiquement les comptes déjà encodés dans les
+réglages copropriété au moteur financier, et maintient cette liaison pour les
+futurs comptes.

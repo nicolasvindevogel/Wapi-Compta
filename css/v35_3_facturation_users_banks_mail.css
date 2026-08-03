@@ -12,3 +12,5 @@
 .w353-send-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .call-owner-select,[data-call-select]{width:15px!important;height:15px!important}
 @media(max-width:900px){.w353-user-row{grid-template-columns:1fr}.w353-toolbar{align-items:flex-start;flex-direction:column}}
+.w355-bank-context{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:11px 14px;border:1px solid #cfe2d8;border-radius:10px;background:#f3fbf6;color:#183d2b}
+.w355-bank-context span{font-size:12px;color:#466454}

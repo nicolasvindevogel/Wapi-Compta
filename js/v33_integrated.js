@@ -615,7 +615,7 @@
    Objectif : appliquer le filtre gestionnaire dans les modules multi-copro utiles,
    sans MutationObserver ni boucle de rendu. */
 (function(){
-  const VERSION = 'WAPI One — V34.4.1';
+  const VERSION = 'WAPI One — V35.5';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const patched = new Set();
   const coproSelectIds = [
@@ -864,7 +864,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V34.4.1';
+  const VERSION = 'WAPI One — V35.5';
   window.WAPI_ONE_VERSION = 'V33 - socle propre stabilisé';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const ACTIVE_COPRO_KEY = 'wapi_compta_active_copro_id';
@@ -1147,8 +1147,18 @@
   async function addBank(coproId){
     const c = client(); const iban = ($id('v33BankIban')?.value || '').trim(); if(!c || !iban){ alert('IBAN obligatoire.'); return; }
     const accId = $id('v33BankAccountAccounting')?.value || null; const acc = arr('accounts').find(a => String(a.id) === String(accId)) || {};
-    const {error} = await c.from('compta_copro_bank_accounts').insert({copro_id:coproId,label:($id('v33BankLabel')?.value||'').trim() || 'Compte bancaire',iban,bic:($id('v33BankBic')?.value||'').trim(),account_id:accId,account_code:acc.code || '',account_type:$id('v33BankType')?.value || 'current',active:true});
-    if(error){ alert(error.message); return; } state.v28CoproBankAccounts = null; await openSettingsPopup(coproId);
+    const bank = {copro_id:coproId,label:($id('v33BankLabel')?.value||'').trim() || 'Compte bancaire',iban,bic:($id('v33BankBic')?.value||'').trim(),account_id:accId,account_code:acc.code || '',account_type:$id('v33BankType')?.value || 'current',active:true};
+    const source = await c.from('compta_copro_bank_accounts').insert(bank);
+    if(source.error){ alert(source.error.message); return; }
+    const existing = await c.from('compta_bank_accounts').select('id').eq('copro_id',coproId).eq('iban',iban).limit(1);
+    if(existing.error){ alert('Le compte est enregistré dans les réglages, mais la liaison financière a échoué : '+existing.error.message); return; }
+    if(!(existing.data||[]).length){
+      const financial = await c.from('compta_bank_accounts').insert({copro_id:coproId,label:bank.label,iban:bank.iban,bic:bank.bic||null,active:true,created_by:window.currentUser?.id||null});
+      if(financial.error){ alert('Le compte est enregistré dans les réglages, mais la liaison financière a échoué : '+financial.error.message); return; }
+    }
+    state.v28CoproBankAccounts = null;
+    if(typeof loadAll === 'function') await loadAll();
+    await openSettingsPopup(coproId);
   }
   async function addFolder(coproId){
     const c = client(); const name = prompt('Nom du dossier'); if(!c || !name) return;
@@ -1252,7 +1262,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V34.4.1';
+  const VERSION = 'WAPI One — V35.5';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1344,7 +1354,10 @@
       if(viewName === 'codaPilot' && typeof window.v33RenderCodaPilotV322 === 'function') setTimeout(window.v33RenderCodaPilotV322, 0);
       if(viewName === 'invoices' && typeof window.v33RenderInvoicesV322 === 'function') setTimeout(window.v33RenderInvoicesV322, 0);
       if(viewName === 'copros' && typeof window.v33RenderCoprosV322 === 'function') setTimeout(window.v33RenderCoprosV322, 0);
-      if(viewName === 'syndicBilling' && typeof renderSyndicBillingV25 === 'function') setTimeout(renderSyndicBillingV25, 0);
+      if(viewName === 'syndicBilling') setTimeout(() => {
+        if(typeof window.wapiRenderSyndicBilling === 'function') window.wapiRenderSyndicBilling();
+        else if(typeof renderSyndicBillingV25 === 'function') renderSyndicBillingV25();
+      }, 0);
     }catch(e){ console.warn('V33.1 rendu vue', e); }
   }
   function activateStable(viewName, title, syndicTab){
