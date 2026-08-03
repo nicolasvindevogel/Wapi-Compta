@@ -1,0 +1,20 @@
+WAPI ONE V35.4 - FACTURATION RECURRENTE AUTOMATIQUE
+
+INSTALLATION
+1. Exécuter dans Supabase SQL Editor :
+   sql/041_v35_4_facturation_recurrente_automatique.sql
+2. Envoyer/remplacer le contenu du ZIP dans GitHub.
+3. Commit puis CTRL + F5.
+
+FONCTIONNEMENT
+- Un nouveau contrat est automatique par défaut.
+- WAPI One crée et comptabilise uniquement les mois arrivés à échéance.
+- Si le contrat commence dans le passé, le formulaire demande s'il faut rattraper ces mois.
+- À chaque ouverture, les mensualités manquantes des contrats automatiques sont traitées.
+- La page Tableau mensuel devient une file des PDF comptabilisés encore à exporter pour Clearfact.
+- Arrêter conserve toutes les factures et empêche les prochaines.
+- Supprimer est possible uniquement si aucune facture officielle n'a été comptabilisée.
+- Les anciens contrats restent manuels par sécurité. Ouvrir Modifier pour activer leur automatisation.
+
+TEST CONSEILLÉ
+Créer d'abord un contrat de test sur une copropriété test, avec une période courte et un montant réduit.

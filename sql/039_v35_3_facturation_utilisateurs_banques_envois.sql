@@ -30,10 +30,25 @@ values ('WAPI','WAPI SYNDIK','WS'),('DLT','DL TECHNIK','DLT')
 on conflict(code) do nothing;
 
 alter table if exists public.compta_syndic_billing_contracts
+  add column if not exists issuer_id uuid references public.compta_billing_issuers(id) on delete restrict,
+  add column if not exists service_family text not null default 'syndic_fee',
   add column if not exists contract_year integer,
   add column if not exists renewed_from_contract_id uuid references public.compta_syndic_billing_contracts(id) on delete set null,
   add column if not exists indexation_rate numeric(8,4),
   add column if not exists renewed_at timestamptz;
+
+alter table if exists public.compta_syndic_invoices
+  add column if not exists issuer_id uuid references public.compta_billing_issuers(id) on delete restrict;
+
+update public.compta_syndic_billing_contracts c
+set issuer_id=i.id
+from public.compta_billing_issuers i
+where c.issuer_id is null and i.code='WAPI';
+
+update public.compta_syndic_invoices f
+set issuer_id=i.id
+from public.compta_billing_issuers i
+where f.issuer_id is null and i.code='WAPI';
 
 update public.compta_syndic_billing_contracts
 set contract_year = coalesce(
@@ -102,3 +117,5 @@ begin
 end $$;
 
 grant execute on function public.wapi_next_issuer_invoice_number(uuid) to authenticated;
+
+notify pgrst, 'reload schema';
