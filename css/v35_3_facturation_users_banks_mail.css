@@ -1,0 +1,14 @@
+/* V35.3 : une seule navigation, formulaires plus lisibles */
+#syndicBillingView>.syndic-tabs{display:none!important}
+.w353-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.w353-toolbar h2,.w353-toolbar h3{margin:0}.w353-toolbar p{margin:4px 0 0;color:var(--muted)}
+.w353-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.w353-card{border:1px solid var(--line);border-radius:13px;background:#fff;padding:16px}
+.w353-card h3{margin:0 0 12px}.w353-card label{display:block;margin:9px 0;font-size:12px;font-weight:700}
+.w353-card input,.w353-card select,.w353-card textarea{width:100%;margin-top:5px}
+.w353-contract-actions{display:flex;gap:7px;flex-wrap:wrap}
+.w353-user-row{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(210px,1.4fr) 140px 110px auto;gap:12px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line)}
+.w353-bank-context{padding:10px 13px;border-left:4px solid var(--brand);background:#f4fafb;border-radius:8px;margin-bottom:12px}
+.w353-send-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.call-owner-select,[data-call-select]{width:15px!important;height:15px!important}
+@media(max-width:900px){.w353-user-row{grid-template-columns:1fr}.w353-toolbar{align-items:flex-start;flex-direction:column}}

@@ -1,65 +1,19 @@
--- WAPI One V35.1.1
--- Correctif : conserver une VCS lorsque l'identite d'un coproprietaire est modifiee.
+WAPI ONE V35.3
 
-BEGIN;
+1. Dans Supabase > SQL Editor, exécuter :
+   sql/039_v35_3_facturation_utilisateurs_banques_envois.sql
 
--- Une meme personne peut avoir plusieurs cles d'identite historiques
--- (ancienne/nouvelle adresse mail, changement d'adresse, presence dans plusieurs ACP)
--- tout en conservant une seule communication VCS.
-ALTER TABLE IF EXISTS public.wapi_owner_vcs_registry
-  DROP CONSTRAINT IF EXISTS wapi_owner_vcs_registry_vcs_key;
+2. Dans GitHub, envoyer/remplacer tout le contenu du ZIP.
 
-DROP INDEX IF EXISTS public.wapi_owner_vcs_registry_vcs_key;
+3. Commit puis recharger le site avec CTRL + F5.
 
-CREATE INDEX IF NOT EXISTS wapi_owner_vcs_registry_vcs_idx
-  ON public.wapi_owner_vcs_registry(vcs);
+TESTS RAPIDES
+- Facturation syndic > Réglages : ouvrir WAPI SYNDIK et DL TECHNIK, puis choisir leur fournisseur correspondant.
+- Contrats : la société émettrice doit être proposée et le bouton Renouveler / indexer visible.
+- Copro CONCORDE > Grand livre financier : seuls ses comptes bancaires doivent être proposés.
+- AG : les boutons Envoyer convocations et Envoyer PV doivent ouvrir l'envoi mail/courrier.
+- Appels : rien ne part sans sélection ; cocher un appel envoie tout son groupe, cocher une personne n'envoie qu'à elle.
+- Configuration > Utilisateurs : modifier coordonnées/rôle, réinitialiser un mot de passe ou changer le sien.
 
--- Le trigger conserve OLD.vcs lors d'une modification et enregistre la nouvelle
--- cle comme alias. Pour une creation, il recherche d'abord une identite connue,
--- sinon il genere une nouvelle VCS via la sequence.
-CREATE OR REPLACE FUNCTION public.wapi_assign_owner_vcs()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  wanted_key text;
-  existing_vcs text;
-  next_value bigint;
-BEGIN
-  wanted_key := public.wapi_owner_identity_key(
-    NEW.email, NEW.display_name, NEW.street, NEW.street_number, NEW.postal_code, NEW.city
-  );
-  NEW.identity_key := wanted_key;
-
-  SELECT r.vcs INTO existing_vcs
-  FROM public.wapi_owner_vcs_registry r
-  WHERE r.identity_key = wanted_key;
-
-  IF existing_vcs IS NOT NULL THEN
-    NEW.vcs := existing_vcs;
-  ELSE
-    IF TG_OP = 'UPDATE' AND OLD.vcs IS NOT NULL AND trim(OLD.vcs) <> '' THEN
-      existing_vcs := OLD.vcs;
-    ELSIF NEW.vcs IS NOT NULL AND trim(NEW.vcs) <> '' THEN
-      existing_vcs := NEW.vcs;
-    ELSE
-      next_value := nextval('public.wapi_vcs_sequence');
-      existing_vcs := public.wapi_format_vcs(next_value);
-    END IF;
-
-    INSERT INTO public.wapi_owner_vcs_registry(identity_key, vcs)
-    VALUES (wanted_key, existing_vcs)
-    ON CONFLICT (identity_key) DO UPDATE SET vcs = EXCLUDED.vcs
-    RETURNING vcs INTO existing_vcs;
-    NEW.vcs := existing_vcs;
-  END IF;
-
-  NEW.address := trim(concat_ws(' ', nullif(NEW.street, ''), nullif(NEW.street_number, '')))
-    || CASE WHEN coalesce(NEW.postal_code, '') <> '' OR coalesce(NEW.city, '') <> ''
-       THEN ', ' || trim(concat_ws(' ', nullif(NEW.postal_code, ''), nullif(NEW.city, ''))) ELSE '' END
-    || CASE WHEN coalesce(NEW.country, '') <> '' THEN ', ' || NEW.country ELSE '' END;
-  RETURN NEW;
-END;
-$$;
-
-COMMIT;
+IMPORTANT
+Les mots de passe existants ne sont jamais affichés. C'est une règle de sécurité Supabase.
