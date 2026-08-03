@@ -1,0 +1,36 @@
+/* WAPI One V34.8 — OCR intelligent et suggestions non associées */
+.ocr-smart-suggestion {
+  margin: 8px 0 2px;
+  padding: 10px 12px;
+  border: 1px solid #f5cf87;
+  border-radius: 10px;
+  background: #fff9ed;
+}
+.ocr-smart-suggestion strong { display:block; margin-bottom:4px; color:#7a4b00; }
+.ocr-smart-suggestion .actions-inline { margin-top:8px; }
+.ocr-smart-source {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#edf7f9;
+  color:#176b76;
+  font-size:11px;
+  font-weight:700;
+}
+.ocr-amount-check {
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:10px;
+  border:1px solid var(--line,#dfe5ea);
+  border-radius:12px;
+  background:#f8fafc;
+}
+.ocr-amount-check > div span { display:block; color:var(--muted,#667085); font-size:11px; }
+.ocr-amount-check > div strong { display:block; margin-top:3px; }
+.ocr-amount-check.is-valid { border-color:#a9dfbb; background:#f0fdf4; }
+.ocr-amount-check.is-warning { border-color:#f5cf87; background:#fff9ed; }
+@media(max-width:720px){.ocr-amount-check{grid-template-columns:1fr}}

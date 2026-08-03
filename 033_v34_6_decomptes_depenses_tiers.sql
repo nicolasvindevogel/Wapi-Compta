@@ -1,0 +1,4 @@
+-- WAPI One V33
+-- Aucune nouvelle migration obligatoire pour la V33 si les scripts V32.2 et V32.3 ont déjà été exécutés.
+-- La V33 nettoie l'interface et consolide les patchs côté application.
+-- À garder comme repère de version.

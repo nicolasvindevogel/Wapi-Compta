@@ -1,0 +1,115 @@
+/* WAPI One V34.7 — stabilisation Tiers, Financier et OCR */
+
+/* Onglets Tiers : un seul état actif, toujours lisible. */
+#ownersView [data-identity-type].active {
+  color: #fff !important;
+  background: var(--brand, #245b78) !important;
+  border-color: var(--brand, #245b78) !important;
+  box-shadow: 0 5px 14px rgba(36, 91, 120, .18);
+}
+
+.v347-tier-toolbar,
+.v347-financial-context,
+.v347-ocr-batch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--line, #dfe5ea);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.v347-tier-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.v347-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted, #667085);
+}
+
+/* Les cases de sélection de la liste des dépenses ne deviennent plus des boutons. */
+#expensesListView input[type="checkbox"],
+#expensesListView .v346-expense-options input[type="checkbox"],
+.v346-expense-table input[type="checkbox"] {
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  width: 15px !important;
+  height: 15px !important;
+  min-width: 15px !important;
+  max-width: 15px !important;
+  min-height: 15px !important;
+  padding: 0 !important;
+  margin: 0 6px 0 0 !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  vertical-align: middle;
+}
+
+#expensesListView .v346-expense-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+
+.v347-financial-context {
+  justify-content: flex-start;
+  color: var(--muted, #667085);
+}
+
+.v347-financial-context strong { color: var(--ink, #172b3a); }
+.v347-financial-context .status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #12b76a;
+  flex: 0 0 auto;
+}
+
+.v347-movement-toggle {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #edf2f6;
+}
+
+.v347-movement-toggle button {
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--muted, #667085);
+  font: inherit;
+  cursor: pointer;
+}
+
+.v347-movement-toggle button.active {
+  color: #fff;
+  background: var(--brand, #245b78);
+}
+
+.v347-recurring-safe {
+  border-left: 4px solid #12b76a !important;
+}
+
+.v347-ocr-batch {
+  margin-top: 10px;
+  background: #f0fdf4;
+  border-color: #b7ebc6;
+}
+
+@media (max-width: 760px) {
+  .v347-tier-toolbar,
+  .v347-ocr-batch { align-items: stretch; flex-direction: column; }
+}
