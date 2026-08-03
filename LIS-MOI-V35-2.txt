@@ -1,0 +1,30 @@
+WAPI ONE V35.2 - VCS / FACTURATION / CONFIGURATION / COMPTE COMPTABLE
+
+1. Dans Supabase > SQL Editor, executez :
+   sql/038_v35_2_vcs_facturation_configuration.sql
+
+   Cette migration :
+   - repare les VCS existantes et les doublons incorrects ;
+   - conserve une meme VCS pour une meme personne dans plusieurs coproprietes ;
+   - cree WAPI SYNDIK et DL TECHNIK comme societes emettrices ;
+   - rattache les anciens contrats et factures a WAPI SYNDIK ;
+   - ajoute les preferences generales.
+
+2. Dans GitHub, envoyez/remplacez tout le contenu du ZIP.
+
+3. Commit, attendez le deploiement GitHub Pages, puis CTRL + F5.
+
+4. A completer une seule fois :
+   Facturation syndic > Reglages
+   Ouvrez WAPI SYNDIK puis DL TECHNIK et completez TVA, adresse, IBAN,
+   prefixe et couleur PDF.
+
+NOUVEAU PARCOURS MENSUEL
+- Les brouillons manquants sont prepares automatiquement quand le mois est ouvert.
+- Controlez puis validez les factures du mois.
+- Telechargez le ZIP Clearfact : il contient un PDF distinct par facture,
+  range par societe emettrice.
+
+IMPORTANT
+Les anciens contrats et factures ne sont pas supprimes. Les contrats existants
+sont attribues a WAPI SYNDIK et restent modifiables.
