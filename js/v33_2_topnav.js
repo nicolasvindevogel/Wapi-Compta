@@ -39,7 +39,7 @@
     if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
     document.body.dataset.wapiVersion = '34.4.1';
-    document.title = 'WAPI One — V35.6';
+    document.title = 'WAPI One — V35.7';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -212,7 +212,7 @@
   }
 
   function refreshCoproContext(){
-    document.title = 'WAPI One — V35.6';
+    document.title = 'WAPI One — V35.7';
     const st = appState(), select = $('activeCoproSelect');
     if (!st || !select) return;
     const selected = st.activeCoproId || select.value || '';
@@ -384,7 +384,7 @@
     setTimeout(refreshOptions,1000);
   }
   function printable(title, body, extraCss=''){
-    const popup = window.open('','_blank','noopener,noreferrer');
+    const popup = window.open('','_blank');
     if (!popup) return alert('Le navigateur a bloqué la fenêtre PDF.');
     popup.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;color:#1d2435;margin:20mm}h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;color:#5f6678;margin:0 0 16px}table{width:100%;border-collapse:collapse}th,td{padding:7px;border-bottom:1px solid #ddd;text-align:left}th{background:#f3f4f8}.num{text-align:right}.summary{display:flex;gap:18px;margin:14px 0;font-weight:bold}${extraCss}</style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
     popup.document.close();
@@ -419,11 +419,11 @@
     refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V35.6'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V35.7'; document.querySelector('.w332-page-head')?.appendChild(version);
     // L'ancien moteur termine un chargement différé des profils ; on réaffirme
     // une seule fois la version et le contexte, sans observateur ni intervalle.
     setTimeout(() => {
-      document.title = 'WAPI One — V35.6';
+      document.title = 'WAPI One — V35.7';
       refreshCoproContext();
       syncTopUniverse();
     }, 1600);

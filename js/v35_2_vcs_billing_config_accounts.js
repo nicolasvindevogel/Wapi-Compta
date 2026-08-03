@@ -114,13 +114,15 @@
   const oldPdf=typeof syndicInvoicePdfBlobV23==='function'?syndicInvoicePdfBlobV23:null;
   syndicInvoicePdfBlobV23=async function(inv){
     const em=invoiceIssuer(inv); if(!window.jspdf?.jsPDF||!em.id) return oldPdf(inv);
-    const d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}), color=em.pdf_color||'#5b4bdb';
-    d.setFillColor(color);d.rect(0,0,210,35,'F');d.setTextColor(255,255,255);d.setFontSize(20);d.text(em.company_name||'Facture',15,17);d.setFontSize(9);d.text(em.vat_number||'',15,25);
-    d.setTextColor(30,38,55);d.setFontSize(18);d.text('FACTURE',195,52,{align:'right'});d.setFontSize(10);d.text(inv.invoice_number||'',195,59,{align:'right'});d.text(`Date : ${inv.invoice_date||''}`,195,65,{align:'right'});
-    d.setFillColor(245,246,250);d.roundedRect(15,48,105,30,2,2,'F');d.setFontSize(9);d.text('CLIENT',20,56);d.setFontSize(12);d.text(inv.compta_copros?.name||inv.customer_name||'',20,65,{maxWidth:90});
-    d.setFontSize(10);d.text('Description',15,94);d.text('HTVA',140,94,{align:'right'});d.text('TVA',165,94,{align:'right'});d.text('TVAC',195,94,{align:'right'});d.line(15,98,195,98);d.text(inv.description||'',15,107,{maxWidth:105});d.text(euro(inv.amount_subtotal),140,107,{align:'right'});d.text(euro(inv.vat_amount),165,107,{align:'right'});d.text(euro(inv.amount_total),195,107,{align:'right'});
-    d.setFillColor(color);d.roundedRect(125,123,70,18,2,2,'F');d.setTextColor(255,255,255);d.setFontSize(13);d.text(`TOTAL  ${euro(inv.amount_total)}`,190,134,{align:'right'});
-    d.setTextColor(70,75,90);d.setFontSize(9);d.text([em.address,em.email,em.phone,em.iban?`IBAN ${em.iban}`:'',em.bic?`BIC ${em.bic}`:''].filter(Boolean),15,265);
+    const d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}), color='#0B6B3B';
+    window.WapiPdfTheme?.jspdfHeader?.(d,'FACTURE',em.company_name||'');
+    d.setTextColor(17,19,24);d.setFont('helvetica','bold');d.setFontSize(11);d.text(inv.invoice_number||'',195,49,{align:'right'});d.setFont('helvetica','normal');d.setFontSize(9);d.text(`Date : ${inv.invoice_date||''}`,195,55,{align:'right'});
+    d.setFillColor(241,248,243);d.roundedRect(15,48,108,31,2,2,'F');d.setTextColor(94,104,116);d.setFontSize(8);d.text('CLIENT',20,56);d.setTextColor(17,19,24);d.setFont('helvetica','bold');d.setFontSize(11);d.text(inv.compta_copros?.name||inv.customer_name||'',20,65,{maxWidth:96});
+    d.setFillColor(11,107,59);d.rect(15,91,180,9,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(9);d.text('Description',18,97);d.text('HTVA',140,97,{align:'right'});d.text('TVA',165,97,{align:'right'});d.text('TVAC',192,97,{align:'right'});
+    d.setTextColor(17,19,24);d.setFont('helvetica','normal');d.text(inv.description||'',18,110,{maxWidth:108});d.text(euro(inv.amount_subtotal),140,110,{align:'right'});d.text(euro(inv.vat_amount),165,110,{align:'right'});d.text(euro(inv.amount_total),192,110,{align:'right'});d.setDrawColor(215,228,218);d.line(15,116,195,116);
+    d.setFillColor(color);d.roundedRect(122,126,73,18,2,2,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(12);d.text(`TOTAL  ${euro(inv.amount_total)}`,190,137,{align:'right'});
+    d.setTextColor(70,75,90);d.setFont('helvetica','normal');d.setFontSize(8.5);d.text([em.address,em.email,em.phone,em.iban?`IBAN ${em.iban}`:'',em.bic?`BIC ${em.bic}`:''].filter(Boolean),15,262);
+    window.WapiPdfTheme?.jspdfFooter?.(d,'Facture '+(inv.invoice_number||''));
     return d.output('blob');
   };
 

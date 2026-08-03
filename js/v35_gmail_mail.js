@@ -151,19 +151,19 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit:'mm', format:'a4' });
     const tier = row.third_row, copro = row.copro || {};
-    doc.setFillColor(31,41,55); doc.rect(0,0,210,30,'F');
-    doc.setTextColor(255); doc.setFontSize(16); doc.text('WAPI One — Situation de compte',15,18);
-    doc.setTextColor(31,41,55); doc.setFontSize(11);
-    doc.text(`Copropriété : ${copro.name || ''}`,15,42); doc.text(`Tiers : ${tier.name || ''}`,15,50);
-    let y=64; doc.setFontSize(9);
+    let y=window.WapiPdfTheme?.jspdfHeader?.(doc,'Situation de compte',copro.name||'')||40;
+    doc.setTextColor(31,41,55); doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text(`Copropriétaire : ${tier.name || ''}`,15,y); y+=12;
+    doc.setFillColor(11,107,59);doc.rect(15,y-5,180,8,'F');doc.setTextColor(255);doc.setFontSize(8.5);
     doc.text('Date',15,y); doc.text('Libellé',42,y); doc.text('Débit',150,y,{align:'right'}); doc.text('Crédit',190,y,{align:'right'}); y+=5;
     for (const detail of tier.details || []) {
-      if (y>275) { doc.addPage(); y=20; }
+      if (y>275) { doc.addPage(); y=window.WapiPdfTheme?.jspdfHeader?.(doc,'Situation de compte',copro.name||'')||40; }
       doc.text(String(detail.date || ''),15,y); doc.text(String(detail.label || '').slice(0,70),42,y);
       if (detail.debit) doc.text(Number(detail.debit).toFixed(2),150,y,{align:'right'});
       if (detail.credit) doc.text(Number(detail.credit).toFixed(2),190,y,{align:'right'}); y+=5;
     }
-    doc.setFontSize(11); doc.text(`Solde : ${Number(tier.balance || 0).toFixed(2)} EUR`,190,y+7,{align:'right'});
+    doc.setTextColor(31,41,55);doc.setFont('helvetica','bold');doc.setFontSize(11); doc.text(`Solde : ${Number(tier.balance || 0).toFixed(2)} EUR`,190,y+7,{align:'right'});
+    window.WapiPdfTheme?.jspdfFooter?.(doc,'Situation de compte');
     return {
       filename:`Situation_de_compte_${String(tier.name || 'tiers').replace(/[^a-z0-9]+/gi,'_')}.pdf`,
       mimeType:'application/pdf',
@@ -175,15 +175,15 @@
   function pdfBase(title, subtitle='') {
     if (!window.jspdf?.jsPDF) throw new Error('Le generateur PDF n est pas charge. Recharge la page.');
     const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'mm',format:'a4'}); const margin=15,width=180;
-    const header=()=>{doc.setFillColor(25,88,106);doc.rect(0,0,210,28,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('WAPI One',margin,12);doc.setFontSize(11);doc.text(title,margin,20);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text(String(subtitle||''),195,19,{align:'right'});doc.setTextColor(31,41,55);};
-    header(); let y=38; const page=()=>{doc.addPage();header();y=38;}; const ensure=(need=8)=>{if(y+need>282)page();};
+    const header=()=>window.WapiPdfTheme?.jspdfHeader?.(doc,title,subtitle)||38;
+    let y=header();doc.__wapiPdfLabel=title; const page=()=>{doc.addPage();y=header();}; const ensure=(need=8)=>{if(y+need>278)page();};
     const line=(label,value,opts={})=>{ensure(opts.height||8);doc.setFontSize(opts.size||10);doc.setFont('helvetica',opts.bold?'bold':'normal');if(label){doc.setFont('helvetica','bold');doc.text(String(label),margin,y);doc.setFont('helvetica','normal');doc.text(String(value??''),opts.valueX||55,y);}else doc.text(String(value??''),margin,y);y+=opts.height||7;};
     const paragraph=(value)=>{const lines=doc.splitTextToSize(String(value||''),width);ensure(lines.length*5+3);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(lines,margin,y);y+=lines.length*5+4;};
     const section=(label)=>{ensure(12);doc.setFillColor(235,245,247);doc.roundedRect(margin,y-5,width,9,2,2,'F');doc.setTextColor(25,88,106);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text(String(label),margin+3,y+1);doc.setTextColor(31,41,55);y+=11;};
     const tableRow=(cells,widths,head=false)=>{const wrapped=cells.map((c,i)=>doc.splitTextToSize(String(c??''),widths[i]-3));const h=Math.max(7,...wrapped.map(x=>x.length*4+3));ensure(h);if(head){doc.setFillColor(25,88,106);doc.rect(margin,y-5,width,h,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');}else{doc.setDrawColor(220);doc.line(margin,y+h-6,margin+width,y+h-6);doc.setTextColor(31,41,55);doc.setFont('helvetica','normal');}doc.setFontSize(8.5);let x=margin;wrapped.forEach((v,i)=>{doc.text(v,x+1.5,y);x+=widths[i];});y+=h;if(head)doc.setTextColor(31,41,55);};
     return {doc,line,paragraph,section,tableRow};
   }
-  function pdfAttachment(doc,filename){return {filename,mimeType:'application/pdf',contentBase64:doc.output('datauristring').split(',')[1]};}
+  function pdfAttachment(doc,filename){window.WapiPdfTheme?.jspdfFooter?.(doc,doc.__wapiPdfLabel||filename.replace(/\.pdf$/i,''));return {filename,mimeType:'application/pdf',contentBase64:doc.output('datauristring').split(',')[1]};}
   function callAttachment(row){const s=appState();const call=(s.ownerCalls||[]).find(c=>String(c.id)===String(row.source_id))||row;const p=pdfBase('Appel de fonds',row.copro?.name||'');p.line('Coproprietaire',row.owner?.display_name||'');p.line('Libelle',call.period_label||call.label||row.document_label||'Appel');p.line('Echeance',call.due_date||row.due_date||'');p.section('Montant a payer');p.line('',euro(call.amount_due||row.amount),{size:18,bold:true,height:14});const bank=(s.v28CoproBankAccounts||[]).find(b=>b.copro_id===row.copro_id&&b.active!==false)||(s.bankAccounts||[]).find(b=>b.copro_id===row.copro_id)||{};p.line('IBAN',bank.iban||'A completer');p.line('Communication',row.owner?.vcs||row.owner?.structured_communication||'A completer');return pdfAttachment(p.doc,`Appel_${safeName(row.copro?.name)}_${safeName(row.owner?.display_name)}.pdf`);}
   function settlementAttachment(row){const calc=window.WapiSettlementV345?.buildOwner?.(row.owner_id,row.copro_id,row.fiscal_year_id);if(!calc)return null;const p=pdfBase('Decompte individuel',row.copro?.name||'');p.line('Coproprietaire',calc.owner?.display_name||'');p.line('Exercice',calc.year?.label||row.period_label||'');p.line('Lots',(calc.lots||[]).map(l=>l.lot_number).join(', ')||'-');p.section('Synthese des charges');p.tableRow(['Nature','Montant'],[130,50],true);p.tableRow(['Charges communes',euro(Number(calc.common||0)+Number(calc.occupant||0))],[130,50]);p.tableRow(['Consommations et frais privatifs',euro(Number(calc.consumptionTotal||0)+Number(calc.privateCharges||0))],[130,50]);p.tableRow(['Total charges',euro(calc.totalCharges)],[130,50]);p.section('Situation de compte');p.tableRow(['Date','Libelle','Debit','Credit'],[28,92,30,30],true);(calc.balanceRow?.details||[]).forEach(d=>p.tableRow([d.date||'',d.label||'',d.debit?euro(d.debit):'',d.credit?euro(d.credit):''],[28,92,30,30]));p.section(calc.final>=0?'Montant a payer':'Montant a recevoir');p.line('',euro(Math.abs(calc.final||0)),{size:17,bold:true,height:14});return pdfAttachment(p.doc,`Decompte_${safeName(row.copro?.name)}_${safeName(row.owner?.display_name)}.pdf`);}
   function agAttachment(row){const s=appState();const meeting=(s.agMeetings||[]).find(m=>String(m.id)===String(row.metadata?.meeting_id||row.source_id));if(!meeting)return null;const points=(s.agPoints||[]).filter(x=>String(x.meeting_id)===String(meeting.id)).sort((a,b)=>Number(a.position||0)-Number(b.position||0));const isPv=window.v22CurrentComposer?.documentType==='ag_minutes';const p=pdfBase(isPv?'Proces-verbal assemblee generale':'Convocation assemblee generale',row.copro?.name||'');p.line('Destinataire',row.owner?.display_name||'');p.line('Date',meeting.meeting_date||'');p.line('Heure',meeting.meeting_time||'');p.line('Lieu',meeting.location||'A preciser');p.section(isPv?'Decisions et votes':'Ordre du jour');points.forEach((point,index)=>{p.line('',`${index+1}. ${point.title||'Point'}`,{bold:true});if(point.description)p.paragraph(point.description);if(isPv&&point.decision_text)p.paragraph(`Decision : ${point.decision_text}`);});if(!isPv){p.section('Procuration');p.paragraph(`Je soussigne(e) ${row.owner?.display_name||''}, donne procuration a ................................ afin de me representer a l assemblee generale du ${meeting.meeting_date||''}.`);}return pdfAttachment(p.doc,`${isPv?'PV_AG':'Convocation_AG'}_${safeName(row.copro?.name)}_${safeName(row.owner?.display_name)}.pdf`);}

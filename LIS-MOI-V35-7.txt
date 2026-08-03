@@ -1,0 +1,23 @@
+WAPI One - V35.7 - Identité PDF WAPI SYNDIK
+
+Installation
+1. Remplacer le contenu du dépôt GitHub par le contenu de ce dossier.
+2. Conserver la structure index.html, css, js, assets et sql.
+3. Valider les changements dans GitHub.
+4. Recharger WAPI One avec CTRL + F5.
+
+Aucune migration SQL n'est nécessaire.
+
+Cette version applique un gabarit commun aux documents imprimés et aux pièces jointes PDF :
+- logo WAPI SYNDIK conservant ses proportions ;
+- vert foncé et vert anis issus du logo ;
+- en-tête, titres, tableaux, totaux et pied de page harmonisés ;
+- typographie plus fine et hiérarchie plus claire ;
+- pagination des PDF générés directement par WAPI One ;
+- présentation cohérente des convocations, PV, appels, décomptes, situations de compte, budgets, balances, bilans, comptes comptables et factures.
+
+Contrôle conseillé
+- générer une convocation et un PV ;
+- générer un appel et un décompte ;
+- envoyer un document test par Gmail et ouvrir la pièce jointe ;
+- exporter un bilan et une facture récurrente.

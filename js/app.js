@@ -8996,16 +8996,16 @@ function updateSidebarButtons() {
     async function syndicInvoicePdfBlobV23(inv){
       if(!window.jspdf?.jsPDF) throw new Error('jsPDF non chargé. Recharge la page.');
       const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'}); const s=state.syndicInvoiceSettings||{}; const copro=inv.compta_copros || (state.copros||[]).find(c=>c.id===inv.copro_id) || {}; const isCredit=inv.billing_type==='credit_note'||Number(inv.amount_total)<0;
-      doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(31,122,140); doc.text('WAPI-SYNDIK',14,18);
-      doc.setFontSize(9); doc.setTextColor(80); doc.setFont('helvetica','normal'); let y=25; y=drawPdfTextLinesV23(doc, `${s.company_name||'WAPI-SYNDIK SPRL'}\n${s.company_address||''}\n${s.company_phone||''} · ${s.company_email||'info@wapi-syndik.be'}\n${s.vat_number||''}`,14,y,88,4);
-      doc.setTextColor(16,42,67); doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.text(isCredit?'NOTE DE CRÉDIT':'FACTURE',196,18,{align:'right'}); doc.setFontSize(11); doc.text(inv.invoice_number||'',196,27,{align:'right'}); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(`Date : ${v23Date(inv.invoice_date)}`,196,34,{align:'right'}); doc.text(`Échéance : ${v23Date(inv.due_date)}`,196,40,{align:'right'});
-      doc.setDrawColor(31,122,140); doc.setLineWidth(1); doc.line(14,48,196,48);
+      window.WapiPdfTheme?.jspdfHeader?.(doc,isCredit?'NOTE DE CRÉDIT':'FACTURE',s.company_name||'WAPI-SYNDIK SPRL');
+      doc.setFontSize(9); doc.setTextColor(80); doc.setFont('helvetica','normal'); let y=48; y=drawPdfTextLinesV23(doc, `${s.company_address||''}\n${s.company_phone||''} - ${s.company_email||'info@wapi-syndik.be'}\n${s.vat_number||''}`,14,y,88,4);
+      doc.setTextColor(16,42,67); doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(inv.invoice_number||'',196,49,{align:'right'}); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(`Date : ${v23Date(inv.invoice_date)}`,196,55,{align:'right'}); doc.text(`Échéance : ${v23Date(inv.due_date)}`,196,61,{align:'right'});
       doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Facturé à',14,60); doc.text('Informations',112,60);
       doc.setFont('helvetica','normal'); doc.setFontSize(9); drawPdfTextLinesV23(doc, `${copro.name||inv.customer_name||''}\n${copro.address||''}\n${copro.optipro_ref||''}`,14,66,78,4); drawPdfTextLinesV23(doc, `Type : ${v23BillingTypeLabel(inv.billing_type)}\nCompte : ${inv.account_code||''}\nRéférence : ${inv.invoice_number||''}`,112,66,78,4);
       let ty=92; doc.setFillColor(16,42,67); doc.rect(14,ty,182,8,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.text('Description',17,ty+5.5); doc.text('Qté',132,ty+5.5); doc.text('HTVA',148,ty+5.5); doc.text('TVA',170,ty+5.5); ty+=12;
       doc.setTextColor(23,32,51); doc.setFont('helvetica','normal'); ty=drawPdfTextLinesV23(doc, `${inv.description||'Facturation syndic'}${inv.notes?'\n'+inv.notes:''}`,17,ty,105,4); doc.text('1',134,104); doc.text(money(Math.abs(inv.amount_subtotal||0)).replace(' EUR',' €'),148,104); doc.text(`${Number(inv.vat_rate||0)}%`,170,104); doc.line(14,ty+2,196,ty+2);
       let sy=ty+14; doc.setFont('helvetica','bold'); doc.text('Total HTVA',130,sy); doc.text(money(inv.amount_subtotal).replace(' EUR',' €'),196,sy,{align:'right'}); sy+=7; doc.text('TVA',130,sy); doc.text(money(inv.vat_amount).replace(' EUR',' €'),196,sy,{align:'right'}); sy+=7; doc.setFillColor(31,122,140); doc.rect(126,sy-5,70,9,'F'); doc.setTextColor(255); doc.text('Total TVAC',130,sy+1); doc.text(money(inv.amount_total).replace(' EUR',' €'),194,sy+1,{align:'right'});
       doc.setTextColor(23,32,51); doc.setFont('helvetica','normal'); doc.setFontSize(9); drawPdfTextLinesV23(doc, `Paiement : ${s.iban||''} ${s.bic?' - '+s.bic:''}\nCommunication : ${inv.invoice_number||''}\nDocument optimisé OCR Clearfact / Winbooks.`,14,260,175,4);
+      window.WapiPdfTheme?.jspdfFooter?.(doc,(isCredit?'Note de crédit ':'Facture ')+(inv.invoice_number||''));
       return doc.output('blob');
     }
     async function exportSyndicInvoicesZipV23(ids){
