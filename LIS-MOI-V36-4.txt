@@ -1,0 +1,16 @@
+WAPI One V36.4 — stabilisation Tiers / Fournisseurs
+
+Installation :
+1. Décompresser le ZIP.
+2. Envoyer tout son contenu à la racine du dépôt GitHub.
+3. Valider le remplacement des fichiers existants.
+4. Faire le commit puis recharger WAPI One avec Ctrl + F5.
+
+Aucune migration SQL supplémentaire n'est nécessaire.
+
+Contrôles conseillés :
+- Tiers > Copropriétaires : afficher/masquer les non actifs.
+- Tiers > Fournisseurs : seuls les fournisseurs de la copro active apparaissent.
+- Ouvrir « Répertoire de tous les fournisseurs » et modifier les associations.
+- Vérifier la suppression sécurisée d'un copropriétaire sans lot ni comptabilité.
+- Facturation syndic > Prestations / mutations.

@@ -42,6 +42,7 @@
   }
 
   function renderTiersV347() {
+    if (window.WapiTiersV364?.render) return window.WapiTiersV364.render();
     const host = $('ownersTable');
     if (!host) return;
     const type = state.selectedIdentityType || 'owner';

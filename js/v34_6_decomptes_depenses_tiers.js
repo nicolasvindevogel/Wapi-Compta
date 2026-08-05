@@ -145,6 +145,7 @@
     return owner.active!==false&&(state.lots||[]).some(l=>l.owner_id===owner.id&&l.active!==false);
   }
   function renderOwnersActive(){
+    if(window.WapiTiersV364?.render)return window.WapiTiersV364.render();
     const host=id('ownersTable');if(!host||state.selectedIdentityType!=='owner')return;
     const copro=state.activeCoproId||id('ownersFilterCopro')?.value||'';
     let rows=(state.owners||[]).filter(o=>!copro||o.copro_id===copro||(state.lots||[]).some(l=>l.copro_id===copro&&l.owner_id===o.id));

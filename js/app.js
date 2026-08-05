@@ -108,12 +108,14 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
     async function boot() {
       if (!initSupabase()) {
         setVisible("setupScreen");
+        if(typeof window.WapiStableReady==='function')window.WapiStableReady();else document.documentElement.classList.remove("wapi-booting");
         return;
       }
 
       const { data } = await supabaseClient.auth.getSession();
       if (!data.session) {
         setVisible("loginScreen");
+        if(typeof window.WapiStableReady==='function')window.WapiStableReady();else document.documentElement.classList.remove("wapi-booting");
         return;
       }
 
@@ -121,6 +123,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
       $("userPill").textContent = currentUser.email || "Utilisateur connecte";
       setVisible("appScreen");
       await loadAll();
+      if(typeof window.WapiStableReady==='function')window.WapiStableReady();else document.documentElement.classList.remove("wapi-booting");
     }
 
     async function loadAll() {
@@ -10201,7 +10204,7 @@ function updateSidebarButtons() {
     const modules=[
       { id:'home', label:'Accueil', icon:'home', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord','dashboard']] },
       { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre traitement','inbox'],['invoiceOcr','OCR factures','search'],['codaPilot','Validation CODA','bank'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt']] },
-      { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['coproSettings','Réglages copro','settings'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
+      { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
       { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
       { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
       { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
@@ -10638,7 +10641,7 @@ function updateSidebarButtons() {
   const V31_MODULES = [
     { id:'home', label:'Accueil', icon:'home', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord','dashboard']] },
     { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre traitement','inbox'],['invoiceOcr','OCR factures','search'],['codaPilot','Validation CODA','bank'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt']] },
-    { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['coproSettings','Réglages copro','settings'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
+    { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
     { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['od','Opérations diverses','edit'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
     { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
     { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },

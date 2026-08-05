@@ -203,6 +203,7 @@
 
   function tierCoproId(){return state.activeCoproId||$('ownersFilterCopro')?.value||'';}
   function renderSupplierDirectory(){
+    if(window.WapiTiersV364?.render)return window.WapiTiersV364.render();
     if((state.selectedIdentityType||'owner')!=='supplier')return;const host=$('ownersTable');if(!host)return;
     const cid=tierCoproId(),ids=new Set(store.links.filter(l=>l.active!==false&&(!cid||String(l.copro_id)===String(cid))).map(l=>String(l.supplier_id)));
     const rows=(state.suppliers||[]).filter(s=>s.active!==false&&(!cid||ids.has(String(s.id))));

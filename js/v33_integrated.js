@@ -615,7 +615,7 @@
    Objectif : appliquer le filtre gestionnaire dans les modules multi-copro utiles,
    sans MutationObserver ni boucle de rendu. */
 (function(){
-  const VERSION = 'WAPI One — V35.7';
+  const VERSION = 'WAPI One — V36.4';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const patched = new Set();
   const coproSelectIds = [
@@ -864,7 +864,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V35.7';
+  const VERSION = 'WAPI One — V36.4';
   window.WAPI_ONE_VERSION = 'V33 - socle propre stabilisé';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const ACTIVE_COPRO_KEY = 'wapi_compta_active_copro_id';
@@ -912,7 +912,7 @@
   const MODULES = [
     { id:'home', label:'Accueil', icon:'home', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord','dashboard']] },
     { id:'pilotage', label:'Pilotage', icon:'dashboard', defaultView:'processing', tabs:[['processing','Centre traitement','inbox'],['invoiceOcr','OCR factures','search'],['codaPilot','Validation CODA','bank'],['payments','Paiement factures','card'],['callDispatch','Envoi appels','send'],['inform','J’informe','megaphone'],['sendJournal','Journal envois','receipt']] },
-    { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['lots','Lots','hash'],['owners','Tiers copropriétaires','users'],['suppliers','Fournisseurs','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
+    { id:'copros', label:'Copropriétés', icon:'building', defaultView:'copros', tabs:[['copros','Liste','building'],['lots','Lots','hash'],['owners','Tiers','users'],['distribution','Répartitions','puzzle'],['buildings','Bâtiments','building'],['works','Travaux','wrench']] },
     { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['od','Opérations diverses','edit'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
     { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['journals','Journaux','archive'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
     { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
@@ -1262,7 +1262,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V35.7';
+  const VERSION = 'WAPI One — V36.4';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1273,7 +1273,7 @@
   const MODULES = [
     { id:'home', badge:'AC', label:'Accueil', hint:'Vue générale', defaultView:'dashboard', tabs:[['dashboard','Tableau de bord']] },
     { id:'pilotage', badge:'PI', label:'Pilotage', hint:'Traitement & envois', defaultView:'processing', tabs:[['processing','Centre traitement'],['invoiceOcr','OCR factures'],['codaPilot','Validation CODA'],['payments','Paiement factures'],['callDispatch','Envoi appels'],['inform','J’informe'],['sendJournal','Journal envois']] },
-    { id:'copros', badge:'CP', label:'Copropriétés', hint:'Structure immeubles', defaultView:'copros', tabs:[['copros','Liste'],['lots','Lots'],['owners','Tiers copropriétaires'],['suppliers','Fournisseurs'],['distribution','Répartitions'],['buildings','Bâtiments'],['works','Travaux']] },
+    { id:'copros', badge:'CP', label:'Copropriétés', hint:'Structure immeubles', defaultView:'copros', tabs:[['copros','Liste'],['lots','Lots'],['owners','Tiers'],['distribution','Répartitions'],['buildings','Bâtiments'],['works','Travaux']] },
     { id:'compta', badge:'CO', label:'Comptabilité', hint:'Achats, banque, OD', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs'],['bank','Encodage financier'],['od','Opérations diverses'],['meters','Relevés compteurs'],['budgets','Budgets'],['calls','Appels'],['statements','Décomptes'],['expensesList','Liste dépenses'],['exercises','Exercices']] },
     { id:'states', badge:'ET', label:'États comptables', hint:'Contrôles & rapports', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable'],['ledger','Grand livre'],['financialLedger','Grand livre financier'],['balance','Balance générale'],['thirdBalance','Balance tiers'],['journals','Journaux'],['bilan','Bilan'],['heldFunds','Fonds détenus'],['multicoproConsultation','Consultation multi-copro']] },
     { id:'ag', badge:'AG', label:'Assemblées', hint:'AG & résolutions', defaultView:'meetings', tabs:[['meetings','Assemblées'],['resolutions','Catalogue résolutions']] },
@@ -1355,8 +1355,9 @@
       if(viewName === 'invoices' && typeof window.v33RenderInvoicesV322 === 'function') setTimeout(window.v33RenderInvoicesV322, 0);
       if(viewName === 'copros' && typeof window.v33RenderCoprosV322 === 'function') setTimeout(window.v33RenderCoprosV322, 0);
       if(viewName === 'syndicBilling') setTimeout(() => {
-        if(typeof window.wapiRenderSyndicBilling === 'function') window.wapiRenderSyndicBilling();
+        if(typeof renderSyndicBillingV23 === 'function') renderSyndicBillingV23();
         else if(typeof renderSyndicBillingV25 === 'function') renderSyndicBillingV25();
+        else if(typeof window.wapiRenderSyndicBilling === 'function') window.wapiRenderSyndicBilling();
       }, 0);
     }catch(e){ console.warn('V33.1 rendu vue', e); }
   }

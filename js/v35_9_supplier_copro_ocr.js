@@ -34,6 +34,7 @@
   }
 
   function renderSupplierDirectory(){
+    if(window.WapiTiersV364?.render)return window.WapiTiersV364.render();
     if((state.selectedIdentityType||'owner')!=='supplier')return;
     const host=$('ownersTable');if(!host)return;
     const coproId=activeCopro(),allowed=supplierIdsForCopro(coproId);
