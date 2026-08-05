@@ -1,0 +1,4 @@
+WAPI One V36.2 — stabilisation affichage, aperçu PDF et dépenses
+
+Installation : remplacer le contenu du dépôt GitHub par celui du ZIP puis recharger avec Ctrl+F5.
+Aucune migration SQL supplémentaire n'est nécessaire.

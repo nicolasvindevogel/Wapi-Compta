@@ -6958,6 +6958,7 @@ function updateSidebarButtons() {
       return Promise.all(reads);
     }
     function openPrintWindowV16(title, content){
+      if(window.WapiPdfPreviewV362?.openHtml) return window.WapiPdfPreviewV362.openHtml(title,content,pdfCssAgV16());
       const win=window.open('','_blank');
       win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}
 
@@ -7251,6 +7252,7 @@ function updateSidebarButtons() {
       }).join('');
     }
     function openPrintWindowV16(title, content){
+      if(window.WapiPdfPreviewV362?.openHtml) return window.WapiPdfPreviewV362.openHtml(title,content,pdfCssAgV16());
       const win=window.open('','_blank');
       const script=`<script>function go(){const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r;}))).then(()=>setTimeout(()=>window.print(),450));}window.addEventListener('load',go);<\/script>`;
       win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${pdfCssAgV16()}
@@ -7434,7 +7436,14 @@ function updateSidebarButtons() {
       const req = state.selectedInvoiceId ? supabaseClient.from('compta_invoices').update(payload).eq('id', state.selectedInvoiceId) : supabaseClient.from('compta_invoices').insert(payload);
       const { error } = await req;
       if (error) return alert(error.message + "\n\nSi l’erreur parle d’une colonne inexistante, exécute la migration SQL V17.");
-      closeAppModal(); state.selectedInvoiceId = null; await loadAll();
+      const editedInvoiceId=state.selectedInvoiceId;
+      closeAppModal(); state.selectedInvoiceId = null;
+      if(editedInvoiceId){
+        const index=(state.invoices||[]).findIndex(i=>String(i.id)===String(editedInvoiceId));
+        if(index>=0){const supplier=(state.suppliers||[]).find(s=>String(s.id)===String(payload.supplier_id));state.invoices[index]={...state.invoices[index],...payload,compta_suppliers:supplier||state.invoices[index].compta_suppliers};}
+        try{renderInvoices?.();renderExpensesList?.();v29RenderExpensesList?.();v31RenderExpenses?.();}catch(_){ }
+        loadInvoices().then(()=>{try{renderInvoices?.();renderExpensesList?.();v29RenderExpensesList?.();v31RenderExpenses?.();}catch(_){ }}).catch(console.warn);
+      }else await loadAll();
     }
 
     function selectedSettlementCoproV17(){ return state.activeCoproId || $('settlementCoproFilter')?.value || state.copros[0]?.id || ''; }
@@ -10295,6 +10304,7 @@ function updateSidebarButtons() {
   async function v29OpenExpenseEdit(invoiceId){ if(typeof openInvoiceModal==='function') return openInvoiceModal(invoiceId); const inv=(state.invoices||[]).find(i=>i.id===invoiceId); if(!inv) return; alert('Edition facture indisponible.'); }
   function v29PrintExpensesPdf(){
     v29RenderExpensesList(); const content=$id('expensesListTable')?.innerHTML||'';
+    if(window.WapiPdfPreviewV362?.openHtml)return window.WapiPdfPreviewV362.openHtml('Liste des dépenses',`<div class="head"><div><div class="logo">WAPI SYNDIK</div><div>Liste des dépenses</div></div><div>${new Date().toLocaleDateString('fr-BE')}</div></div>${content}`,`body{font-family:Inter,Arial;margin:22px;color:#171B2B}.head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:3px solid #087044;padding-bottom:10px}.logo{font-weight:900;color:#087044}table{width:100%;border-collapse:collapse;font-size:10.5px}th{background:#087044;color:#fff;text-align:left}td,th{padding:4px 5px;border-bottom:1px solid #E6EAF2}.account-group{page-break-inside:avoid;margin-bottom:10px}.account-group h3{font-size:13px;margin:12px 0 5px}.btn,.actions-inline,.quick-actions{display:none}.v29-total-bottom{margin-top:10px;border-top:2px solid #087044;padding-top:8px;font-weight:900;display:flex;justify-content:space-between}@page{margin:12mm}`);
     const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>Liste des dépenses</title><style>body{font-family:Inter,Arial;margin:22px;color:#171B2B}.head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:3px solid #171B2B;padding-bottom:10px}h1{margin:0;font-size:22px}.logo{font-weight:900;color:#171B2B}table{width:100%;border-collapse:collapse;font-size:10.5px}th{background:#171B2B;color:#fff;text-align:left}td,th{padding:4px 5px;border-bottom:1px solid #E6EAF2}.account-group{page-break-inside:avoid;margin-bottom:10px}.account-group h3{font-size:13px;margin:12px 0 5px}.btn,.actions-inline,.quick-actions{display:none}.v29-total-bottom{margin-top:10px;border-top:2px solid #171B2B;padding-top:8px;font-weight:900;display:flex;justify-content:space-between}@page{margin:12mm}</style></head><body><div class="head"><div><div class="logo">WAPI One</div><div>Liste des dépenses</div></div><div>${new Date().toLocaleDateString('fr-BE')}</div></div>${content}<script>window.print();<\/script></body></html>`); w.document.close();
   }
 
@@ -10932,7 +10942,7 @@ function updateSidebarButtons() {
     if(typeof switchToView==='function') switchToView('accountLookup');
     setTimeout(()=>{ if($id('v28AccountLookupCode')) $id('v28AccountLookupCode').value=code; v31RenderAccountLookup(); if(window.v28RenderNav) window.v28RenderNav(); },150);
   }
-  function v31PrintSimple(title, html){ const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Inter,Arial;margin:0;color:#171B2B}h1{font-size:22px;border-bottom:4px solid #1f7a8c;padding-bottom:10px}.pdf-meta{display:flex;justify-content:space-between;margin:12px 0 18px}.pdf-bilan-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.pdf-bilan-columns section{border:1px solid #dfe5ec;border-radius:10px;overflow:hidden}.pdf-bilan-columns h2{margin:0;padding:10px 12px;background:#eef7f8;color:#145d69;font-size:14px}table{width:100%;border-collapse:collapse;font-size:9px}td,th{border-bottom:1px solid #ddd;padding:5px;text-align:left}td:last-child,th:last-child{text-align:right}th{background:#171B2B;color:white}.v30-bilan-total{display:flex;justify-content:space-between;padding:10px 12px;background:#f3f6f9;font-weight:800}.btn,.actions-inline,input,select,.v356-bilan-filters{display:none!important}</style></head><body><h1>${esc(title)}</h1>${html}<script>window.print();<\/script></body></html>`); w.document.close(); }
+  function v31PrintSimple(title, html){const css='@page{size:A4 landscape;margin:12mm}body{font-family:Inter,Arial;margin:0;color:#171B2B}h1{font-size:22px;border-bottom:4px solid #087044;padding-bottom:10px}.pdf-meta{display:flex;justify-content:space-between;margin:12px 0 18px}.pdf-bilan-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.pdf-bilan-columns section{border:1px solid #dfe5ec;border-radius:10px;overflow:hidden}.pdf-bilan-columns h2{margin:0;padding:10px 12px;background:#eef8f2;color:#087044;font-size:14px}table{width:100%;border-collapse:collapse;font-size:9px}td,th{border-bottom:1px solid #ddd;padding:5px;text-align:left}td:last-child,th:last-child{text-align:right}th{background:#087044;color:white}.v30-bilan-total{display:flex;justify-content:space-between;padding:10px 12px;background:#f3f6f9;font-weight:800}.btn,.actions-inline,input,select,.v356-bilan-filters{display:none!important}';if(window.WapiPdfPreviewV362?.openHtml)return window.WapiPdfPreviewV362.openHtml(title,`<h1>${esc(title)}</h1>${html}`,css,{orientation:'landscape'});const w=window.open('','_blank');w.document.write(`<!doctype html><html><head><title>${esc(title)}</title><style>${css}</style></head><body><h1>${esc(title)}</h1>${html}</body></html>`);w.document.close();}
 
   function v31RenderAll(){
     try{v31RenderNav();}catch(e){}
