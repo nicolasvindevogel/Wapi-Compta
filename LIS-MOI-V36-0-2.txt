@@ -1,0 +1,30 @@
+WAPI ONE V36.0.2 — REJETS ET DÉTECTION STRICTE
+
+Cette version contient également le correctif d'aperçu PDF V36.0.1.
+
+CORRECTIONS
+- Une facture rejetée va toujours dans l'onglet Rejetées.
+- Le rejet prime sur les anciens statuts doublon ou erreur.
+- L'onglet Rejetées s'ouvre immédiatement après le rejet.
+- Le PDF importé s'affiche depuis les deux sources Supabase disponibles.
+
+OCR PLUS FIABLE
+- Recherche uniquement le montant TVAC.
+- Accepte un montant uniquement près d'un libellé explicite :
+  Total à payer, Net à payer, Total TVAC/TTC, Montant à payer, Grand total.
+- Ignore les lignes IBAN, BIC, VCS, communication structurée, TVA/BCE et numéro client.
+- Le numéro de facture doit être proche de N° facture, Numéro document,
+  Invoice number ou Référence facture.
+- En l'absence de preuve suffisante, le champ reste vide au lieu d'inventer une valeur.
+
+CALCUL TVA
+- L'utilisateur contrôle uniquement le TVAC et le taux de TVA.
+- Le HTVA et le montant TVA sont calculés automatiquement.
+- Les résultats calculés sont visibles immédiatement sous les deux champs.
+
+INSTALLATION
+1. Aucun nouveau SQL si les migrations 045 et 046 ont déjà été exécutées.
+2. Remplacer GitHub par le contenu du ZIP V36.0.2.
+3. Commit changes.
+4. CTRL + F5.
+

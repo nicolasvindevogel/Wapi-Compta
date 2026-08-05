@@ -1,14 +1,20 @@
 /* WAPI One V36 — centre de traitement factures, multi-copro et rapide. */
 (function(){
   'use strict';
-  window.WAPI_ONE_VERSION='V36.0 — Centre factures';
+  window.WAPI_ONE_VERSION='V36.0.2 — Centre factures';
   const $=id=>document.getElementById(id);
   const esc=v=>typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
   const store={tab:localStorage.getItem('wapi_v36_invoice_tab')||'to_process',manager:localStorage.getItem('wapi_v36_invoice_manager')||'',copro:localStorage.getItem('wapi_v36_invoice_copro')||'',search:'',links:[],busy:false};
   const tabs=[['to_process','À traiter'],['to_validate','À valider'],['posted','Comptabilisées'],['errors','Erreurs'],['duplicates','Doublons'],['rejected','Rejetées']];
 
-  function item(q){return (state.importItems||[]).find(x=>String(x.id)===String(q.item_id))||{};}
+  const previewUrls=new Map();
+  function item(q){
+    const full=(state.importItems||[]).find(x=>String(x.id)===String(q.item_id));
+    if(full)return full;
+    const joined=q?.compta_import_items||{};
+    return {...joined,id:q?.item_id||joined.id||null,raw_data:joined.raw_data||{}};
+  }
   function values(q){const i=item(q);return {...(q.extracted_data||i.raw_data?.extracted||{}),...(q.corrected_data||{})};}
   function copro(id){return (state.copros||[]).find(x=>String(x.id)===String(id));}
   function supplier(id){return (state.suppliers||[]).find(x=>String(x.id)===String(id));}
@@ -30,15 +36,57 @@
     if(!store.manager&&currentUser?.id&&(state.userProfiles||[]).some(u=>String(u.id)===String(currentUser.id))){store.manager=currentUser.id;localStorage.setItem('wapi_v36_invoice_manager',store.manager);}
   }
 
+  /* Détection volontairement stricte : mieux vaut laisser un champ vide que
+     comptabiliser un VCS, un IBAN, une date ou un numéro client comme montant. */
+  function parseInvoiceMoney(raw){
+    if(!raw)return null;let s=String(raw).replace(/[€\s']/g,'');
+    if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
+    else if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+    const n=Number(s.replace(/[^0-9.-]/g,''));return Number.isFinite(n)&&n>0&&n<10000000?n:null;
+  }
+  function strictTotal(text){
+    const lines=String(text||'').replace(/\u00a0/g,' ').split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean),candidates=[];
+    const labels=[[/\bnet\s+(?:a|à)\s+payer\b/i,120],[/\btotal\s+(?:a|à)\s+payer\b/i,118],[/\bmontant\s+(?:a|à)\s+payer\b/i,116],[/\bsolde\s+(?:a|à)\s+payer\b/i,114],[/\btotal\s+(?:tvac|ttc)\b/i,112],[/\bmontant\s+(?:tvac|ttc)\b/i,110],[/\bgrand\s+total\b/i,105],[/\btotal\s+facture\b/i,102],[/\bbalance\s+due\b/i,102]];
+    const amounts=line=>[...String(line||'').matchAll(/(?:^|[^0-9])(-?[0-9]{1,3}(?:[ .'][0-9]{3})*(?:[,.][0-9]{2})|-?[0-9]{1,8}[,.][0-9]{2})(?=\s*(?:€|EUR|$|[^0-9]))/gi)].map(m=>parseInvoiceMoney(m[1])).filter(v=>v!==null);
+    lines.forEach((line,index)=>{
+      if(/iban|bic|communication\s+structuree|communication\s+structurée|vcs|numero\s+client|numéro\s+client|n°\s*client|tva\s*(?:be)?\s*\d{8,}/i.test(line))return;
+      for(const [rx,score] of labels){if(!rx.test(line))continue;const own=amounts(line),next=amounts(lines[index+1]||'');const vals=own.length?own:next;if(vals.length)candidates.push({value:vals[vals.length-1],score,index});break;}
+    });
+    candidates.sort((a,b)=>b.score-a.score||b.index-a.index);return candidates[0]?.value??null;
+  }
+  function strictReference(text,fileName=''){
+    const flat=String(text||'').replace(/\u00a0/g,' ').replace(/\s+/g,' '),patterns=[
+      /(?:n(?:um[eé]ro)?\s*(?:de\s+)?facture|facture\s*n[°o.]?|invoice\s*(?:number|no\.?|#))\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{2,30})/i,
+      /(?:n(?:um[eé]ro)?\s*(?:de\s+)?document|document\s*n[°o.]?|document\s*(?:number|no\.?))\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{2,30})/i,
+      /(?:r[eé]f[eé]rence\s+facture|invoice\s+reference)\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{2,30})/i
+    ];
+    for(const rx of patterns){const m=flat.match(rx);if(!m)continue;const v=m[1].replace(/[.,;:]+$/,'');if(/^BE\d{8,}$/i.test(v)||/^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(v)||/^\d+[,.]\d{2}$/.test(v)||v.length<3)continue;return v;}
+    const base=String(fileName||'').replace(/\.[^.]+$/,'').trim(),m=base.match(/(?:facture|invoice)[ _-]+([A-Z0-9][A-Z0-9._-]{2,30})$/i);return m?m[1]:'';
+  }
+  const previousStrictExtractor=window.extractInvoiceFieldsV19||window.extractInvoiceFieldsV13;
+  function strictInvoiceExtract(text,fileName=''){
+    const base=typeof previousStrictExtractor==='function'?previousStrictExtractor(text,fileName)||{}:{};
+    const total=strictTotal(text),reference=strictReference(text,fileName);
+    return {...base,amount:total??'',reference:reference||''};
+  }
+  window.extractInvoiceFieldsV19=strictInvoiceExtract;
+  window.extractInvoiceFieldsV13=strictInvoiceExtract;
+  if(window.WapiOcrV349?.analyze){
+    const previousSupplyAnalyze=window.WapiOcrV349.analyze;
+    window.WapiOcrV349.analyze=function(text,options={}){const result=previousSupplyAnalyze.apply(this,arguments)||{fields:{}};const total=strictTotal(text),reference=strictReference(text,options.fileName||'');result.fields={...(result.fields||{}),amount:total??'',reference:reference||'',amount_excl_vat:'',vat_amount:'',amount_check:total!==null?'verified':'missing'};return result;};
+  }
+
   function duplicateFor(q){
     const d=values(q),ref=norm(d.reference),cid=qCopro(q),sid=qSupplier(q);if(!ref||!cid||!sid)return null;
     return (state.invoices||[]).find(inv=>String(inv.copro_id)===String(cid)&&String(inv.supplier_id)===String(sid)&&norm(inv.invoice_number)===ref)||null;
   }
   function bucket(q){
+    /* Un rejet est définitif dans le workflow : il prime sur une ancienne
+       détection de doublon ou une erreur mémorisée. */
+    if(q.status==='rejected'||q.workflow_bucket==='rejected')return 'rejected';
     if(q.processing_error||q.workflow_bucket==='errors'||q.status==='error')return 'errors';
     if(q.duplicate_of||duplicateFor(q))return 'duplicates';
     if(q.status==='validated'||q.workflow_bucket==='posted')return 'posted';
-    if(q.status==='rejected'||q.workflow_bucket==='rejected')return 'rejected';
     if(q.status==='to_validate'||q.workflow_bucket==='to_validate')return 'to_validate';
     return 'to_process';
   }
@@ -50,8 +98,7 @@
   function quality(q){
     const d=values(q),cid=qCopro(q),sid=qSupplier(q),missing=[];
     if(!cid)missing.push('copropriété');if(!sid)missing.push('fournisseur');if(!d.account_id)missing.push('compte comptable');if(!d.reference)missing.push('numéro');if(!d.date)missing.push('date');if(!(Number(d.amount)>0))missing.push('TVAC');
-    const ht=Number(d.amount_excl_vat||0),vat=Number(d.vat_amount||0),ttc=Number(d.amount||0),amountMismatch=ht>0&&ttc>0&&Math.abs(ht+vat-ttc)>.05;
-    return {missing,amountMismatch,unlinked:!!(cid&&sid&&!linked(cid,sid)),ready:!missing.length&&!amountMismatch};
+    return {missing,amountMismatch:false,unlinked:!!(cid&&sid&&!linked(cid,sid)),ready:!missing.length};
   }
   function statusInfo(q){const b=bucket(q),map={to_process:['À traiter','warn'],to_validate:['Prête','ok'],posted:['Comptabilisée','ok'],errors:['Erreur','danger'],duplicates:['Doublon','danger'],rejected:['Rejetée','']};return map[b]||map.to_process;}
   function accountOptions(selected){return '<option value="">Choisir…</option>'+(state.accounts||[]).filter(a=>a.active!==false).map(a=>`<option value="${a.id}" ${String(a.id)===String(selected)?'selected':''}>${esc(`${a.code||''} — ${a.label||''}`)}</option>`).join('');}
@@ -76,7 +123,19 @@
       ${store.manager&&!allowedCopros().length?`<div class="notice">Aucune copropriété n’est attribuée à ${esc(profileName(store.manager))}. Attribue-lui une copropriété dans les réglages copro.</div>`:`<div class="v36-workbench">${renderList(rows)}${selected?renderPreview(selected)+renderFields(selected):'<div class="v36-pane v36-empty">Aucune facture dans ce filtre.</div>'}</div>`}`;
   }
   function renderList(rows){return `<div class="v36-pane"><div class="v36-pane-head"><strong>${rows.length} facture(s)</strong><small>${esc(tabs.find(x=>x[0]===store.tab)?.[1]||'')}</small></div><div class="v36-list">${rows.map(q=>{const d=values(q),i=item(q),s=supplier(qSupplier(q)),c=copro(qCopro(q)),[label,cls]=statusInfo(q),qa=quality(q);return `<button class="v36-row ${String(q.id)===String(state.ocrSelectedQueueId)?'active':''}" data-v36-open="${q.id}"><strong>${esc(s?.name||d.supplier_name_guess||'Fournisseur non reconnu')}</strong><small>${esc(c?.name||'Copropriété non reconnue')} · ${esc(d.reference||i.file_name||'N° manquant')}</small><div class="v36-row-meta"><span>${d.amount?money(d.amount):'Montant ?'}</span><span class="v36-status ${qa.missing.length?'danger':cls}">${qa.missing.length?`${qa.missing.length} manque(nt)`:label}</span></div></button>`;}).join('')||'<div class="v36-empty">Aucune facture.</div>'}</div></div>`;}
-  function renderPreview(q){const i=item(q),raw=i.raw_data||{},url=raw.file_data_url||'',mime=i.mime_type||raw.mime_type||'';const content=url?(mime.startsWith('image/')?`<img src="${url}" alt="Facture">`:`<iframe src="${url}" title="Facture"></iframe>`):'<div class="v36-empty">Le PDF original n’est pas disponible pour cet ancien import.</div>';return `<div class="v36-pane"><div class="v36-pane-head"><strong>${esc(i.file_name||'Facture')}</strong><button class="btn secondary small" id="v36Analyze">Ré-analyser</button></div><div class="v36-preview">${content}</div></div>`;}
+  function previewUrl(q,i,raw){
+    const source=raw.file_data_url||i.file_data_url||q?.compta_import_items?.raw_data?.file_data_url||'';
+    if(!source)return '';
+    if(!source.startsWith('data:'))return source;
+    const key=String(i.id||q.item_id||q.id);
+    if(previewUrls.has(key))return previewUrls.get(key);
+    try{
+      const comma=source.indexOf(','),meta=source.slice(5,comma),body=source.slice(comma+1),mime=(meta.split(';')[0]||'application/pdf'),binary=meta.includes(';base64')?atob(body):decodeURIComponent(body),bytes=new Uint8Array(binary.length);
+      for(let n=0;n<binary.length;n++)bytes[n]=binary.charCodeAt(n);
+      const url=URL.createObjectURL(new Blob([bytes],{type:mime}));previewUrls.set(key,url);return url;
+    }catch(error){console.warn('Aperçu PDF impossible',error);return source;}
+  }
+  function renderPreview(q){const i=item(q),raw=i.raw_data||q.compta_import_items?.raw_data||{},url=previewUrl(q,i,raw),mime=i.mime_type||raw.mime_type||String(raw.file_data_url||'').slice(5,50),name=String(i.file_name||'');const image=/^image\//i.test(mime)||/\.(png|jpe?g|webp|gif)$/i.test(name);const content=url?(image?`<img src="${url}" alt="Facture">`:`<iframe src="${url}#toolbar=1&navpanes=0" title="Facture"></iframe>`):'<div class="v36-empty"><strong>PDF non disponible dans cet import</strong><br>Le fichier n’a pas été enregistré dans la ligne d’import. Réimporte-le pour rattacher le document.</div>';return `<div class="v36-pane"><div class="v36-pane-head"><strong>${esc(i.file_name||'Facture')}</strong><button class="btn secondary small" id="v36Analyze">Ré-analyser</button></div><div class="v36-preview">${content}</div></div>`;}
   function renderFields(q){
     const d=values(q),cid=qCopro(q),sid=qSupplier(q),qa=quality(q),isPosted=bucket(q)==='posted',cOptions='<option value="">Choisir…</option>'+allowedCopros().map(c=>`<option value="${c.id}" ${String(c.id)===String(cid)?'selected':''}>${esc(c.name)}</option>`).join('');
     const summary=qa.missing.length?`${qa.missing.length} champ(s) obligatoire(s) à corriger`:qa.amountMismatch?'Montants incohérents':qa.unlinked?'Fournisseur à associer à la copropriété':'Contrôles essentiels réussis';
@@ -88,11 +147,10 @@
         ${field('Numéro de facture',`<input id="v36FieldReference" value="${esc(d.reference||'')}">`,!d.reference,'Numéro manquant')}
         ${field('Date facture',`<input id="v36FieldDate" type="date" value="${esc(d.date||'')}">`,!d.date,'Date manquante')}
         ${field('Échéance',`<input id="v36FieldDue" type="date" value="${esc(d.due_date||'')}">`,false,'')}
-        ${field('Montant HTVA',`<input id="v36FieldHt" type="number" step="0.01" value="${esc(d.amount_excl_vat||'')}">`,false,'',qa.amountMismatch)}
-        ${field('Montant TVA',`<input id="v36FieldVat" type="number" step="0.01" value="${esc(d.vat_amount||'')}">`,false,'',qa.amountMismatch)}
         ${field('Montant TVAC',`<input id="v36FieldTotal" type="number" step="0.01" value="${esc(d.amount||'')}">`,!(Number(d.amount)>0),'TVAC obligatoire',qa.amountMismatch)}
         ${field('Taux TVA',`<input id="v36FieldRate" type="number" step="0.01" value="${esc(d.vat_rate||'')}">`,false,'')}
       </div>
+      <div class="v36-tax-calculation" id="v36TaxCalculation">${taxCalculationHtml(d.amount,d.vat_rate)}</div>
       <div class="v36-supplier-actions">${supplierActions(cid,sid)}</div>
       <label class="v36-block-label">Libellé interne<textarea id="v36FieldDescription">${esc(d.description||'')}</textarea></label>
       <label class="v36-block-label">Note de traitement<textarea id="v36FieldNotes">${esc(d.notes||q.notes||'')}</textarea></label>
@@ -106,7 +164,9 @@
     return `<strong>${sid?esc(supplier(sid)?.name||'Fournisseur'):'Aucun fournisseur sélectionné'}</strong><small>${sid?'Fournisseur déjà associé à cette copropriété.':'Choisis une fiche globale existante ou crée-en une.'}</small><div class="actions-inline"><button class="btn secondary small" id="v36ChooseSupplier">Répertoire global</button><button class="btn secondary small" id="v36CreateSupplier">Nouveau fournisseur</button></div>`;
   }
 
-  function readForm(){return {copro_id:$('v36FieldCopro')?.value||null,supplier_id:$('v36FieldSupplier')?.value||null,account_id:$('v36FieldAccount')?.value||null,reference:$('v36FieldReference')?.value.trim()||null,date:$('v36FieldDate')?.value||null,due_date:$('v36FieldDue')?.value||null,amount_excl_vat:$('v36FieldHt')?.value?Number($('v36FieldHt').value):null,vat_amount:$('v36FieldVat')?.value?Number($('v36FieldVat').value):null,amount:$('v36FieldTotal')?.value?Number($('v36FieldTotal').value):null,vat_rate:$('v36FieldRate')?.value?Number($('v36FieldRate').value):null,description:$('v36FieldDescription')?.value.trim()||null,notes:$('v36FieldNotes')?.value.trim()||null};}
+  function calculatedTaxes(total,rate){const t=Number(total||0),r=Math.max(0,Number(rate||0));if(!(t>0))return {ht:null,vat:null};const ht=Number((t/(1+r/100)).toFixed(2)),vat=Number((t-ht).toFixed(2));return {ht,vat};}
+  function taxCalculationHtml(total,rate){const x=calculatedTaxes(total,rate);return `<div><span>Montant HTVA calculé</span><strong>${x.ht===null?'—':money(x.ht)}</strong></div><div><span>TVA calculée</span><strong>${x.vat===null?'—':money(x.vat)}</strong></div><div><span>Montant TVAC</span><strong>${Number(total)>0?money(total):'—'}</strong></div>`;}
+  function readForm(){const amount=$('v36FieldTotal')?.value?Number($('v36FieldTotal').value):null,vat_rate=$('v36FieldRate')?.value?Number($('v36FieldRate').value):0,tax=calculatedTaxes(amount,vat_rate);return {copro_id:$('v36FieldCopro')?.value||null,supplier_id:$('v36FieldSupplier')?.value||null,account_id:$('v36FieldAccount')?.value||null,reference:$('v36FieldReference')?.value.trim()||null,date:$('v36FieldDate')?.value||null,due_date:$('v36FieldDue')?.value||null,amount_excl_vat:tax.ht,vat_amount:tax.vat,amount,vat_rate,description:$('v36FieldDescription')?.value.trim()||null,notes:$('v36FieldNotes')?.value.trim()||null};}
   function selectedQ(){return allInvoiceQueues().find(q=>String(q.id)===String(state.ocrSelectedQueueId));}
   function patchQueue(id,patch){const idx=state.validationQueue.findIndex(q=>String(q.id)===String(id));if(idx>=0)state.validationQueue[idx]={...state.validationQueue[idx],...patch};}
   async function save(validate=false){
@@ -133,7 +193,7 @@
 
   function chooseSupplier(){const q=selectedQ(),d=readForm(),cid=d.copro_id||qCopro(q);if(!cid)return alert('Choisis d’abord la copropriété.');const body=`<div class="popup-form"><div class="notice">Tous les fournisseurs globaux sont disponibles, même s’ils ne sont pas encore associés à cette copropriété.</div><label>Rechercher<input id="v36SupplierSearch" placeholder="Nom, code, TVA…"></label><div id="v36SupplierResults" class="v359-manage-grid"></div></div>`;openAppModal('Répertoire global des fournisseurs',body,'<button class="btn secondary" data-modal-close>Annuler</button>',{size:'wide'});const draw=()=>{const needle=norm($('v36SupplierSearch')?.value);$('v36SupplierResults').innerHTML=(state.suppliers||[]).filter(s=>s.active!==false&&(!needle||norm([s.name,s.supplier_code,s.vat_number].join(' ')).includes(needle))).slice(0,80).map(s=>`<button class="v359-copro-link ${linked(cid,s.id)?'is-linked':''}" data-v36-use-supplier="${s.id}"><span><strong>${esc(s.name)}</strong><small>${esc(s.supplier_code||s.vat_number||'')}</small></span><span>${linked(cid,s.id)?'Déjà associé':'Ajouter'}</span></button>`).join('')||'<div class="notice">Aucun résultat.</div>';};draw();$('v36SupplierSearch').oninput=draw;document.querySelectorAll('[data-v36-use-supplier]').forEach(()=>{});$('v36SupplierResults').onclick=async e=>{const b=e.target.closest('[data-v36-use-supplier]');if(!b)return;await ensureLink(cid,b.dataset.v36UseSupplier,'ocr');const old=values(q),next={...old,copro_id:cid,supplier_id:b.dataset.v36UseSupplier};await supabaseClient.from('compta_validation_queue').update({copro_id:cid,corrected_data:next}).eq('id',q.id);patchQueue(q.id,{copro_id:cid,corrected_data:next});closeAppModal();render();};}
   function createSupplier(){const q=selectedQ(),d=readForm(),cid=d.copro_id||qCopro(q);if(!cid)return alert('Choisis d’abord la copropriété.');openAppModal('Nouveau fournisseur',`<div class="popup-form"><div class="notice">Une seule fiche globale sera créée puis associée à ${esc(copro(cid)?.name||'la copropriété')}.</div><div class="form-grid"><label>Nom<input id="v36NewSupplierName"></label><label>N° TVA<input id="v36NewSupplierVat"></label><label>E-mail<input id="v36NewSupplierEmail" type="email"></label><label>IBAN<input id="v36NewSupplierIban"></label></div></div>`,`<button class="btn secondary" data-modal-close>Annuler</button><button class="btn" id="v36SaveSupplier">Créer et utiliser</button>`,{size:'wide'});$('v36SaveSupplier').onclick=async()=>{const name=$('v36NewSupplierName').value.trim();if(!name)return alert('Indique le nom.');const existing=(state.suppliers||[]).find(s=>norm(s.name)===norm(name)||($('v36NewSupplierVat').value&&norm(s.vat_number)===norm($('v36NewSupplierVat').value)));if(existing){if(!confirm(`« ${existing.name} » existe déjà. Réutiliser cette fiche ?`))return;await useNewSupplier(existing);}else{const r=await supabaseClient.from('compta_suppliers').insert({name,vat_number:$('v36NewSupplierVat').value.trim()||null,email:$('v36NewSupplierEmail').value.trim()||null,iban:$('v36NewSupplierIban').value.trim()||null,active:true,created_by:currentUser.id}).select('*').single();if(r.error)return alert(r.error.message);state.suppliers.push(r.data);await useNewSupplier(r.data);}};async function useNewSupplier(s){await ensureLink(cid,s.id,'ocr');const next={...values(q),copro_id:cid,supplier_id:s.id};await supabaseClient.from('compta_validation_queue').update({copro_id:cid,corrected_data:next}).eq('id',q.id);patchQueue(q.id,{copro_id:cid,corrected_data:next});closeAppModal();render();}}
-  async function reject(){const q=selectedQ();if(!q||!confirm('Rejeter cette facture ?'))return;await supabaseClient.from('compta_validation_queue').update({status:'rejected',workflow_bucket:'rejected'}).eq('id',q.id);patchQueue(q.id,{status:'rejected',workflow_bucket:'rejected'});store.tab='to_process';state.ocrSelectedQueueId='';render();}
+  async function reject(){const q=selectedQ();if(!q||!confirm('Rejeter cette facture ?'))return;const r=await supabaseClient.from('compta_validation_queue').update({status:'rejected',workflow_bucket:'rejected',processing_error:null,duplicate_of:null}).eq('id',q.id);if(r.error)return alert(r.error.message);patchQueue(q.id,{status:'rejected',workflow_bucket:'rejected',processing_error:null,duplicate_of:null});store.tab='rejected';localStorage.setItem('wapi_v36_invoice_tab','rejected');state.ocrSelectedQueueId=q.id;render();}
 
   function tierCoproId(){return state.activeCoproId||$('ownersFilterCopro')?.value||'';}
   function renderSupplierDirectory(){
@@ -161,7 +221,7 @@
   },true);
   document.addEventListener('click',e=>{const t=e.target.closest?.('[data-v36-tab],[data-v36-open],#v36Profiles,#v36Import,#v36Refresh,#v36Save,#v36Validate,#v36Reject,#v36Analyze,#v36ChooseSupplier,#v36CreateSupplier,#v36LinkSupplier');if(!t)return;e.preventDefault();e.stopImmediatePropagation();if(t.dataset.v36Tab){store.tab=t.dataset.v36Tab;localStorage.setItem('wapi_v36_invoice_tab',store.tab);state.ocrSelectedQueueId='';render();}else if(t.dataset.v36Open){state.ocrSelectedQueueId=t.dataset.v36Open;render();}else if(t.id==='v36Profiles')$('v349ProfilesBtn')?.click();else if(t.id==='v36Import')switchToView('processing');else if(t.id==='v36Refresh')refresh();else if(t.id==='v36Save')save(false);else if(t.id==='v36Validate')save(true);else if(t.id==='v36Reject')reject();else if(t.id==='v36Analyze')analyze();else if(t.id==='v36ChooseSupplier')chooseSupplier();else if(t.id==='v36CreateSupplier')createSupplier();else if(t.id==='v36LinkSupplier'){const d=readForm();ensureLink(d.copro_id,d.supplier_id,'ocr').then(render);}},true);
   document.addEventListener('change',e=>{if(e.target.id==='v36Manager'){store.manager=e.target.value;store.copro='';localStorage.setItem('wapi_v36_invoice_manager',store.manager);localStorage.removeItem('wapi_v36_invoice_copro');state.ocrSelectedQueueId='';render();}if(e.target.id==='v36Copro'){store.copro=e.target.value;localStorage.setItem('wapi_v36_invoice_copro',store.copro);state.ocrSelectedQueueId='';render();}if(e.target.id==='v36FieldCopro'){const q=selectedQ(),next={...values(q),...readForm(),copro_id:e.target.value,supplier_id:null};patchQueue(q.id,{copro_id:e.target.value,corrected_data:next});render();}if(e.target.id==='v36FieldSupplier'){const q=selectedQ(),next={...values(q),...readForm(),supplier_id:e.target.value||null};patchQueue(q.id,{corrected_data:next});render();}const toggle=e.target.closest?.('[data-v36-supplier-copro]');if(toggle){toggle.disabled=true;(async()=>{if(toggle.checked)await ensureLink(toggle.dataset.v36SupplierCopro,toggle.dataset.supplier,'manual');else{const l=store.links.find(x=>String(x.copro_id)===String(toggle.dataset.v36SupplierCopro)&&String(x.supplier_id)===String(toggle.dataset.supplier));if(l){const r=await supabaseClient.from('compta_copro_suppliers').update({active:false,updated_at:new Date().toISOString()}).eq('id',l.id);if(r.error)alert(r.error.message);else l.active=false;}}toggle.disabled=false;toggle.closest('.v359-copro-link')?.classList.toggle('is-linked',toggle.checked);})();}});
-  document.addEventListener('input',e=>{if(e.target.id==='v36Search'){store.search=e.target.value;clearTimeout(store.searchTimer);store.searchTimer=setTimeout(render,180);}});
+  document.addEventListener('input',e=>{if(e.target.id==='v36Search'){store.search=e.target.value;clearTimeout(store.searchTimer);store.searchTimer=setTimeout(render,180);}if(e.target.id==='v36FieldTotal'||e.target.id==='v36FieldRate'){const host=$('v36TaxCalculation');if(host)host.innerHTML=taxCalculationHtml($('v36FieldTotal')?.value,$('v36FieldRate')?.value);}});
   async function refresh(){const btn=$('v36Refresh');if(btn){btn.disabled=true;btn.innerHTML='<span class="v36-spinner"></span> Actualisation…';}await Promise.all([loadImportBatches?.(),loadImportItems?.(),loadValidationQueue?.(),loadInvoices?.(),loadSupport()]);render();}
   async function install(){await loadSupport();const old=$('ocrStatusFilter');if(old)old.closest('.list-filters').style.display='none';render();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,700));else setTimeout(install,700);
