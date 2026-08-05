@@ -1,0 +1,48 @@
+WAPI ONE V36 — CENTRE DE TRAITEMENT DES FACTURES
+
+INSTALLATION
+1. Dans Supabase > SQL Editor, exécuter dans cet ordre :
+   a. sql/045_v35_9_fournisseurs_par_copro_ocr.sql
+   b. sql/046_v36_centre_factures.sql
+2. Dans GitHub, remplacer le contenu du projet par celui du ZIP V36.
+3. Commit changes.
+4. Recharger avec CTRL + F5.
+
+NOUVEAU CENTRE FACTURES
+- À traiter
+- À valider
+- Comptabilisées
+- Erreurs
+- Doublons
+- Rejetées
+
+FILTRES
+- Gestionnaire : limite réellement les factures aux copropriétés attribuées.
+- Copropriété : ne propose que les copropriétés du gestionnaire sélectionné.
+- Recherche : fournisseur, numéro, montant ou copropriété.
+- Si un gestionnaire n'a aucune copropriété, la vue est vide et l'indique clairement.
+
+FOURNISSEURS
+- Une fiche fournisseur globale unique.
+- Associations distinctes avec les copropriétés.
+- Choix dans tout le répertoire depuis l'OCR.
+- Création d'un fournisseur sans quitter l'OCR.
+- Contrôle anti-doublon par nom et numéro de TVA.
+- Gestion des associations dans Tiers > Fournisseurs.
+- Gestion des associations dans Réglages copropriété.
+
+FLUIDITÉ
+- Une correction ne recharge plus tout WAPI One.
+- Le changement de filtre ne sollicite pas Supabase.
+- La réanalyse réutilise le texte déjà extrait au lieu de relancer inutilement la lecture complète du PDF.
+- Seul le bouton Actualiser recharge les listes depuis Supabase.
+
+TEST CONSEILLÉ
+1. Sélectionner un gestionnaire et vérifier la liste de ses copros.
+2. Choisir une copro précise.
+3. Ouvrir successivement plusieurs factures.
+4. Choisir un fournisseur global non encore associé.
+5. Créer un nouveau fournisseur depuis une facture test.
+6. Ouvrir Réglages copro et ajouter/retirer un fournisseur.
+7. Vérifier les onglets À traiter, À valider et Comptabilisées.
+
