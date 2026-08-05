@@ -1,0 +1,23 @@
+WAPI ONE V35.9 — FOURNISSEURS PAR COPROPRIÉTÉ ET CONTRÔLE OCR
+
+INSTALLATION
+1. Dans Supabase > SQL Editor, exécuter :
+   sql/045_v35_9_fournisseurs_par_copro_ocr.sql
+2. Dans GitHub, remplacer tout le contenu par celui du ZIP V35.9.
+3. Commit changes.
+4. Recharger WAPI One avec CTRL + F5.
+
+TEST RAPIDE
+1. Ouvrir une copropriété puis Tiers > Fournisseurs.
+2. Vérifier que seuls les fournisseurs attribués à cette copropriété apparaissent.
+3. Cliquer « Ajouter un fournisseur existant » et associer une fiche globale.
+4. Ouvrir « Gérer les copros » sur un fournisseur et contrôler ses associations.
+5. Importer une facture dans l'OCR.
+6. Si le fournisseur est connu mais non associé à la copro, cliquer le bouton proposé.
+7. Vérifier que les champs absents apparaissent en rouge et les incohérences en orange.
+
+IMPORTANT
+- Un fournisseur n'est jamais dupliqué simplement parce qu'il travaille pour une autre copropriété.
+- Les anciennes factures et les profils EAN/compteurs reconstruisent les associations existantes.
+- La validation d'une facture ajoute automatiquement le fournisseur à la copropriété concernée.
+
