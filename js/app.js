@@ -10809,31 +10809,91 @@ function updateSidebarButtons() {
   /* OD : module complet, liste, modification, impact classe 6 */
   function v31EntryAccount(entry){ return v31AccountById(entry.account_id) || {}; }
   function v31OdGroups(){
-    const rows=(state.entries||[]).filter(e=>String(e.journal_code||'').toUpperCase()==='OD');
+    const rows=(state.entries||[]).filter(e=>String(e.source_type||'').toLowerCase()==='od' || ['OD','AN'].includes(String(e.journal_code||'').toUpperCase()));
     const map=new Map();
     rows.forEach(e=>{ const key=e.od_group_id || e.source_id || e.reference || e.id; if(!map.has(key)) map.set(key,{id:key, rows:[], date:e.entry_date, reference:e.reference, label:e.description||e.label||'', copro_id:e.copro_id, status:e.status}); map.get(key).rows.push(e); });
     return [...map.values()].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  }
+  function v31OdLineHtml(row={}, index=0){
+    const account=v31EntryAccount(row);
+    const accountValue=account?.id ? `${account.code||''} - ${account.label||''}` : '';
+    return `<tr data-v31-od-line>
+      <td class="v31-od-line-no">${index+1}</td>
+      <td><input class="v31-od-account-input" data-v31-od-account-input list="v31OdAccountsList" value="${esc(accountValue)}" placeholder="N° ou libellé du compte" autocomplete="off"></td>
+      <td><input class="v31-od-line-label" data-v31-od-line-label value="${esc(row.description||row.label||'')}" placeholder="Libellé de la ligne"></td>
+      <td><input class="v31-od-money" data-v31-od-debit type="number" min="0" step="0.01" value="${Number(row.debit||0)||''}" aria-label="Débit ligne ${index+1}"></td>
+      <td><input class="v31-od-money" data-v31-od-credit type="number" min="0" step="0.01" value="${Number(row.credit||0)||''}" aria-label="Crédit ligne ${index+1}"></td>
+      <td><button class="btn danger small v31-od-remove" data-v31-remove-od-line type="button" title="Supprimer cette ligne">Supprimer</button></td>
+    </tr>`;
+  }
+  function v31OdAccountList(){
+    return `<datalist id="v31OdAccountsList">${(state.accounts||[]).slice().sort((a,b)=>String(a.code||'').localeCompare(String(b.code||''),'fr',{numeric:true})).map(a=>`<option value="${esc(`${a.code||''} - ${a.label||''}`)}"></option>`).join('')}</datalist>`;
+  }
+  function v31OdReadCents(value){ return Math.round((Number(value)||0)*100); }
+  function v31OdAccountFromValue(value){
+    const raw=String(value||'').trim().toLowerCase();
+    if(!raw) return null;
+    return (state.accounts||[]).find(a=>String(a.id)===raw || `${a.code||''} - ${a.label||''}`.toLowerCase()===raw)
+      || (state.accounts||[]).find(a=>String(a.code||'').toLowerCase()===raw)
+      || null;
+  }
+  function v31RefreshOdTotals(){
+    const rows=[...document.querySelectorAll('#v31OdLinesBody [data-v31-od-line]')];
+    const debit=rows.reduce((s,r)=>s+v31OdReadCents(r.querySelector('[data-v31-od-debit]')?.value),0);
+    const credit=rows.reduce((s,r)=>s+v31OdReadCents(r.querySelector('[data-v31-od-credit]')?.value),0);
+    const gap=debit-credit;
+    if($id('v31OdDebitTotal')) $id('v31OdDebitTotal').textContent=money31(debit/100);
+    if($id('v31OdCreditTotal')) $id('v31OdCreditTotal').textContent=money31(credit/100);
+    const badge=$id('v31OdBalanceBadge');
+    if(badge){ badge.className=`badge ${gap===0&&debit>0?'ok':'warn'}`; badge.textContent=gap===0&&debit>0?'Écriture équilibrée':`Écart ${money31(gap/100)}`; }
   }
   function v31RenderODModule(){
     const view=$id('odView'); if(!view) return; const card=view.querySelector('.card'); if(!card) return;
     const coproId=state.activeCoproId || card.dataset.v31Copro || '';
     const groups=v31OdGroups().filter(g=>!coproId||g.copro_id===coproId);
-    card.innerHTML=`<div class="toolbar"><div><h2>Opérations diverses</h2><p class="muted-note">Journal OD : débit/crédit entre comptes comptables. Les OD en classe 6 remontent dans la liste des dépenses et les décomptes.</p></div><button class="btn" id="v31NewOdBtn" type="button">+ Nouvelle OD</button></div><div class="list-filters"><label>Copropriété <select id="v31OdCoproFilter">${'<option value="">Toutes</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${c.id===coproId?'selected':''}>${esc(c.name||'')}</option>`).join('')}</select></label></div><div class="v31-od-list">${groups.map(g=>{ const debit=g.rows.filter(r=>Number(r.debit)>0)[0]||{}; const credit=g.rows.filter(r=>Number(r.credit)>0)[0]||{}; const amount=Number(debit.debit||credit.credit||0); const da=v31EntryAccount(debit), ca=v31EntryAccount(credit); return `<div class="v31-od-card"><div><strong>${esc(g.reference||'OD')}</strong><div class="muted-note">${esc(g.date||'')} · ${esc(g.label||'')}</div></div><div><span class="badge">Débit ${esc(da.code||'')}</span><span class="badge">Crédit ${esc(ca.code||'')}</span></div><div><strong>${money31(amount)}</strong></div><button class="btn secondary small" data-v31-edit-od="${esc(g.id)}" type="button">Modifier</button></div>`; }).join('')||'<div class="notice">Aucune opération diverse.</div>'}</div>`;
+    card.innerHTML=`<div class="toolbar"><div><h2>Opérations diverses</h2><p class="muted-note">Écritures multi-lignes au journal OD. Les écritures validées alimentent immédiatement les comptes, le bilan et les décomptes.</p></div><button class="btn" id="v31NewOdBtn" type="button">+ Nouvelle OD</button></div><div class="list-filters"><label>Copropriété <select id="v31OdCoproFilter">${'<option value="">Toutes</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${c.id===coproId?'selected':''}>${esc(c.name||'')}</option>`).join('')}</select></label></div><div class="v31-od-list">${groups.map(g=>{ const debit=g.rows.reduce((s,r)=>s+Number(r.debit||0),0); const credit=g.rows.reduce((s,r)=>s+Number(r.credit||0),0); const isDraft=g.status==='draft'; return `<div class="v31-od-card"><div><strong>${esc(g.reference||'OD')}</strong><div class="muted-note">${esc(g.date||'')} · ${esc(g.label||'')}</div></div><div><span class="badge">${g.rows.length} ligne(s)</span><span class="badge ${isDraft?'warn':'ok'}">${isDraft?'Brouillon':'Validée'}</span></div><div><strong>${money31(Math.max(debit,credit))}</strong><div class="muted-note">Écart ${money31(debit-credit)}</div></div><button class="btn secondary small" data-v31-edit-od="${esc(g.id)}" type="button">Ouvrir</button></div>`; }).join('')||'<div class="notice">Aucune opération diverse.</div>'}</div>`;
   }
   function v31OpenOdModal(groupId=''){
     const g=groupId ? v31OdGroups().find(x=>String(x.id)===String(groupId)) : null;
-    const debit=g?.rows?.find(r=>Number(r.debit)>0)||{}; const credit=g?.rows?.find(r=>Number(r.credit)>0)||{};
     const coproId=g?.copro_id||state.activeCoproId||$id('v31OdCoproFilter')?.value||'';
-    const body=`<div class="popup-form"><div class="form-grid"><label>Copropriété <select id="v31OdCopro">${v31CoproOptions(coproId)}</select></label><label>Date <input id="v31OdDate" type="date" value="${esc(g?.date||today31())}"></label><label>Référence <input id="v31OdReference" value="${esc(g?.reference||'')}"></label><label>Montant <input id="v31OdAmount" type="number" step="0.01" value="${Number(debit.debit||credit.credit||0)}"></label><label>Compte débit <select id="v31OdDebitAccount">${v31AccountOptions('',debit.account_id||'')}</select></label><label>Compte crédit <select id="v31OdCreditAccount">${v31AccountOptions('',credit.account_id||'')}</select></label></div><label>Libellé <textarea id="v31OdLabel">${esc(g?.label||'')}</textarea></label><div class="notice">Exemple : débiter une classe 6 et créditer un compte de régularisation. Si une classe 6 est utilisée, l’OD sera reprise dans les dépenses et dans les décomptes.</div></div>`;
-    openAppModal(groupId?'Modifier OD':'Nouvelle opération diverse', body, '<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" id="v31SaveOdModalBtn" type="button">Enregistrer</button>', {size:'wide'});
+    const rows=g?.rows?.length ? g.rows : [{},{ }];
+    const body=`<div class="popup-form v31-od-editor">
+      <div class="v31-od-header-grid">
+        <label>Copropriété <select id="v31OdCopro">${v31CoproOptions(coproId)}</select></label>
+        <label>Date de l'OD <input id="v31OdDate" type="date" value="${esc(g?.date||today31())}"></label>
+        <label>Journal <select id="v31OdJournal"><option value="OD" selected>OD — Opérations diverses</option><option value="AN">AN — À nouveaux</option></select></label>
+        <label>Référence <input id="v31OdReference" value="${esc(g?.reference||'')}" placeholder="Automatique si vide"></label>
+        <label class="v31-od-main-label">Libellé général <input id="v31OdLabel" value="${esc(g?.label||'')}" placeholder="Objet de l'opération diverse"></label>
+        <label class="v31-od-opening"><input id="v31OdOpening" type="checkbox" ${String(g?.rows?.[0]?.journal_code||'').toUpperCase()==='AN'?'checked':''}> OD de reprise comptable</label>
+      </div>
+      <div class="v31-od-table-wrap"><table class="v31-od-table"><thead><tr><th>#</th><th>Compte comptable</th><th>Libellé de ligne</th><th>Débit</th><th>Crédit</th><th></th></tr></thead><tbody id="v31OdLinesBody">${rows.map((r,i)=>v31OdLineHtml(r,i)).join('')}</tbody><tfoot><tr><td colspan="2"><button class="btn secondary small" id="v31AddOdLineBtn" type="button">+ Ajouter une ligne</button></td><td class="v31-od-total-label">Totaux</td><td id="v31OdDebitTotal">0,00 €</td><td id="v31OdCreditTotal">0,00 €</td><td></td></tr></tfoot></table></div>
+      ${v31OdAccountList()}
+      <div class="v31-od-editor-foot"><span id="v31OdBalanceBadge" class="badge warn">Écriture à compléter</span><span class="muted-note">Une OD validée doit comporter au moins deux lignes et être équilibrée au centime.</span></div>
+    </div>`;
+    const footer='<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn secondary" id="v31SaveOdDraftBtn" type="button">Enregistrer le brouillon</button><button class="btn" id="v31SaveOdModalBtn" type="button">Valider l’OD</button>';
+    openAppModal(groupId?'Modifier une opération diverse':'Nouvelle opération diverse', body, footer, {size:'wide'});
     state.v31EditingOdGroupId=groupId||'';
+    setTimeout(v31RefreshOdTotals,0);
   }
-  async function v31SaveOd(groupId=''){
-    const coproId=$id('v31OdCopro')?.value; const date=$id('v31OdDate')?.value; const ref=($id('v31OdReference')?.value||`OD-${date||today31()}`).trim(); const label=($id('v31OdLabel')?.value||'').trim(); const amount=Number($id('v31OdAmount')?.value||0); const debitId=$id('v31OdDebitAccount')?.value; const creditId=$id('v31OdCreditAccount')?.value;
-    if(!coproId||!date||!debitId||!creditId||!amount||!label) return alert('Complète la copropriété, date, comptes, montant et libellé.');
+  async function v31SaveOd(groupId='', status='posted'){
+    const coproId=$id('v31OdCopro')?.value; const date=$id('v31OdDate')?.value; const ref=($id('v31OdReference')?.value||`OD-${date||today31()}`).trim(); const label=($id('v31OdLabel')?.value||'').trim();
+    const journal=$id('v31OdOpening')?.checked?'AN':($id('v31OdJournal')?.value||'OD');
+    const lineEls=[...document.querySelectorAll('#v31OdLinesBody [data-v31-od-line]')];
+    if(!coproId||!date||!label) return alert('Complète la copropriété, la date et le libellé général.');
+    if(lineEls.length<2) return alert('Une opération diverse doit comporter au moins deux lignes.');
+    const parsed=[]; let debitCents=0, creditCents=0;
+    for(let i=0;i<lineEls.length;i++){
+      const el=lineEls[i], account=v31OdAccountFromValue(el.querySelector('[data-v31-od-account-input]')?.value);
+      const debit=v31OdReadCents(el.querySelector('[data-v31-od-debit]')?.value), credit=v31OdReadCents(el.querySelector('[data-v31-od-credit]')?.value);
+      if(!account) return alert(`Choisis un compte comptable valide à la ligne ${i+1}.`);
+      if((debit<=0&&credit<=0)||(debit>0&&credit>0)) return alert(`La ligne ${i+1} doit contenir un montant, soit au débit, soit au crédit.`);
+      debitCents+=debit; creditCents+=credit;
+      parsed.push({account_id:account.id,debit:debit/100,credit:credit/100,description:(el.querySelector('[data-v31-od-line-label]')?.value||label).trim()||label});
+    }
+    if(status==='posted' && (debitCents!==creditCents || debitCents===0)) return alert(`L’OD n’est pas équilibrée. Débit ${money31(debitCents/100)} — crédit ${money31(creditCents/100)}.`);
     const gid=groupId||uid31();
-    if(groupId) await supabaseClient.from('compta_entries').delete().eq('od_group_id',groupId);
-    const rows=[{copro_id:coproId,journal_code:'OD',entry_date:date,reference:ref,label,description:label,status:'posted',account_id:debitId,debit:amount,credit:0,od_group_id:gid,source_type:'od',source_id:gid,created_by:currentUser?.id||null},{copro_id:coproId,journal_code:'OD',entry_date:date,reference:ref,label,description:label,status:'posted',account_id:creditId,debit:0,credit:amount,od_group_id:gid,source_type:'od',source_id:gid,created_by:currentUser?.id||null}];
+    if(groupId){ const del=await supabaseClient.from('compta_entries').delete().eq('od_group_id',groupId); if(del.error) return alert(del.error.message); }
+    const rows=parsed.map((line,index)=>({copro_id:coproId,journal_code:journal,entry_date:date,reference:ref,label,description:line.description,status,account_id:line.account_id,debit:line.debit,credit:line.credit,od_group_id:gid,source_type:'od',source_id:gid,created_by:currentUser?.id||null}));
     const {error}=await supabaseClient.from('compta_entries').insert(rows); if(error) return alert(error.message);
     closeAppModal(); if(typeof loadEntries==='function') await loadEntries(); else if(typeof loadAll==='function') await loadAll(); v31RenderAll();
   }
@@ -10847,7 +10907,7 @@ function updateSidebarButtons() {
     (state.invoices||[]).filter(i=>i.status!=='rejected' && (!copro||i.copro_id===copro) && v31DateInYear(i.invoice_date,y)).forEach(i=>{ const acc=v31AccountById(i.account_id); const code=String(i.account_code||acc.code||'610'); const amount=Number(i.amount_total||0); v31Entry(rows,code,amount,0,i.description||`Facture ${i.invoice_number||''}`,i.invoice_date,i.invoice_number,i.copro_id,'invoice',i.id); v31Entry(rows,'440',0,amount,`Dette fournisseur ${i.invoice_number||''}`,i.invoice_date,i.invoice_number,i.copro_id,'invoice',i.id); });
     (state.ownerCalls||[]).filter(c=>(!copro||c.copro_id===copro) && (!y || c.fiscal_year_id===y.id || v31DateInYear(c.due_date,y)) && (typeof ownerCallAccountingStatus!=='function' || ownerCallAccountingStatus(c)==='accounted')).forEach(c=>{ const amount=Number(c.amount_due||0); const code=c.accounting_account_code || v31CallAccountCode(c.call_type); v31Entry(rows,'410',amount,0,c.label||'Appel',c.due_date,c.period_label,c.copro_id,'call',c.id); v31Entry(rows,code,0,amount,c.label||'Appel',c.due_date,c.period_label,c.copro_id,'call',c.id); });
     (state.bankTransactions||[]).filter(t=>(!copro||t.copro_id===copro) && v31DateInYear(t.transaction_date,y)).forEach(t=>{ const amount=Number(t.amount||0); const bank=v31BankCode(t); const tier=v31TierCode(t.tier_type); const lab=t.communication||t.description||t.counterparty_name||'Mouvement bancaire'; if(amount>=0){ v31Entry(rows,bank,amount,0,lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); v31Entry(rows,tier,0,amount,lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); } else { v31Entry(rows,tier,Math.abs(amount),0,lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); v31Entry(rows,bank,0,Math.abs(amount),lab,t.transaction_date,t.statement_number,t.copro_id,'bank_tx',t.id); }});
-    (state.entries||[]).filter(e=>String(e.journal_code||'').toUpperCase()==='OD' && e.account_id && (!copro||e.copro_id===copro) && v31DateInYear(e.entry_date,y)).forEach(e=>{ const acc=v31AccountById(e.account_id); v31Entry(rows,acc.code||'499',Number(e.debit||0),Number(e.credit||0),e.description||e.label||'OD',e.entry_date,e.reference,e.copro_id,'od',e.od_group_id||e.id); });
+    (state.entries||[]).filter(e=>(String(e.source_type||'').toLowerCase()==='od'||['OD','AN'].includes(String(e.journal_code||'').toUpperCase())) && e.status!=='draft' && e.account_id && (!copro||e.copro_id===copro) && v31DateInYear(e.entry_date,y)).forEach(e=>{ const acc=v31AccountById(e.account_id); v31Entry(rows,acc.code||'499',Number(e.debit||0),Number(e.credit||0),e.description||e.label||'OD',e.entry_date,e.reference,e.copro_id,'od',e.od_group_id||e.id); });
     return rows;
   }
   function v31GroupedAccounts(){ const map=new Map(); v31AccountingRows().forEach(e=>{ if(!map.has(e.code)) map.set(e.code,{code:e.code,label:v31AccLabel(e.code),debit:0,credit:0,lines:[]}); const r=map.get(e.code); r.debit+=e.debit; r.credit+=e.credit; r.lines.push(e); }); return [...map.values()].sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true})); }
@@ -10974,7 +11034,22 @@ function updateSidebarButtons() {
     if(b.id==='v28SaveCoproSettingsBtn'){ e.preventDefault(); e.stopImmediatePropagation(); return v31SaveCoproSettings(); }
     if(b.id==='v31NewOdBtn'){ e.preventDefault(); return v31OpenOdModal(''); }
     if(b.dataset.v31EditOd){ e.preventDefault(); return v31OpenOdModal(b.dataset.v31EditOd); }
-    if(b.id==='v31SaveOdModalBtn'){ e.preventDefault(); return v31SaveOd(state.v31EditingOdGroupId||''); }
+    if(b.id==='v31AddOdLineBtn'){
+      e.preventDefault();
+      const body=$id('v31OdLinesBody'); if(!body) return;
+      body.insertAdjacentHTML('beforeend',v31OdLineHtml({},body.querySelectorAll('[data-v31-od-line]').length));
+      return v31RefreshOdTotals();
+    }
+    if(b.dataset.v31RemoveOdLine!==undefined){
+      e.preventDefault();
+      const body=$id('v31OdLinesBody');
+      if((body?.querySelectorAll('[data-v31-od-line]').length||0)<=2) return alert('Une OD doit conserver au moins deux lignes.');
+      b.closest('[data-v31-od-line]')?.remove();
+      [...body.querySelectorAll('[data-v31-od-line]')].forEach((r,i)=>{ const no=r.querySelector('.v31-od-line-no'); if(no) no.textContent=i+1; });
+      return v31RefreshOdTotals();
+    }
+    if(b.id==='v31SaveOdDraftBtn'){ e.preventDefault(); return v31SaveOd(state.v31EditingOdGroupId||'','draft'); }
+    if(b.id==='v31SaveOdModalBtn'){ e.preventDefault(); return v31SaveOd(state.v31EditingOdGroupId||'','posted'); }
     if(b.id==='saveOdBtn'){ e.preventDefault(); e.stopImmediatePropagation(); return v31OpenOdModal(''); }
     if(b.dataset.v356BilanSearch!==undefined) return v31RenderBilan();
     if(b.dataset.v356BilanClear!==undefined){ state.v356BilanMode='before'; state.v356BilanDisplay='summary'; state.v356BilanOpening=false; state.v356BilanGroupTiers=true; state.v356BilanShowOwners=false; return v31RenderBilan(); }
@@ -10988,6 +11063,13 @@ function updateSidebarButtons() {
     if(year?.starts_on&&$id('v31CallStart')) $id('v31CallStart').value=year.starts_on;
   });
   document.addEventListener('input',(e)=>{ if(['v28AccountLookupCode'].includes(e.target?.id)) v31RenderAccountLookup(); });
+  document.addEventListener('input',(e)=>{
+    const t=e.target;
+    if(!t?.closest?.('#v31OdLinesBody')) return;
+    if(t.matches('[data-v31-od-debit]') && v31OdReadCents(t.value)>0){ const other=t.closest('tr')?.querySelector('[data-v31-od-credit]'); if(other) other.value=''; }
+    if(t.matches('[data-v31-od-credit]') && v31OdReadCents(t.value)>0){ const other=t.closest('tr')?.querySelector('[data-v31-od-debit]'); if(other) other.value=''; }
+    v31RefreshOdTotals();
+  });
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(v31RenderAll,800)); else setTimeout(v31RenderAll,800);
 })();
 

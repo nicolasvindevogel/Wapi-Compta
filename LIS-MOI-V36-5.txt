@@ -1,0 +1,20 @@
+WAPI One V36.5 — Opérations diverses multi-lignes
+
+INSTALLATION
+1. Remplacer le contenu du dépôt GitHub par le contenu de ce dossier/ZIP.
+2. Conserver tous les dossiers et leur structure.
+3. Faire le commit GitHub.
+4. Recharger WAPI One avec Ctrl + F5.
+
+SUPABASE
+Aucune nouvelle migration SQL n'est nécessaire pour cette version.
+
+TEST RAPIDE
+1. Ouvrir Comptabilité > Opérations diverses.
+2. Cliquer sur Nouvelle OD.
+3. Encoder au moins deux lignes.
+4. Vérifier que le total débit correspond au total crédit.
+5. Enregistrer un brouillon, le rouvrir, puis le valider.
+6. Vérifier l'écriture dans le compte comptable et, pour une classe 6, dans la liste des dépenses et le décompte.
+
+Le document MIGRATION-OPTIPRO-VERS-WAPI-ONE.md contient l'analyse préparatoire de la migration.

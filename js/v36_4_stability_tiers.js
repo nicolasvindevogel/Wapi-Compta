@@ -26,13 +26,13 @@
   }
 
   function cleanShell(){
-    document.title='WAPI One — V36.4';
+    document.title='WAPI One — V36.5';
     document.querySelectorAll('[data-view="suppliers"]').forEach(el=>el.remove());
     $('suppliersView')?.classList.add('hidden');
     $('v363AllSuppliers')?.remove();
     const heading=$('ownersView')?.querySelector('.toolbar h2');if(heading)heading.textContent='Tiers';
     document.querySelectorAll('[data-view="owners"] .nav-label').forEach(el=>el.textContent='Tiers');
-    document.querySelectorAll('.app-version-badge,.version-badge').forEach(el=>el.textContent='V36.4');
+    document.querySelectorAll('.app-version-badge,.version-badge').forEach(el=>el.textContent='V36.5');
   }
 
   function toolbar(type,count,cid){
