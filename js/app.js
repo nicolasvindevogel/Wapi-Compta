@@ -8142,6 +8142,7 @@ function updateSidebarButtons() {
       return f;
     }
     function callDispatchRowsV20(){
+      if(window.WapiCallDispatchV361?.rows) return window.WapiCallDispatchV361.rows();
       const f=callDispatchFiltersReadV20();
       return (state.ownerCalls || []).filter((c)=>{
         if(ownerCallAccountingStatus && ownerCallAccountingStatus(c)!=='accounted') return false;
@@ -8168,6 +8169,7 @@ function updateSidebarButtons() {
     }
     function selectedDispatchIdsV20(){ if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(Array.from(state.callDispatchSelectedIds||[])); return Array.from(state.callDispatchSelectedIds); }
     function renderCallDispatchV20(){
+      if(window.WapiCallDispatchV361?.render) return window.WapiCallDispatchV361.render();
       if(!$('callDispatchTable')) return;
       if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(Array.from(state.callDispatchSelectedIds||[]));
       const f=state.callDispatchFilters || {type:'provisions',status:'to_send'};
@@ -8509,6 +8511,7 @@ function updateSidebarButtons() {
     }
 
     function renderCallDispatchV20(){
+      if(window.WapiCallDispatchV361?.render) return window.WapiCallDispatchV361.render();
       if(!$('callDispatchTable')) return;
       if(!(state.callDispatchSelectedIds instanceof Set)) state.callDispatchSelectedIds=new Set(Array.from(state.callDispatchSelectedIds||[]));
       const f=state.callDispatchFilters || {type:'provisions',status:'to_send'};

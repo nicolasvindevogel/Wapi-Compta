@@ -46,13 +46,19 @@
   }
   function strictTotal(text){
     const lines=String(text||'').replace(/\u00a0/g,' ').split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean),candidates=[];
-    const labels=[[/\bnet\s+(?:a|à)\s+payer\b/i,120],[/\btotal\s+(?:a|à)\s+payer\b/i,118],[/\bmontant\s+(?:a|à)\s+payer\b/i,116],[/\bsolde\s+(?:a|à)\s+payer\b/i,114],[/\btotal\s+(?:tvac|ttc)\b/i,112],[/\bmontant\s+(?:tvac|ttc)\b/i,110],[/\bgrand\s+total\b/i,105],[/\btotal\s+facture\b/i,102],[/\bbalance\s+due\b/i,102]];
+    const labels=[[/\bnet\s+(?:a|à)\s+payer\b/i,122],[/\btotal\s+(?:a|à)\s+payer\b/i,120],[/\bmontant\s+(?:a|à)\s+payer\b/i,118],[/\bsolde\s+(?:a|à)\s+payer\b/i,116],[/\btotal\s+(?:tvac|ttc)\b/i,115],[/\btotal\s+tva\s+(?:comprise|incluse?)\b/i,114],[/\btotal\s+(?:taxes?\s+comprises?|vat\s+included)\b/i,114],[/\btotal\s+(?:du|dû|du[e]?)\b/i,112],[/\btotal\s+(?:a|à)\s+acquitter\b/i,112],[/\bmontant\s+(?:tvac|ttc)\b/i,110],[/\bgrand\s+total\b/i,105],[/\btotal\s+facture\b/i,102],[/\bbalance\s+due\b/i,102]];
     const amounts=line=>[...String(line||'').matchAll(/(?:^|[^0-9])(-?[0-9]{1,3}(?:[ .'][0-9]{3})*(?:[,.][0-9]{2})|-?[0-9]{1,8}[,.][0-9]{2})(?=\s*(?:€|EUR|$|[^0-9]))/gi)].map(m=>parseInvoiceMoney(m[1])).filter(v=>v!==null);
     lines.forEach((line,index)=>{
       if(/iban|bic|communication\s+structuree|communication\s+structurée|vcs|numero\s+client|numéro\s+client|n°\s*client|tva\s*(?:be)?\s*\d{8,}/i.test(line))return;
       for(const [rx,score] of labels){if(!rx.test(line))continue;const own=amounts(line),next=amounts(lines[index+1]||'');const vals=own.length?own:next;if(vals.length)candidates.push({value:vals[vals.length-1],score,index});break;}
     });
-    candidates.sort((a,b)=>b.score-a.score||b.index-a.index);return candidates[0]?.value??null;
+    candidates.sort((a,b)=>b.score-a.score||b.index-a.index);
+    if(candidates.length)return candidates[0].value;
+    /* Secours contrôlé : deux lignes explicitement libellées HTVA et TVA
+       peuvent confirmer mathématiquement le TVAC, sans choisir un autre chiffre. */
+    let base=null,tax=null;
+    lines.forEach((line,index)=>{const vals=amounts(line).length?amounts(line):amounts(lines[index+1]||'');if(!vals.length)return;if(/\btotal\s+(?:hors\s+tva|htva|ht)\b/i.test(line))base=vals[vals.length-1];else if(/\btotal\s+tva\b/i.test(line)&&!/comprise|incluse/i.test(line))tax=vals[vals.length-1];});
+    return base!==null&&tax!==null?Number((base+tax).toFixed(2)):null;
   }
   function strictReference(text,fileName=''){
     const flat=String(text||'').replace(/\u00a0/g,' ').replace(/\s+/g,' '),patterns=[

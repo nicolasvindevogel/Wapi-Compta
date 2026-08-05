@@ -1,0 +1,12 @@
+WAPI One V36.1
+
+Installation : remplacer tout le contenu du dépôt GitHub par celui du ZIP, valider les changements, puis recharger le site avec Ctrl+F5.
+
+Aucune nouvelle migration SQL n'est nécessaire si les migrations V36 déjà fournies ont été exécutées.
+
+Cette version améliore :
+- OCR des factures dont le total est libellé "Total TVA comprise" ;
+- reconstitution contrôlée TVAC = hors TVA + TVA lorsque ces deux totaux sont explicitement libellés ;
+- filtres stricts par gestionnaire et copropriété pour l'envoi multicopro des appels ;
+- séparation des appels envoyés et non envoyés ;
+- synchronisation du statut avec les envois réalisés depuis le module Comptabilité.

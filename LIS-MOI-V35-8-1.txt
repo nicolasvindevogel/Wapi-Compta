@@ -1,0 +1,8 @@
+WAPI One V35.8.1 — Correctif encodage des extraits manuels
+
+Dans Supabase, ouvrir SQL Editor et exécuter :
+sql/044_v35_8_1_correctif_extraits_manuels.sql
+
+Ce correctif remplace le déclencheur bancaire défectueux qui essayait de lire
+statement_id lors de la création d'un extrait. Aucun changement de données et
+aucune suppression d'extrait ou de mouvement bancaire ne sont effectués.
