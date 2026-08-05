@@ -1,0 +1,1 @@
+WAPI One V36.3 : facturation filtrée, prestations corrigées, exercice comptable global, tiers unifié, suppression sécurisée et PDF harmonisés. Aucune migration SQL supplémentaire.

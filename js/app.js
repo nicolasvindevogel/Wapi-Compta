@@ -8041,6 +8041,7 @@ function updateSidebarButtons() {
       const calls=ids.map((id)=>state.ownerCalls.find((c)=>c.id===id)).filter(Boolean);
       if(!calls.length) return alert('Aucun copropriétaire sélectionné.');
       const pages=groupOwnerCallsForPdfV20(calls).map(callPageHtmlV20).join('');
+      if(window.WapiPdfPreviewV362?.openHtml) return window.WapiPdfPreviewV362.openHtml(title,pages,callPdfCssV20());
       const win=window.open('','_blank');
       win.document.write(`<!doctype html><html><head><title>${escapeHtml(title)}</title><style>${callPdfCssV20()}
 
