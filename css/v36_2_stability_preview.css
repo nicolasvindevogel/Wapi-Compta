@@ -1,4 +1,17 @@
-html.wapi-booting body{visibility:hidden!important}
+#wapiBootScreen{display:none}
+html.wapi-booting body{overflow:hidden!important}
+html.wapi-booting body>#wapiBootScreen{display:grid!important;position:fixed;inset:0;z-index:2147483647;place-items:center;padding:24px;background:linear-gradient(145deg,#f4f7f6 0%,#eef4f1 55%,#f4f0fa 100%);visibility:visible!important}
+html.wapi-booting body>:not(#wapiBootScreen){visibility:hidden!important}
+.wapi-boot-card{width:min(420px,calc(100vw - 48px));padding:38px 34px;border:1px solid rgba(8,112,68,.14);border-radius:24px;background:rgba(255,255,255,.94);box-shadow:0 22px 70px rgba(18,49,37,.12);text-align:center;color:#14231c}
+.wapi-boot-card img{display:block;width:auto;max-width:150px;max-height:72px;margin:0 auto 10px;object-fit:contain}
+.wapi-boot-mark{display:none;width:58px;height:58px;margin:0 auto 12px;border-radius:17px;background:#087044;color:#fff;font:900 28px/58px system-ui,sans-serif}
+.wapi-boot-card img[style*="display: none"]+.wapi-boot-mark{display:block}
+.wapi-boot-card h1{margin:5px 0 6px;font-size:27px;letter-spacing:-.03em;color:#14231c}
+.wapi-boot-card p{margin:0 0 20px;color:#54645d;font-size:14px}
+.wapi-boot-card small{display:block;margin-top:14px;color:#7b8983;font-size:11px}
+.wapi-boot-progress{height:7px;overflow:hidden;border-radius:999px;background:#e6eee9}
+.wapi-boot-progress span{display:block;width:42%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#087044,#8bcf2f);animation:wapiBootMove 1.15s ease-in-out infinite}
+@keyframes wapiBootMove{0%{transform:translateX(-105%)}100%{transform:translateX(245%)}}
 .v362-preview-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.68);display:flex;align-items:stretch;justify-content:center;padding:18px}
 .v362-preview{position:relative;width:min(1240px,100%);height:100%;background:#eef2f4;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.35)}
 .v362-preview-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;background:#fff;border-bottom:1px solid #dce5e1}

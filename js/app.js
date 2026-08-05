@@ -106,24 +106,35 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
     }
 
     async function boot() {
+      const bootMessage = (message) => { const el = document.getElementById('wapiBootMessage'); if (el) el.textContent = message; };
       if (!initSupabase()) {
         setVisible("setupScreen");
-        if(typeof window.WapiStableReady==='function')window.WapiStableReady();else document.documentElement.classList.remove("wapi-booting");
+        document.documentElement.classList.remove("wapi-booting");
         return;
       }
 
+      bootMessage('Connexion sécurisée…');
       const { data } = await supabaseClient.auth.getSession();
       if (!data.session) {
         setVisible("loginScreen");
-        if(typeof window.WapiStableReady==='function')window.WapiStableReady();else document.documentElement.classList.remove("wapi-booting");
+        document.documentElement.classList.remove("wapi-booting");
         return;
       }
 
       currentUser = data.session.user;
       $("userPill").textContent = currentUser.email || "Utilisateur connecte";
       setVisible("appScreen");
-      await loadAll();
-      if(typeof window.WapiStableReady==='function')window.WapiStableReady();else document.documentElement.classList.remove("wapi-booting");
+      bootMessage('Chargement des copropriétés et de la comptabilité…');
+      try {
+        await loadAll();
+        bootMessage('Finalisation de l’interface…');
+        if(typeof window.WapiStableReady==='function') await window.WapiStableReady();
+        else document.documentElement.classList.remove("wapi-booting");
+      } catch (error) {
+        console.error('Démarrage WAPI One', error);
+        bootMessage('Le chargement a rencontré une erreur. Recharge la page ou vérifie la connexion Supabase.');
+        document.querySelector('.wapi-boot-progress')?.classList.add('hidden');
+      }
     }
 
     async function loadAll() {
@@ -235,7 +246,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_copros")
         .select("*")
         .order("name", { ascending: true });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement copropriétés :', error.message); state.copros = []; return; }
       state.copros = data || [];
     }
 
@@ -244,7 +255,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_owners")
         .select("*")
         .order("display_name", { ascending: true });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement copropriétaires :', error.message); state.owners = []; return; }
       state.owners = data || [];
     }
 
@@ -253,7 +264,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_lots")
         .select("*, compta_copros(name), compta_owners(display_name)")
         .order("lot_number", { ascending: true });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement lots :', error.message); state.lots = []; return; }
       state.lots = data || [];
     }
 
@@ -262,7 +273,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_suppliers")
         .select("*")
         .order("name", { ascending: true });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement fournisseurs :', error.message); state.suppliers = []; return; }
       state.suppliers = data || [];
     }
 
@@ -271,7 +282,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_accounts")
         .select("*")
         .order("code", { ascending: true });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement comptes :', error.message); state.accounts = []; return; }
       state.accounts = data || [];
     }
 
@@ -280,7 +291,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_invoices")
         .select("*, compta_copros(name), compta_suppliers(name)")
         .order("created_at", { ascending: false });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement factures :', error.message); state.invoices = []; return; }
       state.invoices = data || [];
     }
 
@@ -289,7 +300,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .from("compta_bank_accounts")
         .select("*, compta_copros(name)")
         .order("label", { ascending: true });
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement comptes bancaires :', error.message); state.bankAccounts = []; return; }
       state.bankAccounts = data || [];
     }
 
@@ -299,7 +310,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .select("*, compta_bank_accounts(label, iban), compta_copros(name)")
         .order("created_at", { ascending: false })
         .limit(50);
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement extraits :', error.message); state.bankStatements = []; return; }
       state.bankStatements = data || [];
     }
 
@@ -309,7 +320,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .select("*, compta_bank_accounts(label, iban), compta_copros(name)")
         .order("transaction_date", { ascending: false })
         .limit(100);
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement mouvements bancaires :', error.message); state.bankTransactions = []; return; }
       state.bankTransactions = data || [];
     }
 
@@ -359,7 +370,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
         .select("*, compta_copros(name)")
         .order("entry_date", { ascending: false })
         .limit(50);
-      if (error) return alert(error.message);
+      if (error) { console.warn('Chargement écritures :', error.message); state.entries = []; return; }
       state.entries = data || [];
     }
 

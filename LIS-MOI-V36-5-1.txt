@@ -1,0 +1,19 @@
+WAPI One V36.5.1 — correctif de démarrage
+
+Cette version conserve toutes les fonctions de la V36.5 et corrige le flash d'ancienne interface au chargement.
+
+INSTALLATION
+1. Remplacer le contenu du dépôt GitHub par celui du ZIP V36.5.1.
+2. Faire le commit.
+3. Attendre la fin du déploiement GitHub Pages.
+4. Recharger avec Ctrl + F5.
+
+Aucune migration SQL n'est nécessaire.
+
+CORRECTIONS
+- écran de chargement WAPI One unique et propre ;
+- l'ancienne interface ne peut plus apparaître pendant le chargement ;
+- suppression du minuteur qui dévoilait l'application avant la fin ;
+- les erreurs de lecture initiales ne déclenchent plus de fenêtre bloquante ;
+- affichage final seulement lorsque les données et le rendu stable sont prêts ;
+- conservation du module OD multi-lignes V36.5.

@@ -26,13 +26,13 @@
   }
 
   function cleanShell(){
-    document.title='WAPI One — V36.5';
+    document.title='WAPI One — V36.5.1';
     document.querySelectorAll('[data-view="suppliers"]').forEach(el=>el.remove());
     $('suppliersView')?.classList.add('hidden');
     $('v363AllSuppliers')?.remove();
     const heading=$('ownersView')?.querySelector('.toolbar h2');if(heading)heading.textContent='Tiers';
     document.querySelectorAll('[data-view="owners"] .nav-label').forEach(el=>el.textContent='Tiers');
-    document.querySelectorAll('.app-version-badge,.version-badge').forEach(el=>el.textContent='V36.5');
+    document.querySelectorAll('.app-version-badge,.version-badge').forEach(el=>el.textContent='V36.5.1');
   }
 
   function toolbar(type,count,cid){
@@ -121,7 +121,7 @@
   },true);
 
   window.WapiTiersV364={render,loadLinks,openGlobalSuppliers};
-  window.WapiStableReady=()=>{cleanShell();if($('appScreen')?.classList.contains('hidden')){document.documentElement.classList.remove('wapi-booting');return;}loadLinks().finally(()=>{render();document.documentElement.classList.remove('wapi-booting');});};
+  window.WapiStableReady=async()=>{cleanShell();if($('appScreen')?.classList.contains('hidden')){document.documentElement.classList.remove('wapi-booting');return;}try{await loadLinks();render();}catch(error){console.warn('Finalisation tiers :',error);}finally{document.documentElement.classList.remove('wapi-booting');}};
   window.renderOwners=render;
   const oldRenderAll=window.renderAll;
   if(typeof oldRenderAll==='function')window.renderAll=function(){const out=oldRenderAll.apply(this,arguments);setTimeout(render,0);return out;};
