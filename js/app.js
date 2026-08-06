@@ -126,10 +126,15 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
       setVisible("appScreen");
       bootMessage('Chargement des copropriétés et de la comptabilité…');
       try {
-        await loadAll();
+        await Promise.all([
+          loadCopros(), loadOwners(), loadLots(), loadSuppliers(), loadAccounts(),
+          loadBankAccounts(), loadFiscalYears(), loadDistributionKeys(), loadDistributionItems()
+        ]);
+        renderAll();
         bootMessage('Finalisation de l’interface…');
         if(typeof window.WapiStableReady==='function') await window.WapiStableReady();
         else document.documentElement.classList.remove("wapi-booting");
+        setTimeout(() => loadAll().catch(error => console.warn('Actualisation en arriere-plan :', error)), 50);
       } catch (error) {
         console.error('Démarrage WAPI One', error);
         bootMessage('Le chargement a rencontré une erreur. Recharge la page ou vérifie la connexion Supabase.');
@@ -290,7 +295,8 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
       const { data, error } = await supabaseClient
         .from("compta_invoices")
         .select("*, compta_copros(name), compta_suppliers(name)")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(2000);
       if (error) { console.warn('Chargement factures :', error.message); state.invoices = []; return; }
       state.invoices = data || [];
     }
@@ -4672,7 +4678,7 @@ function updateSidebarButtons() {
       if (t?.dataset?.unblockPayment) unblockInvoicePaymentV12(t.dataset.unblockPayment);
     });
     document.addEventListener('change', (e) => {
-      if (['paymentCoproFilter','paymentBankFilter'].includes(e.target?.id)) { if (e.target.id === 'paymentCoproFilter') state.paymentCoproFilter = e.target.value; if (e.target.id === 'paymentBankFilter') state.paymentBankFilter = e.target.value; renderPayments(); }
+      if (['paymentManagerFilter','paymentCoproFilter','paymentBankFilter'].includes(e.target?.id)) { if (e.target.id === 'paymentManagerFilter') { state.paymentManagerFilter = e.target.value; state.paymentCoproFilter = ''; } if (e.target.id === 'paymentCoproFilter') state.paymentCoproFilter = e.target.value; if (e.target.id === 'paymentBankFilter') state.paymentBankFilter = e.target.value; renderPayments(); }
       if (e.target?.classList?.contains('payment-checkbox')) { state.selectedPaymentIds = state.selectedPaymentIds || new Set(); if (e.target.checked) state.selectedPaymentIds.add(e.target.dataset.payInvoice); else state.selectedPaymentIds.delete(e.target.dataset.payInvoice); renderPayments(); }
     });
     document.addEventListener('input', (e) => { if (e.target?.id === 'paymentSearch') renderPayments(); });
@@ -4713,7 +4719,12 @@ function updateSidebarButtons() {
     function paymentInvoiceFilterV12(inv) {
       ensurePaymentSelectionV121();
       const coproFilter = state.paymentCoproFilter || '';
+      const managerFilter = state.paymentManagerFilter || '';
       const search = ($('paymentSearch')?.value || '').toLowerCase().trim();
+      if (managerFilter) {
+        const copro = state.copros.find(c => String(c.id) === String(inv.copro_id));
+        if (String(copro?.manager_user_id || copro?.manager_id || '') !== String(managerFilter)) return false;
+      }
       if (coproFilter && inv.copro_id !== coproFilter) return false;
       if (search) {
         const s = supplierById(inv.supplier_id);
@@ -4729,13 +4740,30 @@ function updateSidebarButtons() {
     function renderPayments() {
       if (!$('paymentsTable')) return;
       ensurePaymentSelectionV121();
+      const currentManager = state.paymentManagerFilter || '';
       const currentCopro = state.paymentCoproFilter || '';
       const currentBank = state.paymentBankFilter || '';
+      let managerSelect = $('paymentManagerFilter');
+      if (!managerSelect && $('paymentCoproFilter')?.closest('label')) {
+        $('paymentCoproFilter').closest('label').insertAdjacentHTML('beforebegin','<label>Gestionnaire <select id="paymentManagerFilter"><option value="">Tous les gestionnaires</option></select></label>');
+        managerSelect = $('paymentManagerFilter');
+      }
+      if (managerSelect) {
+        managerSelect.innerHTML = '<option value="">Tous les gestionnaires</option>' + (state.userProfiles || []).filter(u=>u.active!==false).map(u=>`<option value="${u.id}">${escapeHtml(u.display_name || u.full_name || u.email || 'Utilisateur')}</option>`).join('');
+        managerSelect.value = currentManager;
+      }
+      const allowedCopros = currentManager ? state.copros.filter(c=>String(c.manager_user_id || c.manager_id || '')===String(currentManager)) : state.copros;
+      if (currentCopro && !allowedCopros.some(c=>String(c.id)===String(currentCopro))) state.paymentCoproFilter = '';
       const coproOptionsHtml = '<option value="">Toutes les copropriétés</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
       $('paymentCoproFilter').innerHTML = coproOptionsHtml;
-      $('paymentCoproFilter').value = currentCopro;
+      $('paymentCoproFilter').innerHTML = '<option value="">Toutes les coproprietes</option>' + allowedCopros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      $('paymentCoproFilter').value = state.paymentCoproFilter || '';
       $('paymentBankFilter').innerHTML = '<option value="">Compte bancaire de chaque copropriété</option>' + state.bankAccounts.map((b)=>`<option value="${b.id}">${escapeHtml((b.compta_copros?.name || '') + ' - ' + (b.label || '') + ' ' + (b.iban || ''))}</option>`).join('');
       $('paymentBankFilter').value = currentBank;
+      const allowedCoproIds = new Set(allowedCopros.map(c=>String(c.id)));
+      const visibleBanks = state.bankAccounts.filter(b=>allowedCoproIds.has(String(b.copro_id)) && (!state.paymentCoproFilter || String(b.copro_id)===String(state.paymentCoproFilter)));
+      $('paymentBankFilter').innerHTML = '<option value="">Compte bancaire de chaque copropriete</option>' + visibleBanks.map(b=>`<option value="${b.id}">${escapeHtml((b.compta_copros?.name||'')+' - '+(b.label||'')+' '+(b.iban||''))}</option>`).join('');
+      if (currentBank && visibleBanks.some(b=>String(b.id)===String(currentBank))) $('paymentBankFilter').value=currentBank; else state.paymentBankFilter='';
       document.querySelectorAll('[data-payment-tab]').forEach((btn)=>btn.classList.toggle('active', btn.dataset.paymentTab === state.paymentTab));
 
       const rows = state.invoices.filter(paymentInvoiceFilterV12);
@@ -7455,8 +7483,8 @@ function updateSidebarButtons() {
       if(editedInvoiceId){
         const index=(state.invoices||[]).findIndex(i=>String(i.id)===String(editedInvoiceId));
         if(index>=0){const supplier=(state.suppliers||[]).find(s=>String(s.id)===String(payload.supplier_id));state.invoices[index]={...state.invoices[index],...payload,compta_suppliers:supplier||state.invoices[index].compta_suppliers};}
-        try{renderInvoices?.();renderExpensesList?.();v29RenderExpensesList?.();v31RenderExpenses?.();}catch(_){ }
-        loadInvoices().then(()=>{try{renderInvoices?.();renderExpensesList?.();v29RenderExpensesList?.();v31RenderExpenses?.();}catch(_){ }}).catch(console.warn);
+        try{renderInvoices?.();renderExpensesList?.();v29RenderExpensesList?.();v31RenderExpenses?.();window.WapiExpensesV346?.render?.();}catch(_){ }
+        loadInvoices().then(()=>{try{renderInvoices?.();renderExpensesList?.();v29RenderExpensesList?.();v31RenderExpenses?.();window.WapiExpensesV346?.render?.();}catch(_){ }}).catch(console.warn);
       }else await loadAll();
     }
 

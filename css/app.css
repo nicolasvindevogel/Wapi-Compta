@@ -2464,3 +2464,10 @@
 /* Le moteur V35.2 remplace l'ancien écran compte comptable dès le démarrage.
    Le masquer pendant cette substitution évite le flash de l'ancienne interface. */
 #accountLookupView:not(.w352-account-ready){visibility:hidden}
+/* V36.6 - typographie uniforme, sobre et lisible */
+:root{--wapi-font:"Aptos","Segoe UI Variable Text","Segoe UI",Arial,sans-serif}
+html,body,button,input,select,textarea,table,.topbar,.top-nav,.module-tabs,.app-modal{font-family:var(--wapi-font)!important}
+body{font-size:14px;letter-spacing:0}
+button,input,select,textarea{font-size:13.5px}
+.top-nav button,.module-tab{font-weight:600;letter-spacing:-.01em}
+h1,h2,h3,h4{font-family:var(--wapi-font)!important;letter-spacing:-.025em}

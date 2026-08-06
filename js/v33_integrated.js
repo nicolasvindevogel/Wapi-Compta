@@ -216,10 +216,28 @@
   }
   function renderCodaPilotV322(){
     const el = id('v28CodaTable'); if (!el) return;
-    const copro = state.activeCoproId || id('v28CodaCoproFilter')?.value || '';
+    const coproSelect = id('v28CodaCoproFilter');
+    let managerSelect = id('v28CodaManagerFilter');
+    if (!managerSelect && coproSelect?.closest('label')) {
+      coproSelect.closest('label').insertAdjacentHTML('beforebegin','<label>Gestionnaire <select id="v28CodaManagerFilter"><option value="">Tous les gestionnaires</option></select></label>');
+      managerSelect = id('v28CodaManagerFilter');
+    }
+    const manager = state.codaManagerFilter || '';
+    if (managerSelect) {
+      managerSelect.innerHTML='<option value="">Tous les gestionnaires</option>'+(state.userProfiles||[]).filter(u=>u.active!==false).map(u=>`<option value="${esc(u.id)}">${esc(u.display_name||u.full_name||u.email||'Utilisateur')}</option>`).join('');
+      managerSelect.value=manager;
+    }
+    const allowedCopros=manager?(state.copros||[]).filter(c=>String(c.manager_user_id||c.manager_id||'')===String(manager)):(state.copros||[]);
+    const copro = state.codaCoproFilter || '';
+    if(coproSelect){
+      if(copro&&!allowedCopros.some(c=>String(c.id)===String(copro)))state.codaCoproFilter='';
+      coproSelect.innerHTML='<option value="">Toutes les coproprietes</option>'+allowedCopros.map(c=>`<option value="${esc(c.id)}">${esc(c.name||'')}</option>`).join('');
+      coproSelect.value=state.codaCoproFilter||'';
+    }
     const status = id('v28CodaStatusFilter')?.value || '';
     const sort = id('v28CodaSort')?.value || 'created_at';
-    let rows = (state.bankStatements || []).filter(s => (!copro || s.copro_id === copro) && (!status || s.status === status));
+    const allowedIds=new Set(allowedCopros.map(c=>String(c.id)));
+    let rows = (state.bankStatements || []).filter(s => allowedIds.has(String(s.copro_id)) && (!copro || String(s.copro_id) === String(copro)) && (!status || s.status === status));
     rows.sort((a,b)=>String(b[sort] || '').localeCompare(String(a[sort] || ''), 'fr', {numeric:true}));
     el.innerHTML = rows.map(st => {
       const txs = codaTxForStatement(st);
@@ -312,7 +330,7 @@
     document.addEventListener('change', (e)=>{
       const t = e.target;
       if (!t) return;
-      if (['v28CodaCoproFilter','v28CodaStatusFilter','v28CodaSort'].includes(t.id)) setTimeout(renderCodaPilotV322, 0);
+      if (['v28CodaManagerFilter','v28CodaCoproFilter','v28CodaStatusFilter','v28CodaSort'].includes(t.id)) { if(t.id==='v28CodaManagerFilter'){state.codaManagerFilter=t.value||'';state.codaCoproFilter='';} if(t.id==='v28CodaCoproFilter')state.codaCoproFilter=t.value||''; setTimeout(renderCodaPilotV322, 0); }
       if (t.matches?.('[data-v322-coda-tier-type]')) {
         const row = t.closest('[data-v322-coda-tx]'); const sel = row?.querySelector('[data-v322-coda-tier]'); if (sel) sel.innerHTML = codaTierOptions(t.value, '');
       }

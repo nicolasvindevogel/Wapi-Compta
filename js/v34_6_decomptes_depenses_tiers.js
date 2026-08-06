@@ -131,8 +131,13 @@
     rows.forEach(i=>{const acc=(state.accounts||[]).find(a=>a.id===i.account_id)||{},key=(state.distributionKeys||[]).find(k=>k.id===i.distribution_key_id)||{name:'Quotités générales'};const ak=acc.id||'none',kk=key.id||key.name;if(!groups.has(ak))groups.set(ak,{acc,keys:new Map()});const g=groups.get(ak);if(!g.keys.has(kk))g.keys.set(kk,{key,rows:[]});g.keys.get(kk).rows.push(i);});
     let html='';for(const g of groups.values()){const all=[...g.keys.values()].flatMap(x=>x.rows),total=all.reduce((s,i)=>s+num(i.amount_total),0);html+=`<section class="v346-expense-group"><h3><span>Compte : ${esc(`${g.acc.code||''} - ${g.acc.label||''}`)}</span><strong>${money(total)}</strong></h3>`;for(const kg of g.keys.values()){const kt=kg.rows.reduce((s,i)=>s+num(i.amount_total),0);html+=`<div class="v346-expense-key">Clé : ${esc(kg.key.name||'Quotités générales')} · ${money(kt)}</div><div class="table-wrap"><table class="v346-expense-table"><thead><tr><th>Date valeur</th><th>Libellé</th><th>Fournisseur</th><th>Réf. interne</th>${showRef?'<th>Réf. fournisseur</th>':''}<th class="amount">Montant</th>${showParts?'<th class="amount">Part propriétaire</th><th class="amount">Part occupant</th>':''}<th></th></tr></thead><tbody>${kg.rows.sort((a,b)=>String(a.invoice_date||'').localeCompare(String(b.invoice_date||''))).map(i=>`<tr><td>${esc(i.invoice_date||'')}</td><td>${esc(i.description||'')}</td><td>${esc(i.compta_suppliers?.name||'')}</td><td>${esc(i.internal_invoice_code||i.invoice_code||'')}</td>${showRef?`<td>${esc(i.invoice_number||'')}</td>`:''}<td class="amount">${money(i.amount_total)}</td>${showParts?`<td class="amount">${money(expensePart(i,'owner'))}</td><td class="amount">${money(expensePart(i,'occupant'))}</td>`:''}<td><button class="btn secondary small" data-v346-edit-expense="${i.id}" type="button">Modifier</button></td></tr>`).join('')}</tbody></table></div>`;}html+='</section>';}
     host.innerHTML=html||'<div class="notice">Aucune dépense pour ces critères.</div>';
+    host.querySelectorAll('[data-v346-edit-expense]').forEach(btn=>{
+      const inv=(state.invoices||[]).find(i=>String(i.id)===String(btn.dataset.v346EditExpense));
+      if(inv?.file_data_url&&!btn.parentElement.querySelector('[data-show-pdf]'))btn.insertAdjacentHTML('beforebegin',`<button class="btn secondary small" data-show-pdf="${inv.id}" type="button">Voir PDF</button> `);
+    });
     const toolbar=id('expensesListView')?.querySelector('.toolbar');if(toolbar&&!id('v346ExpensesPdf'))toolbar.insertAdjacentHTML('beforeend','<button class="btn" id="v346ExpensesPdf" type="button">Exporter le PDF</button>');
   }
+  window.WapiExpensesV346={render:renderExpenses};
   function expensesPdf(){
     const {coproId,year}=expenseContext(),copro=(state.copros||[]).find(c=>c.id===coproId)||{},rows=expenseRows(),groups=new Map();
     rows.forEach(i=>{const a=(state.accounts||[]).find(x=>x.id===i.account_id)||{},k=(state.distributionKeys||[]).find(x=>x.id===i.distribution_key_id)||{name:'Quotités générales'},key=`${a.code}|${k.name}`;if(!groups.has(key))groups.set(key,{a,k,rows:[]});groups.get(key).rows.push(i);});
@@ -161,6 +166,7 @@
     if(e.target.closest?.('#v346ValidateSettlements')){e.preventDefault();e.stopImmediatePropagation();validateSettlements();return;}
     const close=e.target.closest?.('[data-v29-close-year]');if(close){e.preventDefault();e.stopImmediatePropagation();closeYearWithSettlements(close.dataset.v29CloseYear);return;}
     if(e.target.closest?.('#v346ExpensesPdf')){e.preventDefault();expensesPdf();return;}
+    const invoicePdf=e.target.closest?.('[data-show-pdf]');if(invoicePdf&&invoicePdf.closest('#expensesListView')){e.preventDefault();e.stopImmediatePropagation();typeof showInvoicePdf==='function'?showInvoicePdf(invoicePdf.dataset.showPdf):alert('PDF indisponible.');return;}
     const edit=e.target.closest?.('[data-v346-edit-expense]');if(edit){e.preventDefault();typeof openInvoiceModal==='function'?openInvoiceModal(edit.dataset.v346EditExpense):alert('Édition facture indisponible.');return;}
   },true);
   document.addEventListener('change',e=>{
