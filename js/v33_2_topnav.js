@@ -25,8 +25,8 @@
   const icon = name => `<span class="w332-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${iconPaths[name] || iconPaths.Configuration}</svg></span>`;
   const mainModules = [
     ['home','Accueil','Accueil','dashboard'],
-    ['pilotage','Plan de travail','Pilotage','processing'],
-    ['copros','Infrastructures','Infrastructures','copros'],
+    ['pilotage','Pilotage','Pilotage','processing'],
+    ['copros','Copropriétés','Infrastructures','copros'],
     ['compta','Comptabilité','Comptabilite','invoices'],
     ['states','États comptables','Etats comptables','accountLookup'],
     ['ag','Assemblées générales','Assemblees generales','meetings'],
@@ -52,7 +52,7 @@
     }
     const brand = document.createElement('div');
     brand.className = 'w332-brand';
-    brand.innerHTML = `<img src="assets/logo-wapi-one.png" alt="WAPI One"><div><strong>WAPI One</strong><small>Gestion de copropriétés</small></div>`;
+    brand.innerHTML = `<div class="w368-wordmark" aria-label="WAPI One"><span class="w368-wapi">WAPI</span><span class="w368-one">One</span><small>SYNDIK</small></div>`;
     if (left) {
       const legacy = document.createElement('div');
       legacy.className = 'w332-legacy-controls';

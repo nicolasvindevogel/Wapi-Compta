@@ -231,43 +231,18 @@
 <div aria-label="Sous-modules" class="module-tabs" id="moduleTabs"></div>
 <div class="content">
 <section class="view" id="dashboardView">
-<div class="grid">
-<div class="stat">
-<div class="stat-label">Coproprietes</div>
-<div class="stat-value" id="statCopros">0</div>
+<div class="w368-dashboard-heading"><div><h1>Tableau de bord</h1><p id="w368DashboardContext">Mode global · Tous les exercices</p></div><button class="btn secondary" data-view="processing" type="button">Ouvrir le centre de traitement</button></div>
+<div class="w368-kpi-grid">
+<button class="w368-kpi" data-view="lots" type="button"><span class="w368-kpi-icon">▦</span><span><strong id="statLots">0</strong><small>lots</small></span></button>
+<button class="w368-kpi" data-view="owners" type="button"><span class="w368-kpi-icon">◎</span><span><strong id="w368OwnersCount">0</strong><small>copropriétaires</small></span></button>
+<button class="w368-kpi" data-view="financialLedger" type="button"><span class="w368-kpi-icon">▤</span><span><strong id="w368BankBalance">0,00 €</strong><small>en banque</small></span></button>
+<button class="w368-kpi" data-view="payments" type="button"><span class="w368-kpi-icon">□</span><span><strong id="statInvoices">0</strong><small>factures à payer</small></span></button>
 </div>
-<div class="stat">
-<div class="stat-label">Fournisseurs</div>
-<div class="stat-value" id="statSuppliers">0</div>
+<div class="w368-dashboard-layout">
+<section class="w368-panel"><header><div><h2>À traiter aujourd’hui</h2><p>Priorités calculées depuis vos modules</p></div><button class="w368-text-link" data-view="processing" type="button">Voir tout →</button></header><div id="w368TodayList" class="w368-today-list"></div></section>
+<section class="w368-panel w368-finance-panel"><header><div><h2>Situation financière</h2><p id="w368FinanceSubtitle">Évolution et derniers mouvements</p></div><button class="w368-text-link" data-view="financialLedger" type="button">Grand livre →</button></header><div class="w368-finance-content"><div><h3>Évolution du solde</h3><div class="w368-chart" id="w368BankChart"></div></div><div><h3>Derniers mouvements comptables</h3><div id="w368RecentMovements" class="w368-movements"></div></div></div></section>
 </div>
-<div class="stat">
-<div class="stat-label">Lots encodes</div>
-<div class="stat-value" id="statLots">0</div>
-</div>
-<div class="stat">
-<div class="stat-label">Factures a valider</div>
-<div class="stat-value" id="statInvoices">0</div>
-</div>
-<div class="stat">
-<div class="stat-label">Montant factures</div>
-<div class="stat-value" id="statAmount">0,00 EUR</div>
-</div>
-<div class="stat">
-<div class="stat-label">Mouvements banque</div>
-<div class="stat-value" id="statBankTransactions">0</div>
-</div>
-<div class="stat">
-<div class="stat-label">A traiter</div>
-<div class="stat-value" id="statProcessingQueue">0</div>
-</div>
-</div>
-<div class="card">
-<h2>Prochaine etape</h2>
-<p>
-              WAPI One fonctionne maintenant autour d'un centre de traitement multi-coproprietes :
-              import massif, reconnaissance automatique, correction humaine, validation puis creation des factures, extraits ou ecritures.
-            </p>
-</div>
+<div class="hidden" aria-hidden="true"><span id="statCopros">0</span><span id="statSuppliers">0</span><span id="statAmount">0</span><span id="statBankTransactions">0</span><span id="statProcessingQueue">0</span></div>
 </section>
 <section class="view hidden" id="processingView">
 <div class="card">
@@ -1271,6 +1246,7 @@
 <link href="css/v36_2_stability_preview.css?v=36.5.1" rel="stylesheet"/>
 <link href="css/v36_3_context_billing_tiers.css?v=36.3.0" rel="stylesheet"/>
 <link href="css/v36_4_stability_tiers.css?v=36.4.0" rel="stylesheet"/>
+<link href="css/v36_8_brand_theme.css?v=36.8.0" rel="stylesheet"/>
 <script src="js/wapi_pdf_theme.js?v=35.8.0"></script>
 <script src="js/app.js?v=36.7.0"></script>
 <script src="js/v33_integrated.js?v=36.7.0"></script>
@@ -1292,5 +1268,6 @@
 <script src="js/v36_3_context_billing_tiers.js?v=36.3.0"></script>
 <script src="js/v36_4_stability_tiers.js?v=36.5.1"></script>
 <script src="js/v36_7_users_auth.js?v=36.7.0"></script>
+<script src="js/v36_8_dashboard_theme.js?v=36.8.0"></script>
 </body>
 </html>
