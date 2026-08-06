@@ -36,7 +36,7 @@
   function render(){
     if(!$('dashboardView'))return;const cid=activeCopro();const lots=(state?.lots||[]).filter(l=>!cid||String(l.copro_id)===String(cid));const ownerIds=new Set(lots.map(l=>l.owner_id).filter(Boolean));const invoices=(state?.invoices||[]).filter(i=>inContext(i)&&!['paid','rejected','cancelled'].includes(String(i.payment_status||i.status||'').toLowerCase()));
     if($('statLots'))$('statLots').textContent=lots.length;if($('w368OwnersCount'))$('w368OwnersCount').textContent=ownerIds.size||((state?.owners||[]).filter(o=>!cid||String(o.copro_id)===String(cid)).length);if($('statInvoices'))$('statInvoices').textContent=invoices.length;if($('w368BankBalance'))$('w368BankBalance').textContent=money(bankBalance());if($('w368DashboardContext'))$('w368DashboardContext').textContent=`${coproName()} · ${yearName()}`;if($('w368FinanceSubtitle'))$('w368FinanceSubtitle').textContent=`${coproName()} · ${yearName()}`;renderTasks();renderChart();renderMovements();
-    document.querySelectorAll('.app-version-badge,.wapi-version-badge').forEach(e=>e.textContent='WAPI One — V36.8.1');document.title='WAPI One — V36.8.1';
+    document.querySelectorAll('.app-version-badge,.wapi-version-badge').forEach(e=>e.textContent='WAPI One — V36.9');document.title='WAPI One — V36.9';
   }
   try{if(typeof renderAll==='function'&&!renderAll.__v368){const old=renderAll;renderAll=function(){const value=old.apply(this,arguments);render();return value};renderAll.__v368=true}}catch(_){ }
   document.addEventListener('click',e=>{if(e.target.closest('[data-view="dashboard"],[data-w332-module="home"]'))setTimeout(render,0)});
