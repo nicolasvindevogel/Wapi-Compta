@@ -2471,3 +2471,20 @@ body{font-size:14px;letter-spacing:0}
 button,input,select,textarea{font-size:13.5px}
 .top-nav button,.module-tab{font-weight:600;letter-spacing:-.01em}
 h1,h2,h3,h4{font-family:var(--wapi-font)!important;letter-spacing:-.025em}
+
+/* V36.7 — connexion professionnelle et gestion utilisateurs */
+#loginScreen{background:linear-gradient(145deg,#f4f8f6 0%,#eef4f8 55%,#f8faf9 100%);min-height:100vh;padding:32px;align-items:center;justify-content:center}
+#loginScreen:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 15% 15%,rgba(18,111,74,.11),transparent 32%),radial-gradient(circle at 85% 82%,rgba(133,194,36,.10),transparent 28%);pointer-events:none}
+.wapi-login-card{position:relative;width:min(920px,94vw)!important;max-width:none!important;display:grid;grid-template-columns:minmax(300px,.9fr) minmax(340px,1.1fr);padding:0!important;overflow:hidden;border:1px solid #dce7e1!important;border-radius:22px!important;background:#fff!important;box-shadow:0 28px 80px rgba(24,44,35,.15)!important}
+.wapi-login-brand{padding:50px 44px;background:linear-gradient(155deg,#0b6844,#095334);color:#fff;display:flex;flex-direction:column;justify-content:center;gap:28px}
+.wapi-login-brand img{width:150px;height:86px;object-fit:contain;object-position:left center;background:#fff;border-radius:14px;padding:10px}
+.wapi-login-brand span{display:block;color:#b9e569;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:800;margin-bottom:8px}
+.wapi-login-brand h1{font-size:30px;line-height:1.12;margin:0 0 12px;color:#fff}
+.wapi-login-brand p{margin:0;color:rgba(255,255,255,.8);line-height:1.6}
+.wapi-login-card form{padding:54px 48px 34px;display:flex;flex-direction:column;justify-content:center;gap:17px}
+.wapi-login-card form label{font-weight:700;color:#21332a;font-size:13px}
+.wapi-login-card form input{margin-top:7px;height:46px;border-radius:10px;border:1px solid #ccd9d2;background:#fbfdfc;padding:0 13px;width:100%;box-sizing:border-box}
+.wapi-login-card form br{display:none}.wapi-login-submit{height:46px;margin-top:4px}.wapi-login-foot{grid-column:2;padding:0 48px 30px;color:#78867f;font-size:12px;margin-top:-18px}
+.v367-user-summary{display:flex;align-items:baseline;gap:9px;padding:14px 18px;margin:14px 0;border-radius:12px;background:#f3f8f5;border:1px solid #dfeae4}.v367-user-summary strong{font-size:21px;color:#0b6844}.v367-user-summary span{color:#64736b;margin-right:18px}
+.form-span{grid-column:1/-1}
+@media(max-width:760px){.wapi-login-card{grid-template-columns:1fr}.wapi-login-brand{padding:30px}.wapi-login-brand img{width:120px;height:64px}.wapi-login-card form{padding:34px 30px}.wapi-login-foot{grid-column:1;padding:0 30px 26px;margin-top:-12px}}

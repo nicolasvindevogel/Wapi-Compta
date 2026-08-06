@@ -638,8 +638,8 @@
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const patched = new Set();
   const coproSelectIds = [
-    'queueFilterCopro','ocrCoproFilter','paymentCoproFilter','callDispatchCoproFilter',
-    'codaFilterCopro','v28CodaCoproFilter','callsCoproFilter','thirdBalanceCoproFilter',
+    'queueFilterCopro','ocrCoproFilter','callDispatchCoproFilter',
+    'codaFilterCopro','callsCoproFilter','thirdBalanceCoproFilter',
     'budgetCoproFilter','settlementCoproFilter','financialLedgerCopro','expensesCoproFilter',
     'v28AccountLookupCopro','v28MeterCopro','informCoproFilter','sendLogCoproFilter',
     'ownersFilterCopro','lotsFilterCopro','distributionCopro','bankAccountCopro'
@@ -830,8 +830,8 @@
   }
   function ensureModuleManagerFilters(){
     const defs = [
-      ['coprosTable','copros'], ['validationQueueTable','processing'], ['v28CodaTable','codaPilot'],
-      ['bankStatementsTable','codaBank'], ['paymentsTable','payments'], ['callDispatchTable','callDispatch'],
+      ['coprosTable','copros'], ['validationQueueTable','processing'],
+      ['bankStatementsTable','codaBank'], ['callDispatchTable','callDispatch'],
       ['invoicesTable','invoices'], ['callsTable','calls'], ['thirdBalanceTable','thirdBalance'],
       ['budgetsTable','budgets'], ['settlementOwnersTable','settlements'], ['invoiceOcrWorkbench','ocr'],
       ['financialLedgerTable','financialLedger'], ['expensesListTable','expenses'], ['syndicBillingContent','syndicBilling'],
@@ -936,7 +936,7 @@
     { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['journals','Journaux','archive'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
     { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
     { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
-    { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['journalCodes','Journaux','receipt'],['bankInstitutions','Banques','bank'],['vatCodes','Codes TVA','calculator'],['defaultExpenseTypes','Natures dépenses','list'],['accessControl','Accès','shield'],['auditTrail','Audit','list'],['importsConfig','Imports','download'],['isabel','Isabel','card']] }
+    { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
   ];
   const VIEW_TO_MODULE = new Map(); MODULES.forEach(m => m.tabs.forEach(t => { if(!VIEW_TO_MODULE.has(t[0])) VIEW_TO_MODULE.set(t[0], m.id); }));
   function currentView(){ const v = [...document.querySelectorAll('.view')].find(x => !x.classList.contains('hidden')); return v ? v.id.replace(/View$/,'') : 'dashboard'; }
@@ -1297,7 +1297,7 @@
     { id:'states', badge:'ET', label:'États comptables', hint:'Contrôles & rapports', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable'],['ledger','Grand livre'],['financialLedger','Grand livre financier'],['balance','Balance générale'],['thirdBalance','Balance tiers'],['journals','Journaux'],['bilan','Bilan'],['heldFunds','Fonds détenus'],['multicoproConsultation','Consultation multi-copro']] },
     { id:'ag', badge:'AG', label:'Assemblées', hint:'AG & résolutions', defaultView:'meetings', tabs:[['meetings','Assemblées'],['resolutions','Catalogue résolutions']] },
     { id:'syndic', badge:'SY', label:'Facturation syndic', hint:'Honoraires & exports', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','campaigns'],['syndicBilling','Contrats','contracts'],['syndicBilling','Prestations / mutations','services'],['syndicBilling','Factures','invoices'],['syndicBilling','Export Clearfact','exports'],['syndicBilling','Réglages','settings']] },
-    { id:'config', badge:'CF', label:'Configuration', hint:'Paramètres', defaultView:'agency', tabs:[['agency','Agence'],['accounts','Plan comptable'],['templates','Modèles'],['users','Utilisateurs'],['journalCodes','Journaux'],['bankInstitutions','Banques'],['vatCodes','Codes TVA'],['defaultExpenseTypes','Natures dépenses'],['accessControl','Accès'],['auditTrail','Audit'],['importsConfig','Imports'],['isabel','Isabel']] }
+    { id:'config', badge:'CF', label:'Configuration', hint:'Paramètres', defaultView:'agency', tabs:[['agency','Agence'],['accounts','Plan comptable'],['templates','Modèles'],['users','Utilisateurs'],['bankInstitutions','Banques'],['importsConfig','Imports']] }
   ];
   const VIEW_TO_MODULE = new Map();
   MODULES.forEach(m => m.tabs.forEach(t => { if(!VIEW_TO_MODULE.has(t[0])) VIEW_TO_MODULE.set(t[0], m.id); }));

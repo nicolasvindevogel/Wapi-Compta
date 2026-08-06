@@ -13,10 +13,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script src="js/config.js?v=36.6.1"></script>
+<script src="js/config.js?v=36.7.0"></script>
 
 <link href="assets/favicon.png?v=33.1" rel="icon" type="image/png"/>
-<link href="css/app.css?v=36.6.1" rel="stylesheet"/>
+<link href="css/app.css?v=36.7.0" rel="stylesheet"/>
 <link href="css/v33_core.css?v=34.4.1" rel="stylesheet"/>
 <link href="css/v33_2_topnav.css?v=34.4.1" rel="stylesheet"/>
 <link href="css/v34_3_third_balance.css?v=34.4.1" rel="stylesheet"/>
@@ -58,12 +58,14 @@
 </div>
 </section>
 <section class="login-wrap hidden" id="loginScreen">
-<div class="login-card">
-<h1>WAPI One</h1>
-<p>Connexion securisee a la comptabilite copropriete.</p>
+<div class="login-card wapi-login-card">
+<div class="wapi-login-brand">
+<img alt="WAPI One" src="assets/logo-wapi-one.png"/>
+<div><span>Plateforme de gestion</span><h1>Bienvenue sur WAPI One</h1><p>Votre environnement syndic et comptable, centralisé et sécurisé.</p></div>
+</div>
 <form id="loginForm">
 <label>
-          Email
+          Adresse e-mail professionnelle
           <input autocomplete="email" id="loginEmail" required="" type="email"/>
 </label>
 <br/>
@@ -72,10 +74,11 @@
           <input autocomplete="current-password" id="loginPassword" required="" type="password"/>
 </label>
 <br/>
-<button class="btn" type="submit">Se connecter</button>
-<button class="btn secondary" id="resetConfigBtn" type="button">Modifier la configuration</button>
+<button class="btn wapi-login-submit" type="submit">Se connecter à WAPI One</button>
+<button class="btn secondary hidden" id="resetConfigBtn" type="button">Modifier la configuration</button>
 <div class="error" id="loginError"></div>
 </form>
+<div class="wapi-login-foot">WAPI One · Accès réservé aux collaborateurs autorisés</div>
 </div>
 </section>
 <section class="app-shell hidden" id="appScreen">
@@ -953,15 +956,11 @@
 <section class="view hidden" id="usersView">
 <div class="card">
 <div class="toolbar">
-<h2>Utilisateurs</h2>
-<span class="badge warn">Module a structurer</span>
+<div><h2>Utilisateurs et gestionnaires</h2><p class="muted-note">Accès à WAPI One, rôle et copropriétés attribuées.</p></div>
+<button class="btn" id="v367AddUserBtn" type="button">Créer un accès</button>
 </div>
-<div class="context-banner">
-<span>Contexte : <span data-active-copro-label="">Mode global</span></span>
-<button class="btn secondary" onclick="switchToView('copros')" type="button">Changer de copropriete</button>
-</div>
-<p style="color:var(--muted); line-height:1.5;">Gestion des utilisateurs WAPI One, rôles, accès et attribution des copropriétés.</p>
-<div class="module-grid"><div class="module-card"><h3>Profils</h3><p>Module prévu dans la feuille de route WAPI One. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Rôles</h3><p>Module prévu dans la feuille de route WAPI One. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div><div class="module-card"><h3>Droits</h3><p>Module prévu dans la feuille de route WAPI One. Il sera connecté au contexte copropriété active et au centre de traitement.</p></div></div>
+<div class="notice">La création d’un accès génère un véritable utilisateur Supabase Auth. Le collaborateur pourra ensuite se connecter avec son adresse et son mot de passe temporaire.</div>
+<div id="v367UsersTable"><div class="muted-note">Chargement des utilisateurs…</div></div>
 </div>
 </section>
 <section class="view hidden" id="accessControlView">
@@ -1273,8 +1272,8 @@
 <link href="css/v36_3_context_billing_tiers.css?v=36.3.0" rel="stylesheet"/>
 <link href="css/v36_4_stability_tiers.css?v=36.4.0" rel="stylesheet"/>
 <script src="js/wapi_pdf_theme.js?v=35.8.0"></script>
-<script src="js/app.js?v=36.6.1"></script>
-<script src="js/v33_integrated.js?v=36.6.1"></script>
+<script src="js/app.js?v=36.7.0"></script>
+<script src="js/v33_integrated.js?v=36.7.0"></script>
 <script src="js/v33_2_topnav.js?v=36.5.1"></script>
 <script src="js/v34_3_third_balance.js?v=34.5.0"></script>
 <script src="js/v34_4_structure_setup.js?v=34.5.0"></script>
@@ -1292,5 +1291,6 @@
 <script src="js/v36_2_stability_preview.js?v=36.5.1"></script>
 <script src="js/v36_3_context_billing_tiers.js?v=36.3.0"></script>
 <script src="js/v36_4_stability_tiers.js?v=36.5.1"></script>
+<script src="js/v36_7_users_auth.js?v=36.7.0"></script>
 </body>
 </html>

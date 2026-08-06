@@ -4488,7 +4488,9 @@ function updateSidebarButtons() {
       return (s.iban || s.bank_iban || '').replace(/\s+/g, '').toUpperCase();
     }
     function paymentInvoiceFilterV12(inv) {
-      const coproFilter = state.activeCoproId || $('paymentCoproFilter')?.value || '';
+      const coproFilter = typeof state.paymentCoproFilter === 'undefined'
+        ? (state.activeCoproId || '')
+        : (state.paymentCoproFilter || '');
       const search = ($('paymentSearch')?.value || '').toLowerCase().trim();
       if (coproFilter && inv.copro_id !== coproFilter) return false;
       if (search) {
@@ -4510,7 +4512,9 @@ function updateSidebarButtons() {
       if (!$('paymentsTable')) return;
       const coproOptionsHtml = '<option value="">Toutes les copropriétés</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
       $('paymentCoproFilter').innerHTML = coproOptionsHtml;
-      if (state.activeCoproId) $('paymentCoproFilter').value = state.activeCoproId;
+      $('paymentCoproFilter').value = typeof state.paymentCoproFilter === 'undefined'
+        ? (state.activeCoproId || '')
+        : (state.paymentCoproFilter || '');
       $('paymentBankFilter').innerHTML = '<option value="">Compte bancaire de la copropriété</option>' + state.bankAccounts.map((b)=>`<option value="${b.id}">${escapeHtml((b.compta_copros?.name || '') + ' - ' + (b.label || '') + ' ' + (b.iban || ''))}</option>`).join('');
       document.querySelectorAll('[data-payment-tab]').forEach((btn)=>btn.classList.toggle('active', btn.dataset.paymentTab === state.paymentTab));
       const rows = state.invoices.filter(paymentInvoiceFilterV12);
@@ -9990,7 +9994,7 @@ function updateSidebarButtons() {
         { id:'states', label:'États comptables', icon:'chart', defaultView:'ledger', tabs:[['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['journals','Journaux','archive'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
         { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées générales','vote'],['resolutions','Catalogue résolutions','list']] },
         { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
-        { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['bankInstitutions','Banques','bank'],['vatCodes','Codes TVA','calculator'],['journalCodes','Codes journaux','receipt'],['defaultExpenseTypes','Natures dépenses','list'],['users','Utilisateurs','users'],['accessControl','Contrôle accès','shield'],['auditTrail','Piste d’audit','list'],['importsConfig','Import','download'],['isabel','Isabel Connect','card']] }
+        { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Import','download']] }
       ];
       const VIEW_TO_MODULE = new Map();
       MODULES.forEach(m => m.tabs.forEach(t => { if(!VIEW_TO_MODULE.has(t[0])) VIEW_TO_MODULE.set(t[0], m.id); }));
@@ -10214,6 +10218,7 @@ function updateSidebarButtons() {
   }
   function renderCodaPilotV28(){
     if(!$id('v28CodaTable')) return;
+    if(typeof window.v33RenderCodaPilotV322 === 'function') return window.v33RenderCodaPilotV322();
     const coproId=state.activeCoproId || $id('v28CodaCoproFilter').value || '';
     $id('v28CodaCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+state.copros.map(c=>`<option value="${c.id}">${escapeHtml(coproLabel(c))}</option>`).join(''); $id('v28CodaCoproFilter').value=coproId;
     const status=$id('v28CodaStatusFilter').value||''; const sort=$id('v28CodaSort').value||'created_at';
@@ -10250,7 +10255,7 @@ function updateSidebarButtons() {
       { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
       { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
       { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
-      { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['journalCodes','Journaux','receipt'],['importsConfig','Imports','download'],['auditTrail','Audit','list'],['isabel','Isabel','card']] }
+      { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
     ];
     const map=new Map(); modules.forEach(m=>m.tabs.forEach(t=>{if(!map.has(t[0])) map.set(t[0],m.id)}));
     function pathIcon(name){ return (typeof iconPaths!=='undefined'?iconPaths[name]:null)||'M12 12h.01'; }
@@ -10591,6 +10596,7 @@ function updateSidebarButtons() {
   }
   function v30RenderCodaPilot(){
     if(!$id('v28CodaTable')) return;
+    if(typeof window.v33RenderCodaPilotV322 === 'function') return window.v33RenderCodaPilotV322();
     const coproId=$id('v28CodaCoproFilter')?.value || ''; const status=$id('v28CodaStatusFilter')?.value || ''; const sort=$id('v28CodaSort')?.value || 'created_at';
     if($id('v28CodaCoproFilter')) $id('v28CodaCoproFilter').innerHTML='<option value="">Toutes les copropriétés</option>'+(state.copros||[]).map(c=>`<option value="${c.id}" ${c.id===coproId?'selected':''}>${esc30(c.name)}</option>`).join('');
     let rows=(state.bankStatements||[]).filter(s=>(!coproId||s.copro_id===coproId)&&(!status||s.status===status)); rows.sort((a,b)=>String(b[sort]||'').localeCompare(String(a[sort]||'')));
@@ -10687,7 +10693,7 @@ function updateSidebarButtons() {
     { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
     { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
     { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
-    { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['journalCodes','Journaux','receipt'],['importsConfig','Imports','download'],['auditTrail','Audit','list'],['isabel','Isabel','card']] }
+    { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
   ];
   const V31_VIEW_TO_MODULE = new Map(); V31_MODULES.forEach(m=>m.tabs.forEach(t=>{ if(!V31_VIEW_TO_MODULE.has(t[0])) V31_VIEW_TO_MODULE.set(t[0],m.id); }));
   function v31CurrentView(){ const v=[...document.querySelectorAll('.view')].find(x=>!x.classList.contains('hidden')); return v?v.id.replace(/View$/,''):'dashboard'; }
