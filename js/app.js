@@ -87,6 +87,8 @@ window.WAPI_ONE_BUILD_DATE = '2026-07-25';
 
     function getConfig() {
       try {
+        const bundled = window.WAPI_PUBLIC_CONFIG;
+        if (bundled?.url && bundled?.anonKey) return bundled;
         return JSON.parse(localStorage.getItem(CONFIG_KEY) || "null");
       } catch (error) {
         return null;
@@ -4687,7 +4689,7 @@ function updateSidebarButtons() {
     // ---- Correctif V12.1: paiements multi-copro, soldes, filtres persistants ----
     function ensurePaymentSelectionV121() {
       if (!state.selectedPaymentIds || !(state.selectedPaymentIds instanceof Set)) state.selectedPaymentIds = new Set(Array.from(state.selectedPaymentIds || []));
-      if (typeof state.paymentCoproFilter === 'undefined') state.paymentCoproFilter = '';
+      if (typeof state.paymentCoproFilter === 'undefined') state.paymentCoproFilter = state.activeCoproId || '';
       if (typeof state.paymentBankFilter === 'undefined') state.paymentBankFilter = '';
     }
 

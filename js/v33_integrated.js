@@ -222,6 +222,7 @@
       coproSelect.closest('label').insertAdjacentHTML('beforebegin','<label>Gestionnaire <select id="v28CodaManagerFilter"><option value="">Tous les gestionnaires</option></select></label>');
       managerSelect = id('v28CodaManagerFilter');
     }
+    if(typeof state.codaCoproFilter==='undefined')state.codaCoproFilter=state.activeCoproId||'';
     const manager = state.codaManagerFilter || '';
     if (managerSelect) {
       managerSelect.innerHTML='<option value="">Tous les gestionnaires</option>'+(state.userProfiles||[]).filter(u=>u.active!==false).map(u=>`<option value="${esc(u.id)}">${esc(u.display_name||u.full_name||u.email||'Utilisateur')}</option>`).join('');

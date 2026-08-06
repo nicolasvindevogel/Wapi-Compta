@@ -1,0 +1,20 @@
+WAPI ONE V36.6.1
+
+INSTALLATION
+1. Decompresser le ZIP.
+2. Envoyer tout son contenu a la racine du depot GitHub.
+3. Confirmer le remplacement des fichiers portant le meme nom.
+4. Commit changes.
+5. Recharger le site avec CTRL + F5.
+
+Aucune migration SQL n'est necessaire.
+
+NOUVEAU DEMARRAGE
+- La configuration publique Supabase est integree dans js/config.js.
+- Un nouvel appareil affiche directement la connexion utilisateur.
+- Aucun ecran de saisie de cle Supabase n'est affiche.
+- Une session deja ouverte reste connectee selon le fonctionnement Supabase Auth.
+
+SECURITE
+- Seule la cle publique publishable est dans le site.
+- Ne jamais ajouter la cle service_role, un mot de passe ou un secret de messagerie dans config.js.
