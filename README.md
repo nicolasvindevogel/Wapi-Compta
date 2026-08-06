@@ -1,2 +1,2 @@
 # Wapi-Compta
-Module comptabilité copropriété WAPI-SYNDIK 
+Module comptabilité copropriété WAPI-SYNDIK SPRL
