@@ -136,40 +136,51 @@
     const s = state.invoiceSort || { key:'invoice_date', dir:'desc' };
     const dir = s.dir === 'asc' ? 1 : -1;
     const activeCoproId = String(state.activeCoproId || id('activeCoproSelect')?.value || '');
-    const fiscalYear = activeCoproId
-      ? ((typeof window.WapiFiscalContextV3611?.getYear === 'function' ? window.WapiFiscalContextV3611.getYear() : null)
-        || (state.fiscalYears || []).find(y => String(y.id) === String(state.activeFiscalYearId || id('activeFiscalYearSelect')?.value || '') && String(y.copro_id) === activeCoproId)
-        || null)
-      : null;
+    const from = String(id('invoiceListFrom')?.value || '');
+    const to = String(id('invoiceListTo')?.value || '');
+    const search = String(id('invoiceListSearch')?.value || '').trim().toLowerCase();
 
-    const coproRows = (state.invoices || []).filter(i => !activeCoproId || String(i.copro_id || '') === activeCoproId);
-    let outsideExercise = 0, missingDate = 0;
+    const allInvoices = state.invoices || [];
+    const coproRows = allInvoices.filter(i => !activeCoproId || String(i.copro_id || '') === activeCoproId);
+    let outsidePeriod = 0;
     const rows = coproRows.filter(i => {
-      if (!fiscalYear) return true;
       const d = String(i.invoice_date || '').slice(0,10);
-      if (!d) { missingDate += 1; return true; } // visible pour permettre la correction de l'anomalie
-      const inside = (!fiscalYear.starts_on || d >= fiscalYear.starts_on) && (!fiscalYear.ends_on || d <= fiscalYear.ends_on);
-      if (!inside) outsideExercise += 1;
-      return inside;
+      if (d && ((from && d < from) || (to && d > to))) { outsidePeriod += 1; return false; }
+      if (search) {
+        const sup = i.compta_suppliers || (state.suppliers||[]).find(x=>String(x.id)===String(i.supplier_id)) || {};
+        const hay = [i.invoice_number, i.internal_invoice_number, i.description, sup.name, i.amount_total]
+          .map(v=>String(v ?? '').toLowerCase()).join(' ');
+        if (!hay.includes(search)) return false;
+      }
+      return true;
     }).slice().sort((a,b)=>{
       const va = sortValueInvoice(a, s.key), vb = sortValueInvoice(b, s.key);
       if (typeof va === 'number' || typeof vb === 'number') return (Number(va||0)-Number(vb||0))*dir;
       return String(va||'').localeCompare(String(vb||''),'fr',{numeric:true,sensitivity:'base'})*dir;
     });
 
-    const loadedComplete = state.invoiceLoadMeta?.complete !== false;
-    const loadCountLabel = state.invoiceLoadMeta?.expected !== null && state.invoiceLoadMeta?.expected !== undefined ? `${Number(state.invoiceLoadMeta?.loaded||0)}/${Number(state.invoiceLoadMeta.expected||0)} chargées` : `${Number(state.invoiceLoadMeta?.loaded||0)} chargées`;
-    const periodLabel = fiscalYear ? `${esc(fiscalYear.label || fiscalYear.year_code || fiscalYear.code || 'Exercice')} · ${esc(fiscalYear.starts_on || '')} → ${esc(fiscalYear.ends_on || '')}` : 'Tous les exercices';
-    const diag = activeCoproId
-      ? `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} affichée${rows.length>1?'s':''}</span><span class="badge">${periodLabel}</span>${outsideExercise?`<span class="badge warn">${outsideExercise} hors exercice</span>`:''}${missingDate?`<span class="badge warn">${missingDate} sans date</span>`:''}${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`
-      : `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} affichée${rows.length>1?'s':''}</span><span class="badge">${esc(loadCountLabel)}</span>${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`;
+    const meta = state.invoiceLoadMeta || {};
+    const loadLabel = meta.expected !== null && meta.expected !== undefined
+      ? `${Number(meta.loaded||0)}/${Number(meta.expected||0)} chargées depuis la base`
+      : `${Number(meta.loaded ?? allInvoices.length)} chargées depuis la base`;
+    const periodLabel = from || to ? `${from || '…'} → ${to || '…'}` : 'Toutes dates';
+    const diag = `<div class="summary-line">
+      <span class="badge">${rows.length} affichée${rows.length>1?'s':''}</span>
+      <span class="badge">${coproRows.length} dans la copropriété</span>
+      <span class="badge">${esc(periodLabel)}</span>
+      <span class="badge">${esc(loadLabel)}</span>
+      ${outsidePeriod?`<span class="badge warn">${outsidePeriod} hors période</span>`:''}
+      ${meta.complete===false?`<span class="badge warn">Chargement incomplet : ${esc(meta.error||'erreur inconnue')}</span>`:''}
+    </div>`;
 
     const colCount = 11;
     let emptyMessage = 'Aucune facture.';
-    if (activeCoproId && fiscalYear && !rows.length && coproRows.length) {
-      emptyMessage = `${coproRows.length} facture${coproRows.length>1?'s existent':' existe'} pour cette copropriété, mais aucune n'est datée dans l'exercice sélectionné (${fiscalYear.starts_on || '?'} → ${fiscalYear.ends_on || '?'}). Vérifie les dates de facture ou change d'exercice.`;
-    } else if (activeCoproId && !rows.length && !loadedComplete) {
-      emptyMessage = 'Aucune facture affichée, mais le chargement de l’historique est incomplet. Recharge la page avant de conclure qu’il n’existe aucune facture.';
+    if (!allInvoices.length && meta.error) {
+      emptyMessage = `Impossible de charger les factures depuis la base : ${meta.error}`;
+    } else if (activeCoproId && !rows.length && coproRows.length) {
+      emptyMessage = `${coproRows.length} facture${coproRows.length>1?'s existent':' existe'} pour cette copropriété, mais aucune ne correspond à la période ou à la recherche affichée.`;
+    } else if (activeCoproId && !rows.length && !coproRows.length && allInvoices.length) {
+      emptyMessage = `Aucune facture chargée pour cette copropriété. ${allInvoices.length} facture${allInvoices.length>1?'s sont':' est'} toutefois chargée${allInvoices.length>1?'s':''} dans WAPI One.`;
     }
 
     tableEl.innerHTML = `${diag}<div class="table-wrap"><table><thead><tr>
@@ -183,14 +194,16 @@
       <th>${thSort('Montant','amount_total')}</th>
       <th>${thSort('Paiement','payment')}</th>
       <th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map(i=>{
-        const acc = (state.accounts || []).find(a=>a.id===i.account_id);
-        const sup = i.compta_suppliers || (state.suppliers||[]).find(s=>s.id===i.supplier_id) || {};
+        const acc = (state.accounts || []).find(a=>String(a.id)===String(i.account_id));
+        const sup = i.compta_suppliers || (state.suppliers||[]).find(x=>String(x.id)===String(i.supplier_id)) || {};
         const supplierDisplay = supplierLabel(sup) || '';
+        const copro = i.compta_copros || (state.copros||[]).find(c=>String(c.id)===String(i.copro_id)) || {};
         const rowCls = typeof invoiceRowClass === 'function' ? invoiceRowClass(i) : '';
         const status = typeof invoicePaymentStatus === 'function' ? invoicePaymentStatus(i) : (i.status || '');
-        return `<tr class="${rowCls}"><td>${esc(i.invoice_date || '')}</td><td>${esc(i.compta_copros?.name || (state.copros||[]).find(c=>c.id===i.copro_id)?.name || '')}</td><td>${esc(supplierDisplay)}</td><td>${supplierCode(sup) ? `<span class="code-pill">${esc(supplierCode(sup))}</span>` : '-'}</td><td>${esc(acc ? `${acc.code} - ${acc.label || ''}` : 'A classer')}</td><td>${esc(i.invoice_number || '')}</td><td><span class="code-pill">${esc(invoiceInternalNo(i))}</span></td><td>${fmt(i.amount_total)}</td><td>${typeof paymentStatusBadge === 'function' ? paymentStatusBadge(status) : esc(status)}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`;
+        return `<tr class="${rowCls}"><td>${esc(i.invoice_date || '')}</td><td>${esc(copro.name || '')}</td><td>${esc(supplierDisplay)}</td><td>${supplierCode(sup) ? `<span class="code-pill">${esc(supplierCode(sup))}</span>` : '-'}</td><td>${esc(acc ? `${acc.code} - ${acc.label || ''}` : 'A classer')}</td><td>${esc(i.invoice_number || '')}</td><td><span class="code-pill">${esc(invoiceInternalNo(i))}</span></td><td>${fmt(i.amount_total)}</td><td>${typeof paymentStatusBadge === 'function' ? paymentStatusBadge(status) : esc(status)}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`;
       }).join('') || `<tr><td colspan="${colCount}">${esc(emptyMessage)}</td></tr>`}</tbody></table></div>`;
   }
+
 
   function renderCoprosV322(){
     const el = id('coprosTable'); if (!el) return;

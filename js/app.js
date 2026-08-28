@@ -1,5 +1,5 @@
 
-window.WAPI_ONE_VERSION = 'V36.13';
+window.WAPI_ONE_VERSION = 'V36.14';
 window.WAPI_ONE_BUILD_DATE = '2026-08-28';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";
@@ -294,64 +294,63 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     }
 
     async function loadInvoices() {
-      // V36.13 : pagination fiable quel que soit le plafond de lignes configuré dans Supabase/PostgREST.
-      // Important : ne jamais déduire « dernière page » du fait que Supabase renvoie moins que la taille
-      // demandée, car le serveur peut lui-même plafonner chaque réponse (100, 500, 1000 lignes…).
-      const requestedPageSize = 500;
+      // V36.14 : lecture robuste de la table brute uniquement.
+      // Les noms copro/fournisseur sont résolus côté client via state.copros/state.suppliers.
+      // On évite ainsi qu'une relation PostgREST indisponible fasse disparaître TOUTES les factures.
+      const pageSize = 500;
       let from = 0;
-      let page = 0;
-      let allRows = [];
+      let pages = 0;
       let expectedCount = null;
+      let allRows = [];
       let loadError = null;
-      let previousFirstId = null;
+      let previousSignature = '';
 
-      while (true) {
-        const query = supabaseClient
+      while (pages < 5000) {
+        let result = await supabaseClient
           .from("compta_invoices")
-          .select("*, compta_copros(name), compta_suppliers(name)", { count: 'exact' })
+          .select("*", pages === 0 ? { count: "exact" } : undefined)
           .order("created_at", { ascending: false })
-          .order("id", { ascending: false })
-          .range(from, from + requestedPageSize - 1);
-        const { data, error, count } = await query;
-        if (error) { loadError = error; break; }
+          .range(from, from + pageSize - 1);
 
-        const chunk = data || [];
-        if (expectedCount === null && Number.isFinite(Number(count))) expectedCount = Number(count);
+        // Repli sans count : certaines configurations PostgREST sont plus strictes.
+        if (result.error && pages === 0) {
+          result = await supabaseClient
+            .from("compta_invoices")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .range(from, from + pageSize - 1);
+        }
+
+        if (result.error) { loadError = result.error; break; }
+        const chunk = result.data || [];
+        if (pages === 0 && Number.isFinite(Number(result.count))) expectedCount = Number(result.count);
         if (!chunk.length) break;
 
-        // Protection anti-boucle si un proxy/API renvoie accidentellement toujours la même page.
-        const firstId = String(chunk[0]?.id || '');
-        if (firstId && firstId === previousFirstId) {
-          loadError = new Error('Pagination factures interrompue : Supabase a renvoyé deux fois la même page.');
+        const signature = `${chunk[0]?.id || ''}|${chunk[chunk.length-1]?.id || ''}|${chunk.length}`;
+        if (signature && signature === previousSignature) {
+          loadError = new Error("Pagination factures interrompue : page identique reçue deux fois.");
           break;
         }
-        previousFirstId = firstId;
+        previousSignature = signature;
 
         allRows.push(...chunk);
-        from += chunk.length; // avancer du nombre réellement reçu, pas du nombre demandé.
-        page += 1;
-
-        if (expectedCount !== null && from >= expectedCount) break;
-        if (page >= 5000) {
-          loadError = new Error('Volume de factures anormalement élevé : garde-fou de pagination atteint.');
-          break;
-        }
+        from += chunk.length;
+        pages += 1;
       }
 
-      // Une facture = une ligne, même si une insertion intervient pendant le chargement et décale un offset.
       const unique = new Map();
-      allRows.forEach(row => { if (row?.id && !unique.has(String(row.id))) unique.set(String(row.id), row); });
+      allRows.forEach((row) => { if (row?.id && !unique.has(String(row.id))) unique.set(String(row.id), row); });
       state.invoices = [...unique.values()];
       const complete = !loadError && (expectedCount === null || state.invoices.length >= expectedCount);
       state.invoiceLoadMeta = {
         loaded: state.invoices.length,
         expected: expectedCount,
-        pages: page,
+        pages,
         complete,
         error: loadError?.message || (!complete && expectedCount !== null ? `Historique incomplet : ${state.invoices.length}/${expectedCount} factures chargées.` : ''),
         loaded_at: new Date().toISOString()
       };
-      if (!complete) console.warn('Chargement factures incomplet :', state.invoiceLoadMeta.error);
+      if (loadError) console.warn('Chargement factures fournisseurs :', loadError.message || loadError);
     }
 
     async function loadBankAccounts() {
