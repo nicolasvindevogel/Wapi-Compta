@@ -294,13 +294,43 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     }
 
     async function loadInvoices() {
-      const { data, error } = await supabaseClient
-        .from("compta_invoices")
-        .select("*, compta_copros(name), compta_suppliers(name)")
-        .order("created_at", { ascending: false })
-        .limit(2000);
-      if (error) { console.warn('Chargement factures :', error.message); state.invoices = []; return; }
-      state.invoices = data || [];
+      // V36.12 : ne jamais tronquer l'historique des factures fournisseurs.
+      // L'ancienne limite globale de 2 000 lignes pouvait faire disparaître entièrement
+      // les factures d'une copropriété dont les documents étaient plus anciens.
+      const pageSize = 750;
+      let from = 0;
+      let page = 0;
+      let allRows = [];
+      let loadError = null;
+      while (true) {
+        const { data, error } = await supabaseClient
+          .from("compta_invoices")
+          .select("*, compta_copros(name), compta_suppliers(name)")
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) { loadError = error; break; }
+        const chunk = data || [];
+        allRows.push(...chunk);
+        if (chunk.length < pageSize) break;
+        from += pageSize;
+        page += 1;
+        // Garde-fou technique uniquement : 750 000 factures avant arrêt explicite.
+        if (page >= 1000) {
+          loadError = new Error('Volume de factures anormalement élevé : chargement interrompu après 750 000 lignes.');
+          break;
+        }
+      }
+      // Sécurité supplémentaire en cas de chevauchement de pages : une facture = une ligne.
+      const unique = new Map();
+      allRows.forEach(row => { if (row?.id && !unique.has(String(row.id))) unique.set(String(row.id), row); });
+      state.invoices = [...unique.values()];
+      state.invoiceLoadMeta = {
+        loaded: state.invoices.length,
+        complete: !loadError,
+        error: loadError?.message || '',
+        loaded_at: new Date().toISOString()
+      };
+      if (loadError) console.warn('Chargement factures partiel :', loadError.message || loadError);
     }
 
     async function loadBankAccounts() {

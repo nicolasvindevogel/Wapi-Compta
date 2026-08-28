@@ -135,13 +135,43 @@
     const tableEl = id('invoicesTable'); if (!tableEl) return;
     const s = state.invoiceSort || { key:'invoice_date', dir:'desc' };
     const dir = s.dir === 'asc' ? 1 : -1;
-    const rows = (state.invoices || []).filter(i => !state.activeCoproId || i.copro_id === state.activeCoproId).slice().sort((a,b)=>{
+    const activeCoproId = String(state.activeCoproId || id('activeCoproSelect')?.value || '');
+    const fiscalYear = activeCoproId
+      ? ((typeof window.WapiFiscalContextV3611?.getYear === 'function' ? window.WapiFiscalContextV3611.getYear() : null)
+        || (state.fiscalYears || []).find(y => String(y.id) === String(state.activeFiscalYearId || id('activeFiscalYearSelect')?.value || '') && String(y.copro_id) === activeCoproId)
+        || null)
+      : null;
+
+    const coproRows = (state.invoices || []).filter(i => !activeCoproId || String(i.copro_id || '') === activeCoproId);
+    let outsideExercise = 0, missingDate = 0;
+    const rows = coproRows.filter(i => {
+      if (!fiscalYear) return true;
+      const d = String(i.invoice_date || '').slice(0,10);
+      if (!d) { missingDate += 1; return true; } // visible pour permettre la correction de l'anomalie
+      const inside = (!fiscalYear.starts_on || d >= fiscalYear.starts_on) && (!fiscalYear.ends_on || d <= fiscalYear.ends_on);
+      if (!inside) outsideExercise += 1;
+      return inside;
+    }).slice().sort((a,b)=>{
       const va = sortValueInvoice(a, s.key), vb = sortValueInvoice(b, s.key);
       if (typeof va === 'number' || typeof vb === 'number') return (Number(va||0)-Number(vb||0))*dir;
       return String(va||'').localeCompare(String(vb||''),'fr',{numeric:true,sensitivity:'base'})*dir;
     });
+
+    const loadedComplete = state.invoiceLoadMeta?.complete !== false;
+    const periodLabel = fiscalYear ? `${esc(fiscalYear.label || fiscalYear.year_code || fiscalYear.code || 'Exercice')} · ${esc(fiscalYear.starts_on || '')} → ${esc(fiscalYear.ends_on || '')}` : 'Tous les exercices';
+    const diag = activeCoproId
+      ? `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} affichée${rows.length>1?'s':''}</span><span class="badge">${periodLabel}</span>${outsideExercise?`<span class="badge warn">${outsideExercise} hors exercice</span>`:''}${missingDate?`<span class="badge warn">${missingDate} sans date</span>`:''}${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`
+      : `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} chargée${rows.length>1?'s':''}</span>${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`;
+
     const colCount = 11;
-    tableEl.innerHTML = `<div class="table-wrap"><table><thead><tr>
+    let emptyMessage = 'Aucune facture.';
+    if (activeCoproId && fiscalYear && !rows.length && coproRows.length) {
+      emptyMessage = `${coproRows.length} facture${coproRows.length>1?'s existent':' existe'} pour cette copropriété, mais aucune n'est datée dans l'exercice sélectionné (${fiscalYear.starts_on || '?'} → ${fiscalYear.ends_on || '?'}). Vérifie les dates de facture ou change d'exercice.`;
+    } else if (activeCoproId && !rows.length && !loadedComplete) {
+      emptyMessage = 'Aucune facture affichée, mais le chargement de l’historique est incomplet. Recharge la page avant de conclure qu’il n’existe aucune facture.';
+    }
+
+    tableEl.innerHTML = `${diag}<div class="table-wrap"><table><thead><tr>
       <th>${thSort('Date','invoice_date')}</th>
       <th>${thSort('Copropriété','copro')}</th>
       <th>${thSort('Fournisseur','supplier')}</th>
@@ -158,7 +188,7 @@
         const rowCls = typeof invoiceRowClass === 'function' ? invoiceRowClass(i) : '';
         const status = typeof invoicePaymentStatus === 'function' ? invoicePaymentStatus(i) : (i.status || '');
         return `<tr class="${rowCls}"><td>${esc(i.invoice_date || '')}</td><td>${esc(i.compta_copros?.name || (state.copros||[]).find(c=>c.id===i.copro_id)?.name || '')}</td><td>${esc(supplierDisplay)}</td><td>${supplierCode(sup) ? `<span class="code-pill">${esc(supplierCode(sup))}</span>` : '-'}</td><td>${esc(acc ? `${acc.code} - ${acc.label || ''}` : 'A classer')}</td><td>${esc(i.invoice_number || '')}</td><td><span class="code-pill">${esc(invoiceInternalNo(i))}</span></td><td>${fmt(i.amount_total)}</td><td>${typeof paymentStatusBadge === 'function' ? paymentStatusBadge(status) : esc(status)}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`;
-      }).join('') || `<tr><td colspan="${colCount}">Aucune facture.</td></tr>`}</tbody></table></div>`;
+      }).join('') || `<tr><td colspan="${colCount}">${esc(emptyMessage)}</td></tr>`}</tbody></table></div>`;
   }
 
   function renderCoprosV322(){
