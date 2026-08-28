@@ -38,8 +38,8 @@
     const app = $('appScreen'), topbar = app?.querySelector('.topbar');
     if (!app || !topbar || $('w332PrimaryNav')) return;
     document.body.dataset.wapiV332 = 'ready';
-    document.body.dataset.wapiVersion = '34.4.1';
-    document.title = 'WAPI One — V36.5.1';
+    document.body.dataset.wapiVersion = '36.9.2';
+    document.title = 'WAPI One — V36.9.2';
 
     const left = topbar.querySelector('.topbar-left');
     const pageWrap = left?.querySelector('.page-title-wrap');
@@ -168,6 +168,7 @@
   function fiscalYearsForActiveCopro(){
     const st = appState();
     const coproId = $('activeCoproSelect')?.value || st?.activeCoproId || '';
+    if (!coproId) return [];
     const seen = new Set();
     return (st?.fiscalYears || []).filter(year => {
       if (coproId && String(year.copro_id) !== String(coproId)) return false;
@@ -186,18 +187,23 @@
     const st = appState();
     if (!select || !st) return;
     const years = fiscalYearsForActiveCopro();
+    const hasCopro = Boolean($('activeCoproSelect')?.value || st.activeCoproId);
     const previous = select.value || st.activeFiscalYearId || '';
-    select.innerHTML = '<option value="">Choisir un exercice</option>' +
+    select.innerHTML = `<option value="">${hasCopro ? 'Choisir un exercice' : 'Tous les exercices'}</option>` +
       years.map(year => `<option value="${esc(year.id)}">${esc(fiscalLabel(year))}</option>`).join('');
     const selected = years.some(year => String(year.id) === String(previous))
       ? previous
-      : (selectDefault ? (years.find(year => String(year.status || '').toLowerCase() !== 'closed') || years[0])?.id || '' : '');
+      : (selectDefault && hasCopro ? (years.find(year => String(year.status || '').toLowerCase() !== 'closed') || years[0])?.id || '' : '');
     select.value = selected;
     if (selected && String(st.activeFiscalYearId || '') !== String(selected)) {
       st.activeFiscalYearId = selected;
       try { localStorage.setItem('wapi-one-active-fiscal-year', selected); } catch (_) {}
+    } else if (!selected && st.activeFiscalYearId) {
+      st.activeFiscalYearId = '';
+      try { localStorage.removeItem('wapi-one-active-fiscal-year'); } catch (_) {}
     }
     updateFiscalStatus();
+    if (typeof window.w368RenderDashboard === 'function') setTimeout(window.w368RenderDashboard, 0);
   }
   function updateFiscalStatus(){
     const dot = $('w332FiscalStatus');
@@ -212,7 +218,7 @@
   }
 
   function refreshCoproContext(){
-    document.title = 'WAPI One — V36.5.1';
+    document.title = 'WAPI One — V36.9.2';
     const st = appState(), select = $('activeCoproSelect');
     if (!st || !select) return;
     const selected = st.activeCoproId || select.value || '';
@@ -420,11 +426,11 @@
     refreshCoproContext();
     enhanceAccountLookup();
     document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V36.5.1'; document.querySelector('.w332-page-head')?.appendChild(version);
+    const version = document.createElement('span'); version.className='badge'; version.textContent='V36.9.2'; document.querySelector('.w332-page-head')?.appendChild(version);
     // L'ancien moteur termine un chargement différé des profils ; on réaffirme
     // une seule fois la version et le contexte, sans observateur ni intervalle.
     setTimeout(() => {
-      document.title = 'WAPI One — V36.5.1';
+      document.title = 'WAPI One — V36.9.2';
       refreshCoproContext();
       syncTopUniverse();
     }, 1600);

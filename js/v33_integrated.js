@@ -634,7 +634,7 @@
    Objectif : appliquer le filtre gestionnaire dans les modules multi-copro utiles,
    sans MutationObserver ni boucle de rendu. */
 (function(){
-  const VERSION = 'WAPI One — V36.5.1';
+  const VERSION = 'WAPI One — V36.9.2';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const patched = new Set();
   const coproSelectIds = [
@@ -883,7 +883,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V36.5.1';
+  const VERSION = 'WAPI One — V36.9.2';
   window.WAPI_ONE_VERSION = 'V33 - socle propre stabilisé';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const ACTIVE_COPRO_KEY = 'wapi_compta_active_copro_id';
@@ -1281,7 +1281,7 @@
    ============================================================ */
 (function(){
   'use strict';
-  const VERSION = 'WAPI One — V36.5.1';
+  const VERSION = 'WAPI One — V36.9.2';
   const STORAGE_KEY = 'wapi_one_manager_filter_user_id';
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

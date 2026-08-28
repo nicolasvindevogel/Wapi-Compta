@@ -1,6 +1,6 @@
 
-window.WAPI_ONE_VERSION = 'V32.1.2 - retour stable anti-boucle';
-window.WAPI_ONE_BUILD_DATE = '2026-07-25';
+window.WAPI_ONE_VERSION = 'V36.9.2';
+window.WAPI_ONE_BUILD_DATE = '2026-08-28';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";
     const ACTIVE_COPRO_KEY = "wapi_compta_active_copro_id";
@@ -11146,7 +11146,7 @@ function updateSidebarButtons() {
       if(!target) return;
       const badge = document.createElement('div');
       badge.className = 'app-version-badge';
-      badge.textContent = 'WAPI One — V32.1.2 stable';
+      badge.textContent = 'WAPI One — V36.9.2';
       target.appendChild(badge);
     }catch(e){ console.warn('Version badge non ajouté', e); }
   }

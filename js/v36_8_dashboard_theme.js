@@ -1,10 +1,11 @@
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const money=v=>new Intl.NumberFormat('fr-BE',{style:'currency',currency:'EUR'}).format(Number(v||0));
   const date=v=>{if(!v)return '';const d=new Date(v);return Number.isNaN(d.getTime())?'':d.toLocaleDateString('fr-BE')};
-  const activeCopro=()=>state?.activeCoproId||$('activeCoproSelect')?.value||'';
-  const activeYear=()=>state?.activeFiscalYearId||$('activeFiscalYearSelect')?.value||'';
+  const activeCopro=()=>$('activeCoproSelect')?.value??state?.activeCoproId??'';
+  const activeYear=()=>$('activeFiscalYearSelect')?.value??state?.activeFiscalYearId??'';
   const year=()=> (state?.fiscalYears||[]).find(y=>String(y.id)===String(activeYear()));
   const itemCopro=item=>item?.copro_id||item?.compta_copros?.id||(item?.bank_account_id?(state?.bankAccounts||[]).find(a=>String(a.id)===String(item.bank_account_id))?.copro_id:'')||(item?.statement_id?(state?.bankStatements||[]).find(s=>String(s.id)===String(item.statement_id))?.copro_id:'')||'';
   const inContext=item=>{
@@ -29,14 +30,14 @@
     (state?.bankStatements||[]).filter(s=>inContext(s)&&!['validated','confirmed','posted'].includes(String(s.status||'').toLowerCase())).slice(0,2).forEach(s=>rows.push({icon:'B',title:`Contrôler l’extrait ${s.statement_number||''}`.trim(),sub:s.compta_copros?.name||'Encodage bancaire',d:s.statement_date||s.created_at,status:'todo',label:'À faire',view:'codaPilot'}));
     return rows.slice(0,5);
   }
-  function renderTasks(){const host=$('w368TodayList');if(!host)return;const rows=taskRows();host.innerHTML=rows.length?rows.map(r=>`<div class="w368-today-row" data-view="${r.view}"><span class="w368-task-icon">${r.icon}</span><span class="w368-task-main"><strong>${r.title}</strong><small>${r.sub}</small></span><time class="w368-task-date">${date(r.d)}</time><span class="w368-status ${r.status}">${r.label}</span></div>`).join(''):'<div class="w368-empty">Rien d’urgent dans le contexte actuel.</div>';}
+  function renderTasks(){const host=$('w368TodayList');if(!host)return;const rows=taskRows();host.innerHTML=rows.length?rows.map(r=>`<div class="w368-today-row" data-view="${esc(r.view)}"><span class="w368-task-icon">${esc(r.icon)}</span><span class="w368-task-main"><strong>${esc(r.title)}</strong><small>${esc(r.sub)}</small></span><time class="w368-task-date">${esc(date(r.d))}</time><span class="w368-status ${esc(r.status)}">${esc(r.label)}</span></div>`).join(''):'<div class="w368-empty">Rien d’urgent dans le contexte actuel.</div>';}
   function transactions(){return (state?.bankTransactions||[]).filter(inContext).slice().sort((a,b)=>String(b.transaction_date||b.created_at||'').localeCompare(String(a.transaction_date||a.created_at||'')));}
   function renderChart(){const host=$('w368BankChart');if(!host)return;const tx=transactions();const vals=Array(12).fill(0);tx.forEach(t=>{const d=new Date(t.transaction_date||t.created_at);if(!Number.isNaN(d.getTime()))vals[d.getMonth()]+=Number(t.amount||0)});let cumulative=0;const totals=vals.map(v=>(cumulative+=v));const min=Math.min(0,...totals),max=Math.max(1,...totals),range=Math.max(1,max-min);const months=['Janv.','Févr.','Mars','Avr.','Mai','Juin','Juil.','Août','Sept.','Oct.','Nov.','Déc.'];host.innerHTML=totals.map((v,i)=>`<div class="w368-bar-wrap" title="${months[i]} : ${money(v)}"><div class="w368-bar" style="height:${Math.max(3,((v-min)/range)*205)}px"></div><small>${months[i]}</small></div>`).join('');}
-  function renderMovements(){const host=$('w368RecentMovements');if(!host)return;const tx=transactions().slice(0,5);host.innerHTML=tx.length?tx.map(t=>{const amount=Number(t.amount||0);return `<div class="w368-movement"><time>${date(t.transaction_date||t.created_at)}</time><span>${t.communication||t.description||t.counterparty_name||'Mouvement bancaire'}</span><strong class="${amount>=0?'positive':'negative'}">${amount>=0?'+ ':''}${money(amount)}</strong></div>`}).join(''):'<div class="w368-empty">Aucun mouvement dans ce contexte.</div>';}
+  function renderMovements(){const host=$('w368RecentMovements');if(!host)return;const tx=transactions().slice(0,5);host.innerHTML=tx.length?tx.map(t=>{const amount=Number(t.amount||0);return `<div class="w368-movement"><time>${esc(date(t.transaction_date||t.created_at))}</time><span>${esc(t.communication||t.description||t.counterparty_name||'Mouvement bancaire')}</span><strong class="${amount>=0?'positive':'negative'}">${amount>=0?'+ ':''}${esc(money(amount))}</strong></div>`}).join(''):'<div class="w368-empty">Aucun mouvement dans ce contexte.</div>';}
   function render(){
     if(!$('dashboardView'))return;const cid=activeCopro();const lots=(state?.lots||[]).filter(l=>!cid||String(l.copro_id)===String(cid));const ownerIds=new Set(lots.map(l=>l.owner_id).filter(Boolean));const invoices=(state?.invoices||[]).filter(i=>inContext(i)&&!['paid','rejected','cancelled'].includes(String(i.payment_status||i.status||'').toLowerCase()));
     if($('statLots'))$('statLots').textContent=lots.length;if($('w368OwnersCount'))$('w368OwnersCount').textContent=ownerIds.size||((state?.owners||[]).filter(o=>!cid||String(o.copro_id)===String(cid)).length);if($('statInvoices'))$('statInvoices').textContent=invoices.length;if($('w368BankBalance'))$('w368BankBalance').textContent=money(bankBalance());if($('w368DashboardContext'))$('w368DashboardContext').textContent=`${coproName()} · ${yearName()}`;if($('w368FinanceSubtitle'))$('w368FinanceSubtitle').textContent=`${coproName()} · ${yearName()}`;renderTasks();renderChart();renderMovements();
-    document.querySelectorAll('.app-version-badge,.wapi-version-badge').forEach(e=>e.textContent='WAPI One — V36.9');document.title='WAPI One — V36.9';
+    document.querySelectorAll('.app-version-badge,.wapi-version-badge').forEach(e=>e.textContent='WAPI One — V36.9.2');document.title='WAPI One — V36.9.2';
   }
   try{if(typeof renderAll==='function'&&!renderAll.__v368){const old=renderAll;renderAll=function(){const value=old.apply(this,arguments);render();return value};renderAll.__v368=true}}catch(_){ }
   document.addEventListener('click',e=>{if(e.target.closest('[data-view="dashboard"],[data-w332-module="home"]'))setTimeout(render,0)});
