@@ -9491,12 +9491,7 @@ function updateSidebarButtons() {
             v25NavButton('exercises','Exercices comptables','📅','Exercices')
           ]),
           v25NavGroup('🏷️','Facturation syndic',[
-            v25NavButton('syndicBilling','Tableau mensuel','🗓️','Tableau mensuel','data-v25-syndic-tab="campaigns"'),
-            v25NavButton('syndicBilling','Contrats honoraires','📆','Contrats','data-v25-syndic-tab="contracts"'),
-            v25NavButton('syndicBilling','Prestations / mutations','➕','Prestations','data-v25-syndic-tab="services"'),
-            v25NavButton('syndicBilling','Factures syndic','🧾','Factures','data-v25-syndic-tab="invoices"'),
-            v25NavButton('syndicBilling','Export Clearfact / Winbooks','📦','Export Clearfact','data-v25-syndic-tab="exports"'),
-            v25NavButton('syndicBilling','Réglages facturation','⚙️','Réglages','data-v25-syndic-tab="settings"')
+            v25NavButton('syndicBilling','Pilotage facturation','🧾','Pilotage facturation')
           ]),
           v25NavGroup('📊','États comptables',[
             v25NavButton('ledger','Grand livre','📖','Grand livre'),
@@ -9576,13 +9571,7 @@ function updateSidebarButtons() {
         if(!tabs) return;
         if(tabs.dataset.v25Tabs==='1') return;
         tabs.dataset.v25Tabs='1';
-        tabs.innerHTML = `
-          <button class="tab-pill active" data-syndic-tab="campaigns" type="button">Tableau mensuel</button>
-          <button class="tab-pill" data-syndic-tab="contracts" type="button">Contrats</button>
-          <button class="tab-pill" data-syndic-tab="services" type="button">Prestations / mutations</button>
-          <button class="tab-pill" data-syndic-tab="invoices" type="button">Factures</button>
-          <button class="tab-pill" data-syndic-tab="exports" type="button">Export Clearfact</button>
-          <button class="tab-pill" data-syndic-tab="settings" type="button">Réglages</button>`;
+        tabs.innerHTML = ''; // V36.11 : navigation interne remplacée par le pilotage unifié V36.10.
       }
       function v25CampaignFor(year, month){ return (state.syndicCampaigns||[]).find(c=>Number(c.year)===Number(year)&&Number(c.month)===Number(month)); }
       function v25InvoicesForCampaign(campaign){
@@ -9993,7 +9982,7 @@ function updateSidebarButtons() {
         { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Financier / Banque','bank'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['thirdBalance','Balance tiers','users'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
         { id:'states', label:'États comptables', icon:'chart', defaultView:'ledger', tabs:[['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['journals','Journaux','archive'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
         { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées générales','vote'],['resolutions','Catalogue résolutions','list']] },
-        { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
+        { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Pilotage facturation','receipt']] },
         { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Import','download']] }
       ];
       const VIEW_TO_MODULE = new Map();
@@ -10254,7 +10243,7 @@ function updateSidebarButtons() {
       { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
       { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
       { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
-      { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
+      { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Pilotage facturation','receipt']] },
       { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
     ];
     const map=new Map(); modules.forEach(m=>m.tabs.forEach(t=>{if(!map.has(t[0])) map.set(t[0],m.id)}));
@@ -10692,7 +10681,7 @@ function updateSidebarButtons() {
     { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['od','Opérations diverses','edit'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
     { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
     { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
-    { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
+    { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Pilotage facturation','receipt']] },
     { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
   ];
   const V31_VIEW_TO_MODULE = new Map(); V31_MODULES.forEach(m=>m.tabs.forEach(t=>{ if(!V31_VIEW_TO_MODULE.has(t[0])) V31_VIEW_TO_MODULE.set(t[0],m.id); }));
