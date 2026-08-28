@@ -158,10 +158,11 @@
     });
 
     const loadedComplete = state.invoiceLoadMeta?.complete !== false;
+    const loadCountLabel = state.invoiceLoadMeta?.expected !== null && state.invoiceLoadMeta?.expected !== undefined ? `${Number(state.invoiceLoadMeta?.loaded||0)}/${Number(state.invoiceLoadMeta.expected||0)} chargées` : `${Number(state.invoiceLoadMeta?.loaded||0)} chargées`;
     const periodLabel = fiscalYear ? `${esc(fiscalYear.label || fiscalYear.year_code || fiscalYear.code || 'Exercice')} · ${esc(fiscalYear.starts_on || '')} → ${esc(fiscalYear.ends_on || '')}` : 'Tous les exercices';
     const diag = activeCoproId
       ? `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} affichée${rows.length>1?'s':''}</span><span class="badge">${periodLabel}</span>${outsideExercise?`<span class="badge warn">${outsideExercise} hors exercice</span>`:''}${missingDate?`<span class="badge warn">${missingDate} sans date</span>`:''}${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`
-      : `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} chargée${rows.length>1?'s':''}</span>${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`;
+      : `<div class="summary-line"><span class="badge">${rows.length} facture${rows.length>1?'s':''} affichée${rows.length>1?'s':''}</span><span class="badge">${esc(loadCountLabel)}</span>${!loadedComplete?`<span class="badge warn">Chargement partiel : ${esc(state.invoiceLoadMeta?.error || 'erreur')}</span>`:''}</div>`;
 
     const colCount = 11;
     let emptyMessage = 'Aucune facture.';

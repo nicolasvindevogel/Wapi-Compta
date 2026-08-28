@@ -1,5 +1,5 @@
 
-window.WAPI_ONE_VERSION = 'V36.9.2';
+window.WAPI_ONE_VERSION = 'V36.13';
 window.WAPI_ONE_BUILD_DATE = '2026-08-28';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";
@@ -294,43 +294,64 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     }
 
     async function loadInvoices() {
-      // V36.12 : ne jamais tronquer l'historique des factures fournisseurs.
-      // L'ancienne limite globale de 2 000 lignes pouvait faire disparaître entièrement
-      // les factures d'une copropriété dont les documents étaient plus anciens.
-      const pageSize = 750;
+      // V36.13 : pagination fiable quel que soit le plafond de lignes configuré dans Supabase/PostgREST.
+      // Important : ne jamais déduire « dernière page » du fait que Supabase renvoie moins que la taille
+      // demandée, car le serveur peut lui-même plafonner chaque réponse (100, 500, 1000 lignes…).
+      const requestedPageSize = 500;
       let from = 0;
       let page = 0;
       let allRows = [];
+      let expectedCount = null;
       let loadError = null;
+      let previousFirstId = null;
+
       while (true) {
-        const { data, error } = await supabaseClient
+        const query = supabaseClient
           .from("compta_invoices")
-          .select("*, compta_copros(name), compta_suppliers(name)")
+          .select("*, compta_copros(name), compta_suppliers(name)", { count: 'exact' })
           .order("created_at", { ascending: false })
-          .range(from, from + pageSize - 1);
+          .order("id", { ascending: false })
+          .range(from, from + requestedPageSize - 1);
+        const { data, error, count } = await query;
         if (error) { loadError = error; break; }
+
         const chunk = data || [];
+        if (expectedCount === null && Number.isFinite(Number(count))) expectedCount = Number(count);
+        if (!chunk.length) break;
+
+        // Protection anti-boucle si un proxy/API renvoie accidentellement toujours la même page.
+        const firstId = String(chunk[0]?.id || '');
+        if (firstId && firstId === previousFirstId) {
+          loadError = new Error('Pagination factures interrompue : Supabase a renvoyé deux fois la même page.');
+          break;
+        }
+        previousFirstId = firstId;
+
         allRows.push(...chunk);
-        if (chunk.length < pageSize) break;
-        from += pageSize;
+        from += chunk.length; // avancer du nombre réellement reçu, pas du nombre demandé.
         page += 1;
-        // Garde-fou technique uniquement : 750 000 factures avant arrêt explicite.
-        if (page >= 1000) {
-          loadError = new Error('Volume de factures anormalement élevé : chargement interrompu après 750 000 lignes.');
+
+        if (expectedCount !== null && from >= expectedCount) break;
+        if (page >= 5000) {
+          loadError = new Error('Volume de factures anormalement élevé : garde-fou de pagination atteint.');
           break;
         }
       }
-      // Sécurité supplémentaire en cas de chevauchement de pages : une facture = une ligne.
+
+      // Une facture = une ligne, même si une insertion intervient pendant le chargement et décale un offset.
       const unique = new Map();
       allRows.forEach(row => { if (row?.id && !unique.has(String(row.id))) unique.set(String(row.id), row); });
       state.invoices = [...unique.values()];
+      const complete = !loadError && (expectedCount === null || state.invoices.length >= expectedCount);
       state.invoiceLoadMeta = {
         loaded: state.invoices.length,
-        complete: !loadError,
-        error: loadError?.message || '',
+        expected: expectedCount,
+        pages: page,
+        complete,
+        error: loadError?.message || (!complete && expectedCount !== null ? `Historique incomplet : ${state.invoices.length}/${expectedCount} factures chargées.` : ''),
         loaded_at: new Date().toISOString()
       };
-      if (loadError) console.warn('Chargement factures partiel :', loadError.message || loadError);
+      if (!complete) console.warn('Chargement factures incomplet :', state.invoiceLoadMeta.error);
     }
 
     async function loadBankAccounts() {
