@@ -1,5 +1,5 @@
 
-window.WAPI_ONE_VERSION = 'V36.14';
+window.WAPI_ONE_VERSION = 'V36.9.2';
 window.WAPI_ONE_BUILD_DATE = '2026-08-28';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";
@@ -294,63 +294,13 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     }
 
     async function loadInvoices() {
-      // V36.14 : lecture robuste de la table brute uniquement.
-      // Les noms copro/fournisseur sont résolus côté client via state.copros/state.suppliers.
-      // On évite ainsi qu'une relation PostgREST indisponible fasse disparaître TOUTES les factures.
-      const pageSize = 500;
-      let from = 0;
-      let pages = 0;
-      let expectedCount = null;
-      let allRows = [];
-      let loadError = null;
-      let previousSignature = '';
-
-      while (pages < 5000) {
-        let result = await supabaseClient
-          .from("compta_invoices")
-          .select("*", pages === 0 ? { count: "exact" } : undefined)
-          .order("created_at", { ascending: false })
-          .range(from, from + pageSize - 1);
-
-        // Repli sans count : certaines configurations PostgREST sont plus strictes.
-        if (result.error && pages === 0) {
-          result = await supabaseClient
-            .from("compta_invoices")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .range(from, from + pageSize - 1);
-        }
-
-        if (result.error) { loadError = result.error; break; }
-        const chunk = result.data || [];
-        if (pages === 0 && Number.isFinite(Number(result.count))) expectedCount = Number(result.count);
-        if (!chunk.length) break;
-
-        const signature = `${chunk[0]?.id || ''}|${chunk[chunk.length-1]?.id || ''}|${chunk.length}`;
-        if (signature && signature === previousSignature) {
-          loadError = new Error("Pagination factures interrompue : page identique reçue deux fois.");
-          break;
-        }
-        previousSignature = signature;
-
-        allRows.push(...chunk);
-        from += chunk.length;
-        pages += 1;
-      }
-
-      const unique = new Map();
-      allRows.forEach((row) => { if (row?.id && !unique.has(String(row.id))) unique.set(String(row.id), row); });
-      state.invoices = [...unique.values()];
-      const complete = !loadError && (expectedCount === null || state.invoices.length >= expectedCount);
-      state.invoiceLoadMeta = {
-        loaded: state.invoices.length,
-        expected: expectedCount,
-        pages,
-        complete,
-        error: loadError?.message || (!complete && expectedCount !== null ? `Historique incomplet : ${state.invoices.length}/${expectedCount} factures chargées.` : ''),
-        loaded_at: new Date().toISOString()
-      };
-      if (loadError) console.warn('Chargement factures fournisseurs :', loadError.message || loadError);
+      const { data, error } = await supabaseClient
+        .from("compta_invoices")
+        .select("id,copro_id,supplier_id,account_id,invoice_number,invoice_date,amount_total,status,payment_status,description,source,file_name,pdf_mime_type,created_by,created_at,updated_at,paid_at,amount_paid,sent_to_payment,sent_to_payment_at,is_direct_debit,do_not_pay_reason,payment_batch_ref,payment_batch_status,compta_copros(name),compta_suppliers(name)")
+        .order("created_at", { ascending: false })
+        .limit(2000);
+      if (error) { console.warn('Chargement factures :', error.message); state.invoices = []; return; }
+      state.invoices = data || [];
     }
 
     async function loadBankAccounts() {
@@ -2010,13 +1960,13 @@ function updateSidebarButtons() {
     }
     function renderInvoices() {
       const rows = state.invoices.filter((i) => !state.activeCoproId || i.copro_id === state.activeCoproId);
-      $('invoicesTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriete</th><th>Fournisseur</th><th>Compte</th><th>Numero</th><th>Montant</th><th>Paiement</th><th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map((i)=>{ const acc = state.accounts.find((a)=>a.id===i.account_id); return `<tr class="${invoiceRowClass(i)}"><td>${i.invoice_date || ''}</td><td>${i.compta_copros?.name || ''}</td><td>${i.compta_suppliers?.name || ''}</td><td>${escapeHtml(acc ? (acc.code + ' - ' + acc.label) : 'A classer')}</td><td>${escapeHtml(i.invoice_number || '')}</td><td>${money(i.amount_total)}</td><td>${paymentStatusBadge(invoicePaymentStatus(i))}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="9">Aucune facture.</td></tr>'}</tbody></table></div>`;
+      $('invoicesTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriete</th><th>Fournisseur</th><th>Compte</th><th>Numero</th><th>Montant</th><th>Paiement</th><th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map((i)=>{ const acc = state.accounts.find((a)=>a.id===i.account_id); return `<tr class="${invoiceRowClass(i)}"><td>${i.invoice_date || ''}</td><td>${i.compta_copros?.name || ''}</td><td>${i.compta_suppliers?.name || ''}</td><td>${escapeHtml(acc ? (acc.code + ' - ' + acc.label) : 'A classer')}</td><td>${escapeHtml(i.invoice_number || '')}</td><td>${money(i.amount_total)}</td><td>${paymentStatusBadge(invoicePaymentStatus(i))}</td><td>${(i.file_data_url||i.file_name||i.pdf_mime_type) ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="9">Aucune facture.</td></tr>'}</tbody></table></div>`;
     }
     function clearInvoiceForm() { state.selectedInvoiceId = null; ['invoiceNumber','invoiceDate','invoiceAmount','invoiceDescription'].forEach((id)=>$(id).value=''); $('invoiceAccount').value=''; $('invoiceSupplier').value=''; $('invoicePaymentStatus').value='unpaid'; $('invoiceStatus').value='draft'; if (state.activeCoproId) $('invoiceCopro').value=state.activeCoproId; }
     function editInvoice(id) { const i=state.invoices.find((x)=>x.id===id); if(!i) return; state.selectedInvoiceId=id; $('invoiceCopro').value=i.copro_id||''; $('invoiceSupplier').value=i.supplier_id||''; $('invoiceAccount').value=i.account_id||''; $('invoiceNumber').value=i.invoice_number||''; $('invoiceDate').value=i.invoice_date||''; $('invoiceAmount').value=i.amount_total||''; $('invoicePaymentStatus').value=invoicePaymentStatus(i); $('invoiceStatus').value=i.status||'draft'; $('invoiceDescription').value=i.description||''; }
     async function saveInvoice() { const accountId=$('invoiceAccount').value; if(!accountId) return alert('Le compte comptable est obligatoire.'); const paymentStatus=$('invoicePaymentStatus').value; const payload={ copro_id: state.activeCoproId || $('invoiceCopro').value, supplier_id:$('invoiceSupplier').value||null, account_id:accountId, invoice_number:$('invoiceNumber').value.trim()||null, invoice_date:$('invoiceDate').value||null, amount_total:Number($('invoiceAmount').value||0), status: paymentStatus==='paid' ? 'paid' : $('invoiceStatus').value, payment_status:paymentStatus, sent_to_payment: paymentStatus==='payment_sent', is_direct_debit: paymentStatus==='domiciliation', description:$('invoiceDescription').value.trim()||null, source:'manual', created_by:currentUser.id}; if(!payload.copro_id) return alert('Choisis une copropriete.'); if(!payload.supplier_id) return alert('Choisis un fournisseur.'); if(!payload.amount_total) return alert('Indique un montant.'); const req=state.selectedInvoiceId ? supabaseClient.from('compta_invoices').update(payload).eq('id',state.selectedInvoiceId) : supabaseClient.from('compta_invoices').insert(payload); const {error}=await req; if(error) return alert(error.message); clearInvoiceForm(); await loadAll(); }
     async function deleteInvoice(id) { const inv=state.invoices.find((i)=>i.id===id); if(!inv) return; if(invoicePaymentStatus(inv)==='paid') return alert('Facture payee/lettree : suppression refusee. Passe par une annulation/contre-ecriture plus tard.'); if(!confirm('Supprimer cette facture ?')) return; const {error}=await supabaseClient.from('compta_invoices').delete().eq('id',id); if(error) return alert(error.message); await loadAll(); }
-    function showInvoicePdf(id) { const inv=state.invoices.find((i)=>i.id===id); if(!inv?.file_data_url) return alert('Aucun PDF lie.'); const w=window.open(); w.document.write(`<iframe src="${inv.file_data_url}" style="width:100%;height:100vh;border:0;"></iframe>`); }
+    async function showInvoicePdf(id) { const inv=state.invoices.find((i)=>i.id===id); if(!inv) return alert('Facture introuvable.'); let url=inv.file_data_url; if(!url){const {data,error}=await supabaseClient.from('compta_invoices').select('file_data_url').eq('id',id).single(); if(error) return alert(error.message); url=data?.file_data_url||null; inv.file_data_url=url;} if(!url) return alert('Aucun PDF lie.'); const w=window.open(); w.document.write(`<iframe src="${url}" style="width:100%;height:100vh;border:0;"></iframe>`); }
 
     function renderValidationQueue() {
       if (!$('validationQueueTable')) return; const rows=getQueueRowsFiltered(); if(!rows.length){ $('validationQueueTable').innerHTML='<div class="notice">Aucun element dans la file pour ce filtre.</div>'; return; }
@@ -2277,7 +2227,7 @@ function updateSidebarButtons() {
             <label>Statut dossier<select id="modalInvoiceStatus"><option value="draft" ${(invoice?.status||'draft')==='draft'?'selected':''}>Brouillon</option><option value="to_validate" ${invoice?.status==='to_validate'?'selected':''}>A valider</option><option value="validated" ${invoice?.status==='validated'?'selected':''}>Validee</option><option value="paid" ${invoice?.status==='paid'?'selected':''}>Payee</option><option value="rejected" ${invoice?.status==='rejected'?'selected':''}>Rejetee</option></select></label>
           </div>
           <label>Description <textarea id="modalInvoiceDescription">${escapeHtml(invoice?.description || '')}</textarea></label>
-          ${invoice?.file_data_url ? '<div class="summary-line"><span class="badge ok">PDF disponible</span></div>' : ''}
+          ${(invoice?.file_data_url||invoice?.file_name||invoice?.pdf_mime_type) ? '<div class="summary-line"><span class="badge ok">PDF disponible</span></div>' : ''}
         </div>`;
     }
 
@@ -2335,10 +2285,18 @@ function updateSidebarButtons() {
       await loadAll();
     }
 
-    function showInvoicePdf(invoiceId) {
+    async function showInvoicePdf(invoiceId) {
       const inv = state.invoices.find((i) => i.id === invoiceId);
-      if (!inv?.file_data_url) return alert('Aucun PDF rattache.');
-      const body = `<iframe src="${inv.file_data_url}" style="width:100%;height:70vh;border:0;border-radius:12px;background:#fff;"></iframe>`;
+      if (!inv) return alert('Facture introuvable.');
+      let url = inv.file_data_url;
+      if (!url) {
+        const { data, error } = await supabaseClient.from('compta_invoices').select('file_data_url').eq('id', invoiceId).single();
+        if (error) return alert(error.message);
+        url = data?.file_data_url || null;
+        inv.file_data_url = url;
+      }
+      if (!url) return alert('Aucun PDF rattache.');
+      const body = `<iframe src="${url}" style="width:100%;height:70vh;border:0;border-radius:12px;background:#fff;"></iframe>`;
       openAppModal(`PDF facture ${inv.invoice_number || ''}`, body, '<button class="btn secondary" type="button" data-modal-close>Fermer</button>', { size: 'wide' });
     }
 
@@ -4717,7 +4675,7 @@ function updateSidebarButtons() {
         }
         return true;
       });
-      $('invoicesTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriété</th><th>Fournisseur</th><th>Compte</th><th>Numero</th><th>Montant</th><th>Paiement</th><th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map((i)=>{ const acc = state.accounts.find((a)=>a.id===i.account_id); const ps=invoicePaymentStatus(i); return `<tr class="${invoiceRowClass(i)}"><td>${i.invoice_date || ''}</td><td>${i.compta_copros?.name || ''}</td><td>${i.compta_suppliers?.name || ''}</td><td>${escapeHtml(acc ? (acc.code + ' - ' + acc.label) : 'A classer')}</td><td>${escapeHtml(i.invoice_number || '')}</td><td>${money(i.amount_total)}</td><td>${paymentStatusBadge(ps)}${i.do_not_pay_reason ? `<div class="muted-note">${escapeHtml(i.do_not_pay_reason)}</div>`:''}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button>${ps==='payment_sent'?`<button class="btn secondary small" data-reintegrate-invoice="${i.id}" type="button">Réintégrer paiement</button>`:''}${ps==='do_not_pay'?`<button class="btn secondary small" data-unblock-payment="${i.id}" type="button">Débloquer</button>`:`<button class="btn blocked small" data-block-payment="${i.id}" type="button">Ne pas payer</button>`}<button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="9">Aucune facture.</td></tr>'}</tbody></table></div>`;
+      $('invoicesTable').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Copropriété</th><th>Fournisseur</th><th>Compte</th><th>Numero</th><th>Montant</th><th>Paiement</th><th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map((i)=>{ const acc = state.accounts.find((a)=>a.id===i.account_id); const ps=invoicePaymentStatus(i); return `<tr class="${invoiceRowClass(i)}"><td>${i.invoice_date || ''}</td><td>${i.compta_copros?.name || ''}</td><td>${i.compta_suppliers?.name || ''}</td><td>${escapeHtml(acc ? (acc.code + ' - ' + acc.label) : 'A classer')}</td><td>${escapeHtml(i.invoice_number || '')}</td><td>${money(i.amount_total)}</td><td>${paymentStatusBadge(ps)}${i.do_not_pay_reason ? `<div class="muted-note">${escapeHtml(i.do_not_pay_reason)}</div>`:''}</td><td>${(i.file_data_url||i.file_name||i.pdf_mime_type) ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button>${ps==='payment_sent'?`<button class="btn secondary small" data-reintegrate-invoice="${i.id}" type="button">Réintégrer paiement</button>`:''}${ps==='do_not_pay'?`<button class="btn secondary small" data-unblock-payment="${i.id}" type="button">Débloquer</button>`:`<button class="btn blocked small" data-block-payment="${i.id}" type="button">Ne pas payer</button>`}<button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`; }).join('') || '<tr><td colspan="9">Aucune facture.</td></tr>'}</tbody></table></div>`;
     };
 
     const previousRenderAllV12 = renderAll;
@@ -7494,7 +7452,7 @@ function updateSidebarButtons() {
             <label>Note décompte <input id="modalInvoiceSettlementNote" value="${escapeHtml(invoice?.settlement_note || '')}" placeholder="Ex: réparation privative, récupérable locataire..." /></label>
           </div>
           <label>Description <textarea id="modalInvoiceDescription">${escapeHtml(invoice?.description || '')}</textarea></label>
-          ${invoice?.file_data_url ? '<div class="summary-line"><span class="badge ok">PDF disponible</span></div>' : ''}
+          ${(invoice?.file_data_url||invoice?.file_name||invoice?.pdf_mime_type) ? '<div class="summary-line"><span class="badge ok">PDF disponible</span></div>' : ''}
         </div>`;
     }
     async function saveInvoiceFromModal() {
@@ -9541,7 +9499,12 @@ function updateSidebarButtons() {
             v25NavButton('exercises','Exercices comptables','📅','Exercices')
           ]),
           v25NavGroup('🏷️','Facturation syndic',[
-            v25NavButton('syndicBilling','Pilotage facturation','🧾','Pilotage facturation')
+            v25NavButton('syndicBilling','Tableau mensuel','🗓️','Tableau mensuel','data-v25-syndic-tab="campaigns"'),
+            v25NavButton('syndicBilling','Contrats honoraires','📆','Contrats','data-v25-syndic-tab="contracts"'),
+            v25NavButton('syndicBilling','Prestations / mutations','➕','Prestations','data-v25-syndic-tab="services"'),
+            v25NavButton('syndicBilling','Factures syndic','🧾','Factures','data-v25-syndic-tab="invoices"'),
+            v25NavButton('syndicBilling','Export Clearfact / Winbooks','📦','Export Clearfact','data-v25-syndic-tab="exports"'),
+            v25NavButton('syndicBilling','Réglages facturation','⚙️','Réglages','data-v25-syndic-tab="settings"')
           ]),
           v25NavGroup('📊','États comptables',[
             v25NavButton('ledger','Grand livre','📖','Grand livre'),
@@ -9621,7 +9584,13 @@ function updateSidebarButtons() {
         if(!tabs) return;
         if(tabs.dataset.v25Tabs==='1') return;
         tabs.dataset.v25Tabs='1';
-        tabs.innerHTML = ''; // V36.11 : navigation interne remplacée par le pilotage unifié V36.10.
+        tabs.innerHTML = `
+          <button class="tab-pill active" data-syndic-tab="campaigns" type="button">Tableau mensuel</button>
+          <button class="tab-pill" data-syndic-tab="contracts" type="button">Contrats</button>
+          <button class="tab-pill" data-syndic-tab="services" type="button">Prestations / mutations</button>
+          <button class="tab-pill" data-syndic-tab="invoices" type="button">Factures</button>
+          <button class="tab-pill" data-syndic-tab="exports" type="button">Export Clearfact</button>
+          <button class="tab-pill" data-syndic-tab="settings" type="button">Réglages</button>`;
       }
       function v25CampaignFor(year, month){ return (state.syndicCampaigns||[]).find(c=>Number(c.year)===Number(year)&&Number(c.month)===Number(month)); }
       function v25InvoicesForCampaign(campaign){
@@ -10032,7 +10001,7 @@ function updateSidebarButtons() {
         { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Financier / Banque','bank'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['thirdBalance','Balance tiers','users'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
         { id:'states', label:'États comptables', icon:'chart', defaultView:'ledger', tabs:[['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['journals','Journaux','archive'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
         { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées générales','vote'],['resolutions','Catalogue résolutions','list']] },
-        { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Pilotage facturation','receipt']] },
+        { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
         { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Import','download']] }
       ];
       const VIEW_TO_MODULE = new Map();
@@ -10293,7 +10262,7 @@ function updateSidebarButtons() {
       { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
       { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
       { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
-      { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Pilotage facturation','receipt']] },
+      { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
       { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','template'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
     ];
     const map=new Map(); modules.forEach(m=>m.tabs.forEach(t=>{if(!map.has(t[0])) map.set(t[0],m.id)}));
@@ -10731,7 +10700,7 @@ function updateSidebarButtons() {
     { id:'compta', label:'Comptabilité', icon:'book', defaultView:'invoices', tabs:[['invoices','Factures fournisseurs','file'],['bank','Encodage financier','bank'],['od','Opérations diverses','edit'],['meters','Relevés compteurs','calculator'],['budgets','Budgets','euro'],['calls','Appels','speaker'],['statements','Décomptes','file'],['expensesList','Liste dépenses','receipt'],['exercises','Exercices','calendar']] },
     { id:'states', label:'États comptables', icon:'chart', defaultView:'accountLookup', tabs:[['accountLookup','Compte comptable','search'],['ledger','Grand livre','book'],['financialLedger','Grand livre financier','bank'],['balance','Balance générale','chart'],['thirdBalance','Balance tiers','users'],['bilan','Bilan','calculator'],['heldFunds','Fonds détenus','euro'],['multicoproConsultation','Consultation multi-copro','search']] },
     { id:'ag', label:'Assemblées générales', icon:'vote', defaultView:'meetings', tabs:[['meetings','Assemblées','vote'],['resolutions','Catalogue résolutions','list']] },
-    { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Pilotage facturation','receipt']] },
+    { id:'syndic', label:'Facturation syndic', icon:'tag', defaultView:'syndicBilling', tabs:[['syndicBilling','Tableau mensuel','calendar','campaigns'],['syndicBilling','Contrats','calendar','contracts'],['syndicBilling','Prestations / mutations','tag','services'],['syndicBilling','Factures','receipt','invoices'],['syndicBilling','Export Clearfact','archive','exports'],['syndicBilling','Réglages','settings','settings']] },
     { id:'config', label:'Configuration', icon:'settings', defaultView:'agency', tabs:[['agency','Agence','building'],['accounts','Plan comptable','book'],['templates','Modèles','list'],['users','Utilisateurs','users'],['bankInstitutions','Banques','bank'],['importsConfig','Imports','download']] }
   ];
   const V31_VIEW_TO_MODULE = new Map(); V31_MODULES.forEach(m=>m.tabs.forEach(t=>{ if(!V31_VIEW_TO_MODULE.has(t[0])) V31_VIEW_TO_MODULE.set(t[0],m.id); }));
