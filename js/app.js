@@ -7886,10 +7886,20 @@ function updateSidebarButtons() {
       const label = $('importBatchLabel').value.trim() || `${importTypeLabel(importType)} - ${new Date().toLocaleDateString('fr-BE')}`;
       if (!files.length) return alert('Choisis au moins un fichier à importer.');
       if (importType !== 'invoice') return previousImportFilesToQueueV19();
+      const importButton = $('importBatchBtn');
+      const originalButtonText = importButton?.textContent || '';
+      const redrawImport = () => {
+        window.renderImportBatches?.();
+        window.renderInvoiceOcrV13?.();
+      };
       try {
-        const { data:batch, error:batchError } = await supabaseClient.from('compta_import_batches').insert({ import_type:importType, label, total_items:files.length, status:'imported', created_by:currentUser.id }).select('id').single();
+        if (importButton) { importButton.disabled = true; importButton.textContent = `Préparation 0/${files.length}…`; }
+        const { data:batch, error:batchError } = await supabaseClient.from('compta_import_batches').insert({ import_type:importType, label, total_items:files.length, status:'imported', created_by:currentUser.id }).select('*').single();
         if (batchError) throw batchError;
-        for (const file of files) {
+        if (!state.importBatches.some((entry) => entry.id === batch.id)) state.importBatches.unshift(batch);
+        const queueIds = [];
+        for (const [index,file] of files.entries()) {
+          if (importButton) importButton.textContent = `Lecture ${index + 1}/${files.length}…`;
           const lower = file.name.toLowerCase();
           const isPdf = lower.endsWith('.pdf') || (file.type || '').includes('pdf');
           const isImage = (file.type || '').startsWith('image/') || /\.(png|jpe?g|webp|tiff?)$/i.test(file.name);
@@ -7901,7 +7911,7 @@ function updateSidebarButtons() {
           let ocrMode = 'none';
           let documentWarnings = [];
           if (isText) { rawText = await readFileAsText(file); ocrMode = 'text'; }
-          else if (isPdf) { rawText = await extractPdfTextV132(file,{onDiagnostics:d=>{documentWarnings=d.warnings||[];}}); ocrMode = rawText ? 'document-36.10.3' : 'pdf_unread'; }
+          else if (isPdf) { rawText = await extractPdfTextV132(file,{maxOcrPages:2,onDiagnostics:d=>{documentWarnings=d.warnings||[];}}); ocrMode = rawText ? 'document-fast-36.10.4' : 'pdf_unread'; }
           else if (isImage) { rawText = await extractImageTextV132(file); ocrMode = rawText ? 'image_ocr_v19' : 'image_unread'; }
           else if (isDocx) { rawText = await extractDocxTextV131(file); ocrMode = rawText ? 'docx_text_v19' : 'docx_unread'; }
           else if (isDoc) { rawText = await extractOfficeBinaryTextV131(file); ocrMode = rawText ? 'doc_binary_best_effort_v19' : 'doc_unread'; }
@@ -7924,18 +7934,31 @@ function updateSidebarButtons() {
             detected_supplier_id:supplierDetection.supplier?.id || null,
             detected_bank_account_id:null,
             confidence, status:itemStatus, created_by:currentUser.id
-          }).select('id').single();
+          }).select('*').single();
           if (itemError) throw itemError;
           const corrected = { copro_id:coproDetection.copro?.id || null, supplier_id:supplierDetection.supplier?.id || null, bank_account_id:bankDetection.account?.id || null, ...extracted };
-          await supabaseClient.from('compta_validation_queue').insert({ item_id:item.id, target_type:importType, status:itemStatus, copro_id:corrected.copro_id || null, extracted_data:extracted, corrected_data:corrected, notes: confidence >= 75 ? 'Reconnaissance automatique renforcée à confirmer.' : 'Reconnaissance incomplète : vérifie les champs signalés.', created_by:currentUser.id });
+          const { data:queue, error:queueError } = await supabaseClient.from('compta_validation_queue').insert({ item_id:item.id, target_type:importType, status:itemStatus, copro_id:corrected.copro_id || null, extracted_data:extracted, corrected_data:corrected, notes: confidence >= 75 ? 'Reconnaissance automatique renforcée à confirmer.' : 'Reconnaissance incomplète : vérifie les champs signalés.', created_by:currentUser.id }).select('*').single();
+          if (queueError) throw queueError;
+          if (!state.importItems.some((entry) => entry.id === item.id)) state.importItems.unshift(item);
+          if (!state.validationQueue.some((entry) => entry.id === queue.id)) state.validationQueue.unshift(queue);
+          queueIds.push(queue.id);
+          // Update the screen from the just-created records instead of fetching the
+          // entire application (dozens of unrelated tables) after every upload.
+          state.ocrSelectedQueueId = queue.id;
+          redrawImport();
         }
         $('importFiles').value = '';
         $('importBatchLabel').value = '';
-        await loadAll();
         switchToView('invoiceOcr');
+        state.ocrSelectedQueueId = queueIds[0] || state.ocrSelectedQueueId;
+        redrawImport();
+        // Reconcile only the import data in the background; the invoice is already visible.
+        window.setTimeout(() => Promise.all([loadImportBatches(),loadImportItems(),loadValidationQueue(),loadInvoices()]).then(redrawImport).catch((error) => console.warn('Synchronisation légère de l’import impossible', error)), 0);
         alert(`${files.length} facture(s) importée(s).`);
       } catch (error) {
         alert(error.message || 'Erreur pendant l’import.');
+      } finally {
+        if (importButton) { importButton.disabled = false; importButton.textContent = originalButtonText; }
       }
     };
 
@@ -10262,6 +10285,15 @@ function updateSidebarButtons() {
   }
   const prevSwitchV28 = typeof switchToView === 'function' ? switchToView : null;
   switchToView = function(viewName){ if(prevSwitchV28) prevSwitchV28(viewName); setTimeout(()=>{window.v28RenderNav?.(); renderV28All();},0); };
+  // Several independent actions used to launch the same full refresh at once.
+  // Keep one shared refresh in flight; callers still receive the same completion.
+  const previousLoadAllV36104 = loadAll;
+  let pendingLoadAllV36104 = null;
+  loadAll = function(){
+    if(pendingLoadAllV36104) return pendingLoadAllV36104;
+    pendingLoadAllV36104 = Promise.resolve(previousLoadAllV36104()).finally(()=>{pendingLoadAllV36104=null;});
+    return pendingLoadAllV36104;
+  };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{installV28Nav(); bindV28(); setTimeout(()=>{window.v28RenderNav?.(); renderV28All();},500);}); else {installV28Nav(); bindV28(); setTimeout(()=>{window.v28RenderNav?.(); renderV28All();},500);} 
 })();
 

@@ -156,7 +156,7 @@
     const rates=new Set();for(const line of lines){if(!/\b(tva|vat|btw)\b/.test(fold(line)))continue;for(const m of line.matchAll(/\b(\d{1,2}(?:[.,]\d+)?)\s*%/g)){const n=Number(m[1].replace(',','.'));if(n<=100)rates.add(n);}}
     if(rates.size>1)warnings.push('Plusieurs taux de TVA : conservez la ventilation indiquée sur la facture.');
     if(chosen.value==='')warnings.push('Montant TVAC non identifié.');if(!issued.value)warnings.push('Date de facture non identifiée.');if(!ref.value)warnings.push('Numéro de facture non identifié.');
-    return {amount:chosen.value,date:issued.value,due_date:due.value,reference:ref.value,amount_excl_vat:base.value,vat_amount:tax.value,vat_rate:rates.size===1?[...rates][0]:'',amount_check:check,ocr_warnings:warnings,ocr_engine:'document-36.10.3',ocr_evidence:{amount:chosen.line||'',date:issued.line||'',due_date:due.line||''}};
+    return {amount:chosen.value,date:issued.value,due_date:due.value,reference:ref.value,amount_excl_vat:base.value,vat_amount:tax.value,vat_rate:rates.size===1?[...rates][0]:'',amount_check:check,ocr_warnings:warnings,ocr_engine:'document-36.10.4',ocr_evidence:{amount:chosen.line||'',date:issued.line||'',due_date:due.line||''}};
   }
   // Restore visual reading order instead of flattening the PDF text stream.
   function textFromItems(items,viewport){
@@ -194,36 +194,62 @@
   async function readPdf(blob,options={}){
     if(!root.pdfjsLib)throw new Error('Le lecteur PDF n’est pas chargé. Rechargez la page.');
     root.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const task=root.pdfjsLib.getDocument({data:await blob.arrayBuffer()});let pdf,worker;
+    const task=root.pdfjsLib.getDocument({data:await blob.arrayBuffer()});let pdf,worker,pages=[];
     try{
-      pdf=await task.promise;const pages=[],warnings=[];
-      // Read every page: totals often occur on the last page, including mixed PDFs.
+      pdf=await task.promise;const warnings=[];
+      // The text layer is virtually immediate. Read it everywhere first, then only
+      // raster/OCR the few pages that can actually improve an incomplete invoice.
       for(let p=1;p<=pdf.numPages;p++){
         options.onProgress?.(`Lecture de la page ${p}/${pdf.numPages}`);
         const page=await pdf.getPage(p),content=await page.getTextContent(),viewport=page.getViewport({scale:1});
         const embedded=textFromItems(content.items,viewport);
-        let text=embedded;
         const sparse=embedded.replace(/\s/g,'').length<80||/[\uFFFD]{2,}/.test(embedded);
-        const fields=extract(embedded),needsFields=fields.amount===''||!fields.date||!fields.reference;
-        if((sparse&&needsFields)||(options.forceOcr!==false&&needsFields)){
+        pages.push({number:p,page,viewport,embedded,sparse,text:embedded});
+      }
+      const embeddedText=pages.map(x=>x.embedded).join('\n\f\n').trim();
+      const complete=(fields)=>fields.amount!==''&&!!fields.date&&!!fields.reference;
+      const force=options.forceOcr===true;
+      // A digital invoice often has its number, date and total on different pages.
+      // Judge completeness on the whole document before paying the OCR cost.
+      if(!force&&complete(extract(embeddedText))){
+        options.onDiagnostics?.({warnings});
+        return embeddedText;
+      }
+      if(options.forceOcr===false){
+        options.onDiagnostics?.({warnings});
+        return embeddedText;
+      }
+      const relevance=/facture|invoice|total|tvac|ttc|montant|date\s*(de\s*)?facture|échéance|echeance|due\s*date|verval/i;
+      const preferred=[];
+      const add=(record)=>{if(record&&!preferred.includes(record))preferred.push(record);};
+      add(pages[0]);add(pages.at(-1));
+      pages.filter(x=>relevance.test(x.embedded)).forEach(add);
+      pages.filter(x=>x.sparse).forEach(add);
+      const maxPages=Math.max(1,Number(options.maxOcrPages)|| (force?3:2));
+      const selected=preferred.slice(0,maxPages);
+      for(const record of selected){
+        const {number:p,page,viewport,embedded}=record;
+        options.onProgress?.(`Reconnaissance page ${p}/${pdf.numPages}`);
+        {
           if(!worker)worker=await createWorker(n=>options.onProgress?.(`Reconnaissance page ${p}/${pdf.numPages} : ${n} %`));
-          const scale=Math.min(3,Math.sqrt(14000000/(viewport.width*viewport.height))),v=page.getViewport({scale});
+          const scale=Math.min(Number(options.scale)||3,Math.sqrt(14000000/(viewport.width*viewport.height))),v=page.getViewport({scale});
           const canvas=root.document.createElement('canvas');canvas.width=Math.ceil(v.width);canvas.height=Math.ceil(v.height);
           try{
             await page.render({canvasContext:canvas.getContext('2d'),viewport:v,background:'rgb(255,255,255)'}).promise;
             const scanned=await recognize(worker,canvas);
             if(textScore(scanned.text||'')>textScore(embedded)){
-              text=scanned.text||embedded;
+              record.text=scanned.text||embedded;
               if(Number(scanned.confidence||0)<75)warnings.push(`Page ${p} : reconnaissance peu sûre, vérifiez les chiffres sur le PDF.`);
               if(scanned.conflict)warnings.push(`Page ${p} : les deux lectures OCR donnent des champs différents, à vérifier.`);
             }
           }finally{canvas.width=canvas.height=0;}
         }
-        pages.push(text);page.cleanup();
       }
+      const result=pages.map(x=>x.text).join('\n\f\n').trim();
+      if(!complete(extract(result))&&selected.length<pages.length)warnings.push('Lecture rapide terminée : utilisez « Relancer l’OCR » si un champ manque encore.');
       options.onDiagnostics?.({warnings});
-      return pages.join('\n\f\n').trim();
-    }finally{try{if(worker)await worker.terminate();}finally{if(pdf)await pdf.destroy();else await task.destroy();}}
+      return result;
+    }finally{try{if(worker)await worker.terminate();}finally{if(pdf){pages.forEach(({page})=>page.cleanup());await pdf.destroy();}else await task.destroy();}}
   }
   async function readImage(blob,options={}){let worker;try{worker=await createWorker(options.onProgress);const result=await recognize(worker,blob);options.onDiagnostics?.({warnings:Number(result.confidence||0)<75||result.conflict?['Reconnaissance de l’image incertaine : vérifiez les chiffres.']:[]});return result.text||'';}finally{if(worker)await worker.terminate();}}
   function mergeAnalysis(previous,current,extracted){
