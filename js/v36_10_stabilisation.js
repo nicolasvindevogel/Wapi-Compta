@@ -1,6 +1,6 @@
-/* WAPI One V36.10.1 - stabilisation budget, OCR, mutations et facturation syndic. */
+/* WAPI One V36.10.3 - stabilisation budget, OCR, mutations et facturation syndic. */
 (()=>{'use strict';
-  window.WAPI_ONE_VERSION='V36.10.1';
+  window.WAPI_ONE_VERSION='V36.10.3';
   window.WAPI_ONE_BUILD_DATE='2026-09-08';
   const $=id=>document.getElementById(id);
   const esc=v=>typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,7 +9,7 @@
   const ymToday=()=>today().slice(0,7);
   const monthNames=['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const slug=v=>String(v||'document').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9._-]+/gi,'_').replace(/^_+|_+$/g,'').slice(0,90)||'document';
-  function stampVersion(){document.title='WAPI One — V36.10.1';document.querySelector('meta[name="wapi-one-version"]')?.setAttribute('content','36.10.1');}
+  function stampVersion(){document.title='WAPI One — V36.10.3';document.querySelector('meta[name="wapi-one-version"]')?.setAttribute('content','36.10.3');}
   let emitters=[];
 
   function monthStart(value){return String(value||ymToday()).slice(0,7)+'-01'}
@@ -143,11 +143,40 @@
     }
   }
   function markBudgetDirty(el){el?.classList.add('v3610-budget-dirty');if(typeof recalcBudgetTotalsV11==='function')recalcBudgetTotalsV11();}
+  let budgetSaveTask=null;
   async function saveBudgetDraft(silent=false){
-    const headerId=state.selectedBudgetHeaderId;if(!headerId)return;
-    const lines=(state.budgetLines||[]).filter(l=>String(l.budget_id)===String(headerId));
-    const updates=lines.map(line=>{const amount=Number(document.querySelector(`[data-budget-amount-v11="${line.id}"]`)?.value||0),label=document.querySelector(`[data-budget-label-v11="${line.id}"]`)?.value?.trim()||null;return supabaseClient.from('compta_budget_lines').update({amount,label}).eq('id',line.id).then(r=>{if(r.error)throw r.error;line.amount=amount;line.label=label;});});
-    try{await Promise.all(updates);await supabaseClient.from('compta_budgets').update({status:'draft',updated_at:new Date().toISOString()}).eq('id',headerId);document.querySelectorAll('.v3610-budget-dirty').forEach(el=>el.classList.remove('v3610-budget-dirty'));if(!silent){renderBudgets();alert('Brouillon enregistré.');}return true;}catch(e){alert('Enregistrement impossible : '+(e.message||e));return false;}
+    if(budgetSaveTask)return budgetSaveTask;
+    const headerId=state.selectedBudgetHeaderId;if(!headerId)return false;
+    const header=(state.budgetHeaders||[]).find(b=>String(b.id)===String(headerId));
+    if(!header||header.status==='validated')return false;
+    const table=$('budgetsTable'),snapshots=[];
+    for(const line of (state.budgetLines||[]).filter(l=>String(l.budget_id)===String(headerId))){
+      const amountEl=table.querySelector('[data-budget-amount-v11="'+line.id+'"]'),labelEl=table.querySelector('[data-budget-label-v11="'+line.id+'"]');
+      if(!amountEl&&!labelEl)continue;
+      if(amountEl&&(!amountEl.value.trim()||!amountEl.checkValidity()||!Number.isFinite(Number(amountEl.value)))){alert('Indique un montant valide pour chaque ligne.');return false;}
+      snapshots.push({line,amount:amountEl?Number(amountEl.value):line.amount,label:labelEl?(labelEl.value.trim()||null):line.label});
+    }
+    const controls=[...table.querySelectorAll('button,input,select')].filter(el=>!el.disabled);
+    controls.forEach(el=>el.disabled=true);
+    budgetSaveTask=(async()=>{
+      try{
+        const results=await Promise.allSettled(snapshots.map(async snapshot=>{
+          const {line,amount,label}=snapshot;
+          const result=await supabaseClient.from('compta_budget_lines').update({amount,label}).eq('id',line.id);
+          if(result.error)throw result.error;
+          line.amount=amount;line.label=label;
+        }));
+        const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;
+        const result=await supabaseClient.from('compta_budgets').update({status:'draft',updated_at:new Date().toISOString()}).eq('id',headerId);
+        if(result.error)throw result.error;
+        header.status='draft';
+        table.querySelectorAll('.v3610-budget-dirty').forEach(el=>el.classList.remove('v3610-budget-dirty'));
+        if(!silent){renderBudgets();alert('Brouillon enregistré.');}
+        return true;
+      }catch(e){alert('Enregistrement impossible : '+(e.message||e));return false;}
+      finally{controls.forEach(el=>el.disabled=false);budgetSaveTask=null;}
+    })();
+    return budgetSaveTask;
   }
 
   function enhanceLots(){
@@ -214,6 +243,12 @@
   },true);
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('button');if(!b)return;
+    if(b.matches('[data-back-budget-list]')){
+      e.preventDefault();e.stopImmediatePropagation();
+      const leave=()=>{state.selectedBudgetHeaderId='';if($('budgetHeaderFilter'))$('budgetHeaderFilter').value='';$('budgetsTable')?.classList.remove('v3610-budget-locked');renderBudgets();};
+      if(document.querySelector('.v3610-budget-dirty')){b.disabled=true;saveBudgetDraft(true).then(ok=>{if(ok)leave();else b.disabled=false;});}else leave();
+      return;
+    }
     if(b.id==='v3610SaveBudgetDraft'){e.preventDefault();e.stopImmediatePropagation();return saveBudgetDraft();}
     if(b.dataset.validateBudgetHeader&&document.querySelector('.v3610-budget-dirty')){e.preventDefault();e.stopImmediatePropagation();saveBudgetDraft(true).then(ok=>{if(ok&&typeof validateBudgetHeaderV113==='function')validateBudgetHeaderV113(b.dataset.validateBudgetHeader);});return;}
     if((b.matches('[data-delete-budget],[data-show-budget-add],[data-add-budget-line]'))&&$('budgetsTable')?.classList.contains('v3610-budget-locked')){e.preventDefault();e.stopImmediatePropagation();return alert('Ce budget est validé. Crée ou modifie un brouillon pour préparer une nouvelle version.');}

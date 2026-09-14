@@ -296,7 +296,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     async function loadInvoices() {
       const { data, error } = await supabaseClient
         .from("compta_invoices")
-        .select("id,copro_id,supplier_id,account_id,invoice_number,invoice_date,amount_total,status,payment_status,description,source,file_name,pdf_mime_type,created_by,created_at,updated_at,paid_at,amount_paid,sent_to_payment,sent_to_payment_at,is_direct_debit,do_not_pay_reason,payment_batch_ref,payment_batch_status,compta_copros(name),compta_suppliers(name)")
+        .select("id,copro_id,supplier_id,account_id,ocr_source_item_id,invoice_number,invoice_date,amount_total,status,payment_status,description,source,file_name,pdf_mime_type,created_by,created_at,updated_at,paid_at,amount_paid,sent_to_payment,sent_to_payment_at,is_direct_debit,do_not_pay_reason,payment_batch_ref,payment_batch_status,compta_copros(name),compta_suppliers(name)")
         .order("created_at", { ascending: false })
         .limit(2000);
       if (error) { console.warn('Chargement factures :', error.message); state.invoices = []; return; }
@@ -4008,7 +4008,7 @@ function updateSidebarButtons() {
       if (!$('budgetsTable')) return;
       const previousCopro = state.activeCoproId || $('budgetCoproFilter')?.value || '';
       const previousYear = $('budgetFiscalYearFilter')?.value || '';
-      const previousHeader = state.selectedBudgetHeaderId || $('budgetHeaderFilter')?.value || '';
+      const previousHeader = state.selectedBudgetHeaderId ?? $('budgetHeaderFilter')?.value ?? '';
 
       $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c)=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
       if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
@@ -4146,7 +4146,7 @@ function updateSidebarButtons() {
       if (!$('budgetsTable')) return;
       const previousCopro = state.activeCoproId || $('budgetCoproFilter')?.value || '';
       const previousYear = $('budgetFiscalYearFilter')?.value || '';
-      const previousHeader = state.selectedBudgetHeaderId || $('budgetHeaderFilter')?.value || '';
+      const previousHeader = state.selectedBudgetHeaderId ?? $('budgetHeaderFilter')?.value ?? '';
 
       $('budgetCoproFilter').innerHTML = '<option value="">Toutes</option>' + state.copros.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
       if (state.activeCoproId) $('budgetCoproFilter').value = state.activeCoproId;
@@ -5682,34 +5682,7 @@ function updateSidebarButtons() {
     }
 
     async function extractPdfTextV132(fileOrBlob, options = {}) {
-      if (!window.pdfjsLib) return '';
-      try {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        const buffer = await fileOrBlob.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data:buffer }).promise;
-        let embeddedText = '';
-        const textPages = Math.min(pdf.numPages, options.maxTextPages || 5);
-        for (let p = 1; p <= textPages; p++) {
-          const page = await pdf.getPage(p);
-          const content = await page.getTextContent();
-          embeddedText += '\n' + content.items.map((it)=>it.str || '').join(' ');
-        }
-        const forceOcr = options.forceOcr === true;
-        if (!forceOcr && embeddedText.trim().length > 80) return embeddedText.trim();
-
-        let ocrText = '';
-        const ocrPages = Math.min(pdf.numPages, options.maxOcrPages || 4);
-        for (let p = 1; p <= ocrPages; p++) {
-          const page = await pdf.getPage(p);
-          const canvas = await renderPdfPageCanvasV132(page, options.scale || 2.35);
-          ocrText += '\n' + await runTesseractOnCanvasV132(canvas, `PDF page ${p}`);
-          await waitForV132(20);
-        }
-        return (embeddedText + '\n' + ocrText).replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-      } catch (error) {
-        console.warn('OCR PDF scanné impossible', error);
-        return '';
-      }
+      return window.WapiInvoiceDocument.readPdf(fileOrBlob, options);
     }
 
     extractPdfTextV13 = extractPdfTextV132;
@@ -7926,8 +7899,9 @@ function updateSidebarButtons() {
           const fileDataUrl = await readFileAsDataURL(file);
           let rawText = '';
           let ocrMode = 'none';
+          let documentWarnings = [];
           if (isText) { rawText = await readFileAsText(file); ocrMode = 'text'; }
-          else if (isPdf) { rawText = await extractPdfTextV132(file, { maxTextPages:5, maxOcrPages:4, scale:2.45 }); ocrMode = rawText ? 'pdf_text_or_scan_ocr_v19' : 'pdf_unread'; }
+          else if (isPdf) { rawText = await extractPdfTextV132(file,{onDiagnostics:d=>{documentWarnings=d.warnings||[];}}); ocrMode = rawText ? 'document-36.10.3' : 'pdf_unread'; }
           else if (isImage) { rawText = await extractImageTextV132(file); ocrMode = rawText ? 'image_ocr_v19' : 'image_unread'; }
           else if (isDocx) { rawText = await extractDocxTextV131(file); ocrMode = rawText ? 'docx_text_v19' : 'docx_unread'; }
           else if (isDoc) { rawText = await extractOfficeBinaryTextV131(file); ocrMode = rawText ? 'doc_binary_best_effort_v19' : 'doc_unread'; }
@@ -7938,9 +7912,10 @@ function updateSidebarButtons() {
           const smartInvoice = window.WapiOcrV349?.analyze?.(detectionText,{fileName:file.name,date:baseExtracted.date||'',supplierId:supplierDetection.supplier?.id||null}) || null;
           const coproDetection = smartInvoice?.coproId ? { copro:state.copros.find((c)=>c.id===smartInvoice.coproId)||null, confidence:smartInvoice.coproConfidence||0 } : {copro:null,confidence:0};
           const extracted = { ...baseExtracted, ...(smartInvoice?.fields||{}) };
+          extracted.ocr_warnings=[...(extracted.ocr_warnings||[]),...documentWarnings];
           const fieldScore = ['reference','date','amount','account_id'].filter((k)=>extracted[k]).length * 8;
           const confidence = Math.min(98, Math.max(coproDetection.confidence || 0, supplierDetection.confidence || 0, bankDetection.confidence || 0) + fieldScore + (rawText ? 8 : 0));
-          const itemStatus = extracted.amount && extracted.reference && supplierDetection.supplier && coproDetection.copro ? 'to_validate' : 'to_verify';
+          const itemStatus = Number(extracted.amount)>0 && extracted.reference && extracted.date && extracted.account_id && !extracted.ocr_warnings?.length && supplierDetection.supplier && coproDetection.copro ? 'to_validate' : 'to_verify';
           const rawData = { file_name:file.name, file_size:file.size, mime_type:file.type || null, file_data_url:fileDataUrl, extracted, ocr_mode:ocrMode, ocr_text_length:(rawText || '').length, v19:true };
           const { data:item, error:itemError } = await supabaseClient.from('compta_import_items').insert({
             batch_id:batch.id, import_type:importType, file_name:file.name, file_size:file.size, mime_type:file.type || null,
