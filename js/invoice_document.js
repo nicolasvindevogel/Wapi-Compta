@@ -153,10 +153,12 @@
     if(due.conflict)warnings.push('Plusieurs échéances différentes ont été trouvées.');
     if(issued.value&&due.value&&due.value<issued.value)warnings.push('L’échéance précède la date de facture.');
     const ref=reference(text,fileName);if(ref.conflict)warnings.push('Plusieurs numéros de facture ont été trouvés.');if(ref.fallback&&ref.value)warnings.push('Numéro proposé à partir du nom du fichier : à confirmer.');
+    const communicationSource=clean(text),communicationMatch=communicationSource.match(/\+{3}\s*(\d{3})\s*[/ .-]\s*(\d{4})\s*[/ .-]\s*(\d{5})\s*\+{3}/)||communicationSource.match(/(?:communication|reference|mededeling|gestructureerd)[^\n]{0,35}?(\d{3})\s*[/ .-]\s*(\d{4})\s*[/ .-]\s*(\d{5})/i);
+    const structured_communication=communicationMatch?`+++${communicationMatch[1]}/${communicationMatch[2]}/${communicationMatch[3]}+++`:'';
     const rates=new Set();for(const line of lines){if(!/\b(tva|vat|btw)\b/.test(fold(line)))continue;for(const m of line.matchAll(/\b(\d{1,2}(?:[.,]\d+)?)\s*%/g)){const n=Number(m[1].replace(',','.'));if(n<=100)rates.add(n);}}
     if(rates.size>1)warnings.push('Plusieurs taux de TVA : conservez la ventilation indiquée sur la facture.');
     if(chosen.value==='')warnings.push('Montant TVAC non identifié.');if(!issued.value)warnings.push('Date de facture non identifiée.');if(!ref.value)warnings.push('Numéro de facture non identifié.');
-    return {amount:chosen.value,date:issued.value,due_date:due.value,reference:ref.value,amount_excl_vat:base.value,vat_amount:tax.value,vat_rate:rates.size===1?[...rates][0]:'',amount_check:check,ocr_warnings:warnings,ocr_engine:'document-36.10.4',ocr_evidence:{amount:chosen.line||'',date:issued.line||'',due_date:due.line||''}};
+    return {amount:chosen.value,date:issued.value,due_date:due.value,reference:ref.value,structured_communication,amount_excl_vat:base.value,vat_amount:tax.value,vat_rate:rates.size===1?[...rates][0]:'',amount_check:check,ocr_warnings:warnings,ocr_engine:'document-36.10.5',ocr_evidence:{amount:chosen.line||'',date:issued.line||'',due_date:due.line||''}};
   }
   // Restore visual reading order instead of flattening the PDF text stream.
   function textFromItems(items,viewport){

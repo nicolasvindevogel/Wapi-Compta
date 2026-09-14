@@ -1,6 +1,6 @@
-/* WAPI One V36.10.4 - accélération du traitement et stabilisation des modules. */
+/* WAPI One V36.10.5 - OCR récurrent, exercice et accélération du traitement. */
 (()=>{'use strict';
-  window.WAPI_ONE_VERSION='V36.10.4';
+  window.WAPI_ONE_VERSION='V36.10.5';
   window.WAPI_ONE_BUILD_DATE='2026-09-08';
   const $=id=>document.getElementById(id);
   const esc=v=>typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,7 +9,7 @@
   const ymToday=()=>today().slice(0,7);
   const monthNames=['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const slug=v=>String(v||'document').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9._-]+/gi,'_').replace(/^_+|_+$/g,'').slice(0,90)||'document';
-  function stampVersion(){document.title='WAPI One — V36.10.4';document.querySelector('meta[name="wapi-one-version"]')?.setAttribute('content','36.10.4');document.querySelectorAll('.app-version-badge,.wapi-version-badge,.version-badge').forEach(el=>el.textContent='WAPI One — V36.10.4');}
+  function stampVersion(){document.title='WAPI One — V36.10.5';document.querySelector('meta[name="wapi-one-version"]')?.setAttribute('content','36.10.5');document.querySelectorAll('.app-version-badge,.wapi-version-badge,.version-badge').forEach(el=>el.textContent='WAPI One — V36.10.5');}
   let emitters=[];
 
   function monthStart(value){return String(value||ymToday()).slice(0,7)+'-01'}
