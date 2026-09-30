@@ -1,0 +1,9 @@
+.v361-dispatch-empty{padding:34px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#64748b}
+.v361-dispatch-status{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.v361-dispatch-status::before{content:"";width:8px;height:8px;border-radius:50%;background:#f59e0b}
+.v361-dispatch-status.is-sent::before{background:#16a34a}
+.v361-dispatch-filter-note{grid-column:1/-1;margin-top:-4px;color:#64748b;font-size:12px}
+#callDispatchView .dispatch-metric.is-sent{border-color:#bbf7d0;background:#f0fdf4}
+#callDispatchView .dispatch-metric.is-pending{border-color:#fed7aa;background:#fff7ed}
+#callDispatchView .dispatch-recipient-row--sent{opacity:.72;background:#f7fcf8}
+#callDispatchView .dispatch-group-head h3{margin:0 0 3px}

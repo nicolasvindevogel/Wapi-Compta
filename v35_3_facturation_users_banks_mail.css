@@ -1,9 +1,16 @@
-/* WAPI One V34.9 — profils EAN/compteurs */
-.v349-profile-list{display:grid;gap:9px;margin-top:14px}
-.v349-profile-row{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1fr auto;gap:10px;align-items:center;padding:11px;border:1px solid var(--line,#dfe5ea);border-radius:12px;background:#fff}
-.v349-profile-row strong,.v349-profile-row small{display:block}
-.v349-profile-row small{color:var(--muted,#667085);margin-top:3px}
-.v349-ocr-proof{margin:9px 0;padding:9px 11px;border-radius:10px;background:#eef8f9;border:1px solid #b9e1e5;color:#176b76}
-.v349-ocr-proof.warn{background:#fff9ed;border-color:#f5cf87;color:#7a4b00}
-.v349-amount-invalid{border-color:#f2a4a4!important;background:#fff4f4!important}
-@media(max-width:900px){.v349-profile-row{grid-template-columns:1fr 1fr}.v349-profile-row>*:last-child{grid-column:1/-1}}
+/* V35.3 : une seule navigation, formulaires plus lisibles */
+#syndicBillingView .syndic-tabs{display:none!important}
+.w353-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.w353-toolbar h2,.w353-toolbar h3{margin:0}.w353-toolbar p{margin:4px 0 0;color:var(--muted)}
+.w353-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.w353-card{border:1px solid var(--line);border-radius:13px;background:#fff;padding:16px}
+.w353-card h3{margin:0 0 12px}.w353-card label{display:block;margin:9px 0;font-size:12px;font-weight:700}
+.w353-card input,.w353-card select,.w353-card textarea{width:100%;margin-top:5px}
+.w353-contract-actions{display:flex;gap:7px;flex-wrap:wrap}
+.w353-user-row{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(210px,1.4fr) 140px 110px auto;gap:12px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line)}
+.w353-bank-context{padding:10px 13px;border-left:4px solid var(--brand);background:#f4fafb;border-radius:8px;margin-bottom:12px}
+.w353-send-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.call-owner-select,[data-call-select]{width:15px!important;height:15px!important}
+@media(max-width:900px){.w353-user-row{grid-template-columns:1fr}.w353-toolbar{align-items:flex-start;flex-direction:column}}
+.w355-bank-context{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:11px 14px;border:1px solid #cfe2d8;border-radius:10px;background:#f3fbf6;color:#183d2b}
+.w355-bank-context span{font-size:12px;color:#466454}

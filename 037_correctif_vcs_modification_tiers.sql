@@ -1,64 +1,65 @@
--- WAPI One V34.7
--- Garde-fous financiers stricts : un compte bancaire et une écriture
--- doivent appartenir à la même copropriété.
+-- WAPI One V35.1.1
+-- Correctif : conserver une VCS lorsque l'identite d'un coproprietaire est modifiee.
 
-create or replace function public.compta_check_bank_context()
-returns trigger
-language plpgsql
-security invoker
-set search_path = public
-as $$
-declare
-  account_copro uuid;
-  statement_copro uuid;
-begin
-  if new.bank_account_id is null then
-    raise exception 'Un compte bancaire est obligatoire.';
-  end if;
+BEGIN;
 
-  select copro_id into account_copro
-  from public.compta_bank_accounts
-  where id = new.bank_account_id;
+-- Une meme personne peut avoir plusieurs cles d'identite historiques
+-- (ancienne/nouvelle adresse mail, changement d'adresse, presence dans plusieurs ACP)
+-- tout en conservant une seule communication VCS.
+ALTER TABLE IF EXISTS public.wapi_owner_vcs_registry
+  DROP CONSTRAINT IF EXISTS wapi_owner_vcs_registry_vcs_key;
 
-  if account_copro is null then
-    raise exception 'Compte bancaire introuvable.';
-  end if;
+DROP INDEX IF EXISTS public.wapi_owner_vcs_registry_vcs_key;
 
-  if new.copro_id is null then
-    new.copro_id := account_copro;
-  elsif new.copro_id <> account_copro then
-    raise exception 'Le compte bancaire ne correspond pas à la copropriété sélectionnée.';
-  end if;
+CREATE INDEX IF NOT EXISTS wapi_owner_vcs_registry_vcs_idx
+  ON public.wapi_owner_vcs_registry(vcs);
 
-  if tg_table_name = 'compta_bank_transactions' and new.statement_id is not null then
-    select copro_id into statement_copro
-    from public.compta_bank_statements
-    where id = new.statement_id;
+-- Le trigger conserve OLD.vcs lors d'une modification et enregistre la nouvelle
+-- cle comme alias. Pour une creation, il recherche d'abord une identite connue,
+-- sinon il genere une nouvelle VCS via la sequence.
+CREATE OR REPLACE FUNCTION public.wapi_assign_owner_vcs()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  wanted_key text;
+  existing_vcs text;
+  next_value bigint;
+BEGIN
+  wanted_key := public.wapi_owner_identity_key(
+    NEW.email, NEW.display_name, NEW.street, NEW.street_number, NEW.postal_code, NEW.city
+  );
+  NEW.identity_key := wanted_key;
 
-    if statement_copro is null or statement_copro <> new.copro_id then
-      raise exception 'L''extrait bancaire ne correspond pas à la copropriété sélectionnée.';
-    end if;
-  end if;
+  SELECT r.vcs INTO existing_vcs
+  FROM public.wapi_owner_vcs_registry r
+  WHERE r.identity_key = wanted_key;
 
-  return new;
-end;
+  IF existing_vcs IS NOT NULL THEN
+    NEW.vcs := existing_vcs;
+  ELSE
+    IF TG_OP = 'UPDATE' AND OLD.vcs IS NOT NULL AND trim(OLD.vcs) <> '' THEN
+      existing_vcs := OLD.vcs;
+    ELSIF NEW.vcs IS NOT NULL AND trim(NEW.vcs) <> '' THEN
+      existing_vcs := NEW.vcs;
+    ELSE
+      next_value := nextval('public.wapi_vcs_sequence');
+      existing_vcs := public.wapi_format_vcs(next_value);
+    END IF;
+
+    INSERT INTO public.wapi_owner_vcs_registry(identity_key, vcs)
+    VALUES (wanted_key, existing_vcs)
+    ON CONFLICT (identity_key) DO UPDATE SET vcs = EXCLUDED.vcs
+    RETURNING vcs INTO existing_vcs;
+    NEW.vcs := existing_vcs;
+  END IF;
+
+  NEW.address := trim(concat_ws(' ', nullif(NEW.street, ''), nullif(NEW.street_number, '')))
+    || CASE WHEN coalesce(NEW.postal_code, '') <> '' OR coalesce(NEW.city, '') <> ''
+       THEN ', ' || trim(concat_ws(' ', nullif(NEW.postal_code, ''), nullif(NEW.city, ''))) ELSE '' END
+    || CASE WHEN coalesce(NEW.country, '') <> '' THEN ', ' || NEW.country ELSE '' END;
+  RETURN NEW;
+END;
 $$;
 
-drop trigger if exists trg_compta_bank_statements_context on public.compta_bank_statements;
-create trigger trg_compta_bank_statements_context
-before insert or update of copro_id, bank_account_id
-on public.compta_bank_statements
-for each row execute function public.compta_check_bank_context();
-
-drop trigger if exists trg_compta_bank_transactions_context on public.compta_bank_transactions;
-create trigger trg_compta_bank_transactions_context
-before insert or update of copro_id, bank_account_id, statement_id
-on public.compta_bank_transactions
-for each row execute function public.compta_check_bank_context();
-
--- Index utiles pour le contrôle des récurrences et des doublons OCR.
-create index if not exists idx_compta_invoices_recurring_match
-on public.compta_invoices (copro_id, supplier_id, account_id, amount_total);
-
-create index if not exists idx_compta_invoices_supplier_reference
-on public.compta_invoices (copro_id, supplier_id, invoice_number);
+COMMIT;

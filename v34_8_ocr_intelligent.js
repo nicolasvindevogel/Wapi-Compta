@@ -1,251 +1,179 @@
-/* WAPI One V34.5 - Décomptes inspirés du flux Optipro.
-   Calcul en centimes, lot par lot, puis regroupement par copropriétaire. */
+/* WAPI One V34.8 — compréhension structurée des factures. */
 (function(){
   'use strict';
-  window.WAPI_ONE_VERSION='V34.5 - Décomptes Optipro';
-  const byId=(id)=>document.getElementById(id);
-  const n=(v)=>Number(v||0);
-  const cents=(v)=>Math.round((n(v)+Number.EPSILON)*100);
-  const fromCents=(v)=>v/100;
-  const esc=(v)=>typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'');
-
-  function installSettlementOptions(){
-    const filters=document.querySelector('#statementsView .list-filters');
-    if(!filters || byId('settlementDisplayBy')) return;
-    filters.insertAdjacentHTML('afterend',`
-      <div class="settlement-optipro-options">
-        <label>Présentation
-          <select id="settlementDisplayBy">
-            <option value="account">Détail par compte</option>
-            <option value="key">Détail par clé</option>
-          </select>
-        </label>
-        <label>Niveau
-          <select id="settlementDetailLevel">
-            <option value="simple">Vue simple</option>
-            <option value="detailed">Vue détaillée</option>
-          </select>
-        </label>
-        <label><input id="settlementGroupMainLots" type="checkbox"> Regrouper par lots principaux</label>
-        <label><input id="settlementShowVat" type="checkbox"> Afficher la TVA</label>
-        <label><input id="settlementShowOccupant" type="checkbox" checked> Afficher la part occupant</label>
-        <label><input id="settlementSubtractOccupant" type="checkbox"> Soustraire la part occupant</label>
-        <label><input id="settlementIncludeSituation" type="checkbox" checked> Situation de compte sur PDF</label>
-        <label>Échéance <input id="settlementPaymentDeadline" type="date"></label>
-      </div>`);
-    ['settlementDisplayBy','settlementDetailLevel','settlementGroupMainLots','settlementShowVat',
-      'settlementShowOccupant','settlementSubtractOccupant','settlementIncludeSituation','settlementPaymentDeadline']
-      .forEach(id=>byId(id)?.addEventListener('change',()=>window.renderStatementsV17?.()));
-  }
-
-  function yearFor(coproId,yearId){
-    return (state.fiscalYears||[]).find(y=>y.id===yearId) ||
-      (state.fiscalYears||[]).find(y=>y.copro_id===coproId) || null;
-  }
-  function daysInclusive(a,b){
-    const x=new Date(`${a}T00:00:00`),y=new Date(`${b}T00:00:00`);
-    return Math.max(1,Math.round((y-x)/86400000)+1);
-  }
-  function lotProrata(lot,year){
-    if(!year) return {days:365,totalDays:365,ratio:1};
-    const totalDays=daysInclusive(year.starts_on,year.ends_on);
-    const start=lot.mutation_date && lot.mutation_date>year.starts_on && lot.mutation_date<=year.ends_on
-      ? lot.mutation_date : year.starts_on;
-    const days=daysInclusive(start,year.ends_on);
-    return {days,totalDays,ratio:days/totalDays};
-  }
-  function accountFor(id){ return (state.accounts||[]).find(a=>a.id===id)||{}; }
-  function keyFor(id,coproId){
-    return (state.distributionKeys||[]).find(k=>k.id===id) ||
-      (state.distributionKeys||[]).find(k=>k.copro_id===coproId&&k.is_default) ||
-      (state.distributionKeys||[]).find(k=>k.copro_id===coproId)||{};
-  }
-  function weightsForKey(keyId,coproId){
-    const lots=(state.lots||[]).filter(l=>l.copro_id===coproId&&l.active!==false);
-    const items=(state.distributionItems||[]).filter(i=>i.distribution_key_id===keyId&&i.included!==false);
-    const map=new Map(items.map(i=>[i.lot_id,n(i.quotities)]));
-    return lots.map(l=>({lot:l,weight:map.has(l.id)?map.get(l.id):n(l.quotities)})).filter(x=>x.weight>0);
-  }
-  function allocateCents(totalAmount,weightedLots,year){
-    const source=cents(totalAmount);
-    const rows=weightedLots.map(x=>{
-      const p=lotProrata(x.lot,year);
-      return {...x,prorata:p,effective:x.weight*p.ratio};
-    });
-    const denominator=rows.reduce((s,x)=>s+x.effective,0)||1;
-    const raw=rows.map((x,index)=>{
-      const exact=source*x.effective/denominator;
-      const floor=exact>=0?Math.floor(exact):Math.ceil(exact);
-      return {...x,index,exact,allocated:floor,remainder:Math.abs(exact-floor)};
-    });
-    let residual=source-raw.reduce((s,x)=>s+x.allocated,0);
-    const order=[...raw].sort((a,b)=>b.remainder-a.remainder||String(a.lot.lot_number||'').localeCompare(String(b.lot.lot_number||'')));
-    for(let i=0;residual!==0&&order.length;i=(i+1)%order.length){
-      order[i].allocated+=residual>0?1:-1; residual+=residual>0?-1:1;
-    }
-    return raw;
-  }
-  function ownerLots(ownerId,coproId,year){
-    return (state.lots||[]).filter(l=>l.copro_id===coproId&&l.owner_id===ownerId&&l.active!==false)
-      .map(l=>({...l,_prorata:lotProrata(l,year)}));
-  }
-  function invoices(coproId,year){
-    return (state.invoices||[]).filter(i=>i.copro_id===coproId&&(!year||!i.invoice_date||(i.invoice_date>=year.starts_on&&i.invoice_date<=year.ends_on)))
-      .filter(i=>String(accountFor(i.account_id).code||'').startsWith('6'));
-  }
-  function meterLines(coproId,yearId){
-    const batches=new Map((state.v28MeterBatches||[]).filter(b=>b.copro_id===coproId&&(!yearId||b.fiscal_year_id===yearId)&&b.status==='validated').map(b=>[b.id,b]));
-    return (state.v28MeterLines||[]).filter(l=>batches.has(l.batch_id)).map(l=>({...l,batch:batches.get(l.batch_id)}));
-  }
-  function balanceRow(ownerId,coproId,yearId){
-    try{return thirdRowsFor('owners',coproId,yearId).find(r=>r.id===ownerId)||{balance:0,details:[]};}
-    catch(e){return {balance:0,details:[]};}
-  }
-  function buildOwner(ownerId,coproId,yearId){
-    const owner=(state.owners||[]).find(o=>o.id===ownerId)||{};
-    const year=yearFor(coproId,yearId);
-    const lots=ownerLots(ownerId,coproId,year);
-    const lotIds=new Set(lots.map(l=>l.id));
-    const lines=[]; let common=0,occupant=0,privateCharges=0,building=0;
-    invoices(coproId,year).forEach(inv=>{
-      const amount=n(inv.amount_total); if(!amount) return;
-      const target=inv.charge_target||'common_owner';
-      if(target==='meter_pending'||target==='private_balance') return;
-      const acc=accountFor(inv.account_id),key=keyFor(inv.distribution_key_id,coproId);
-      const label=inv.settlement_note||inv.description||`Facture ${inv.invoice_number||''}`;
-      if(target==='private_settlement'){
-        if(inv.private_owner_id!==ownerId)return;
-        const lot=lots[0]||{};
-        lines.push({kind:'private',lot,account:acc,key,label,building:amount,owner:amount,occupant:0,weight:0,totalWeight:0,prorata:lot._prorata});
-        privateCharges+=amount; building+=amount; return;
-      }
-      const allocations=allocateCents(amount,weightsForKey(key.id,coproId),year);
-      allocations.filter(a=>lotIds.has(a.lot.id)).forEach(a=>{
-        const share=fromCents(a.allocated),isOcc=target==='common_occupant';
-        lines.push({kind:'common',lot:a.lot,account:acc,key,label,building:amount,owner:isOcc?0:share,occupant:isOcc?share:0,weight:a.weight,totalWeight:allocations.reduce((s,x)=>s+x.weight,0),prorata:a.prorata});
-        if(isOcc)occupant+=share;else common+=share;
-      });
-      building+=amount;
-    });
-    const consumptions=meterLines(coproId,yearId).filter(l=>lotIds.has(l.lot_id)).map(l=>{
-      const lot=lots.find(x=>x.id===l.lot_id)||{}; const acc=accountFor(l.batch.account_id);
-      return {kind:'meter',lot,account:acc,key:{name:'Consommation individuelle'},label:l.batch.label||'Consommation',
-        indexStart:n(l.index_start),indexEnd:n(l.index_end),consumption:n(l.consumption),unitPrice:n(l.batch.unit_price)||((n(l.batch.invoice_total)&&n(l.consumption))?n(l.amount)/n(l.consumption):0),
-        building:n(l.batch.invoice_total),owner:n(l.amount),occupant:0,prorata:lot._prorata};
-    });
-    const consumptionTotal=consumptions.reduce((s,l)=>s+l.owner,0);
-    const bal=balanceRow(ownerId,coproId,yearId);
-    const subtractOcc=!!byId('settlementSubtractOccupant')?.checked;
-    const charged=common+privateCharges+consumptionTotal+(subtractOcc?0:occupant);
-    return {owner,year,lots,lines,consumptions,common,occupant,privateCharges,consumptionTotal,totalCharges:charged,building,balanceRow:bal,final:n(bal.balance)+charged};
-  }
-  function ownerRows(coproId,yearId){
-    const year=yearFor(coproId,yearId),search=(byId('settlementSearch')?.value||'').toLowerCase();
-    return (state.owners||[]).filter(o=>o.copro_id===coproId).filter(o=>{
-      const lots=ownerLots(o.id,coproId,year);
-      return !search||[o.code,o.display_name,...lots.map(l=>l.lot_number)].join(' ').toLowerCase().includes(search);
-    }).sort((a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||'')));
-  }
-  function selectedContext(){
-    const coproId=state.activeCoproId||byId('settlementCoproFilter')?.value||state.copros?.[0]?.id||'';
-    const years=(state.fiscalYears||[]).filter(y=>y.copro_id===coproId);
-    const yearId=byId('settlementYearFilter')?.value||state.activeFiscalYearId||years[0]?.id||'';
-    return {coproId,yearId,year:yearFor(coproId,yearId)};
-  }
-  function groupLines(calc){
-    const display=byId('settlementDisplayBy')?.value||'account';
-    const groups=new Map();
-    calc.lines.forEach(l=>{
-      const id=display==='key'?(l.key.id||l.key.name):(l.account.id||l.account.code||l.account.label);
-      if(!groups.has(id))groups.set(id,{label:display==='key'?(l.key.name||'Clé'):[l.account.code,l.account.label].filter(Boolean).join(' - '),building:0,owner:0,occupant:0,lines:[]});
-      const g=groups.get(id);g.building+=l.building;g.owner+=l.owner;g.occupant+=l.occupant;g.lines.push(l);
-    });
-    return [...groups.values()];
-  }
-  function commonHtml(calc){
-    const detailed=byId('settlementDetailLevel')?.value==='detailed';
-    const showOcc=byId('settlementShowOccupant')?.checked!==false;
-    return calc.lots.map(lot=>{
-      const rows=calc.lines.filter(l=>l.lot.id===lot.id&&l.kind!=='private');
-      const grouped=new Map();
-      rows.forEach(l=>{const key=`${l.account.id||l.account.code}|${l.key.id||l.key.name}`;if(!grouped.has(key))grouped.set(key,{...l,owner:0,occupant:0});const g=grouped.get(key);g.owner+=l.owner;g.occupant+=l.occupant;});
-      const body=[...grouped.values()].map(l=>`<tr><td><strong>${esc([l.account.code,l.account.label].filter(Boolean).join(' - '))}</strong>${detailed?`<div class="subtle">${esc(l.key.name||'Clé')} · ${n(l.weight).toLocaleString('fr-BE')} / ${n(l.totalWeight).toLocaleString('fr-BE')} · ${l.prorata.days}/${l.prorata.totalDays} jours</div>`:''}</td><td class="amount">${money(l.owner)}</td>${showOcc?`<td class="amount">${money(l.occupant)}</td>`:''}</tr>`).join('');
-      const own=rows.reduce((s,x)=>s+x.owner,0),occ=rows.reduce((s,x)=>s+x.occupant,0);
-      return `<div class="settlement-lot-block"><div class="settlement-lot-title">${esc(lot.lot_number||'Lot')} · ${esc(lot.lot_type||'')} · ${lot._prorata.days}/${lot._prorata.totalDays} jours</div><table class="settlement-table"><thead><tr><th>Compte et répartition</th><th class="amount">Part propriétaire</th>${showOcc?'<th class="amount">Part occupant</th>':''}</tr></thead><tbody>${body||`<tr><td colspan="${showOcc?3:2}">Aucune charge commune.</td></tr>`}<tr class="total-row"><td>Total du lot</td><td class="amount">${money(own)}</td>${showOcc?`<td class="amount">${money(occ)}</td>`:''}</tr></tbody></table></div>`;
-    }).join('');
-  }
-  function consumptionHtml(calc){
-    const rows=calc.consumptions.map(l=>`<tr><td>${esc(l.lot.lot_number||'')}</td><td>${esc(l.label)}</td><td class="amount">${l.indexStart.toLocaleString('fr-BE')}</td><td class="amount">${l.indexEnd.toLocaleString('fr-BE')}</td><td class="amount">${l.consumption.toLocaleString('fr-BE')}</td><td class="amount">${money(l.owner)}</td></tr>`).join('');
-    return `<table class="settlement-table"><thead><tr><th>Lot</th><th>Compteur</th><th class="amount">Index début</th><th class="amount">Index fin</th><th class="amount">Consommation</th><th class="amount">Montant</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Aucune consommation validée pour cet exercice.</td></tr>'}</tbody></table>`;
-  }
-  function situationHtml(calc){
-    return table(['Date','Journal / libellé','Débit','Crédit'],(calc.balanceRow.details||[]).map(d=>[
-      d.date||'',`${esc(d.journal_code||d.journal||'')} ${esc(d.label||'')}`,d.debit?money(d.debit):'',d.credit?money(d.credit):''
-    ]));
-  }
-  function renderDetail(ownerId){
-    const {coproId,yearId}=selectedContext(),calc=buildOwner(ownerId,coproId,yearId),el=byId('settlementDetail');if(!el)return;
-    el.classList.add('is-open');
-    el.innerHTML=`<div class="settlement-detail-head"><div><h3>${esc(calc.owner.code||'')} ${esc(calc.owner.display_name||'')}</h3><p class="muted-note">${esc(calc.year?.label||'Exercice')} · ${esc(coproNameByIdV14(coproId))}</p></div><div class="actions-inline"><button class="btn secondary small" data-close-settlement-detail type="button">Retour à la liste</button><button class="btn small" data-v345-pdf-owner="${ownerId}" type="button">Exporter PDF</button></div></div>
-      <div class="settlement-section"><h3 class="settlement-section-title">Charges communes <span>${money(calc.common+calc.occupant)}</span></h3>${commonHtml(calc)}</div>
-      <div class="settlement-section"><h3 class="settlement-section-title">Consommations <span>${money(calc.consumptionTotal)}</span></h3>${consumptionHtml(calc)}</div>
-      <div class="settlement-section"><h3 class="settlement-section-title">Total charges</h3><div class="settlement-result-grid"><div class="settlement-result-card"><span>Charges communes</span><strong>${money(calc.common+calc.occupant)}</strong></div><div class="settlement-result-card"><span>Consommations et privatifs</span><strong>${money(calc.consumptionTotal+calc.privateCharges)}</strong></div><div class="settlement-result-card"><span>Total imputé</span><strong>${money(calc.totalCharges)}</strong></div></div></div>
-      <div class="settlement-section"><h3 class="settlement-section-title">Situation de compte au ${esc(calc.year?.ends_on||'')}</h3>${situationHtml(calc)}</div>
-      <div class="settlement-big-result ${calc.final>=0?'positive':'negative'}"><div><strong>${calc.final>=0?'Montant à payer':'Montant à recevoir'}</strong><div class="muted-note">Solde avant décompte ${money(calc.balanceRow.balance)} + charges réelles ${money(calc.totalCharges)}</div></div><strong>${money(Math.abs(calc.final))}</strong></div>`;
-  }
-  function render(){
-    installSettlementOptions();
-    const coproSelect=byId('settlementCoproFilter'),yearSelect=byId('settlementYearFilter');if(!coproSelect||!yearSelect)return;
-    const oldC=coproSelect.value;
-    coproSelect.innerHTML=(state.copros||[]).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    coproSelect.value=state.activeCoproId||oldC||state.copros?.[0]?.id||'';
-    const coproId=coproSelect.value,years=(state.fiscalYears||[]).filter(y=>y.copro_id===coproId),oldY=yearSelect.value;
-    yearSelect.innerHTML=years.map(y=>`<option value="${y.id}">${esc(y.code||'')} ${esc(y.label||'Exercice')}</option>`).join('');
-    yearSelect.value=years.some(y=>y.id===oldY)?oldY:(state.activeFiscalYearId&&years.some(y=>y.id===state.activeFiscalYearId)?state.activeFiscalYearId:years[0]?.id||'');
-    const yearId=yearSelect.value,year=yearFor(coproId,yearId),owners=ownerRows(coproId,yearId),calcs=owners.map(o=>buildOwner(o.id,coproId,yearId));
-    const sourceCents=invoices(coproId,year).filter(i=>!['private_balance','meter_pending'].includes(i.charge_target)).reduce((s,i)=>s+cents(i.amount_total),0);
-    const distributedCents=calcs.reduce((s,c)=>s+cents(c.common+c.occupant+c.privateCharges),0);
-    byId('settlementSummary').innerHTML=`<div class="settlement-metric"><span>Exercice</span><strong>${esc(year?.label||'Non défini')}</strong></div><div class="settlement-metric"><span>Charges à répartir</span><strong>${money(fromCents(sourceCents))}</strong></div><div class="settlement-metric"><span>Copropriétaires</span><strong>${owners.length}</strong></div><div class="settlement-metric"><span>Contrôle centimes</span><strong class="${sourceCents===distributedCents?'settlement-reconcile-ok':'settlement-reconcile-warn'}">${sourceCents===distributedCents?'Équilibré':money(fromCents(sourceCents-distributedCents))}</strong></div>`;
-    byId('settlementOwnerList').innerHTML=owners.map((o,i)=>`<div class="settlement-owner-row"><input type="checkbox" data-settlement-select="${o.id}"><div><strong>${esc(o.code||'')} ${esc(o.display_name||'')}</strong><div class="settlement-owner-row__lots">${esc(calcs[i].lots.map(l=>`${l.lot_number} (${l.lot_type||'lot'})`).join(', ')||'Aucun lot')}</div></div><span class="settlement-owner-row__count">${calcs[i].lots.length} lot(s)</span><strong class="amount">${money(calcs[i].totalCharges)}</strong><button class="btn secondary small" data-v345-open-owner="${o.id}" type="button">Consulter</button></div>`).join('')||'<div class="notice">Aucun copropriétaire pour cette copropriété.</div>';
-    if(!state.selectedSettlementOwnerId)byId('settlementDetail').innerHTML='<div class="notice">Sélectionne « Consulter » pour ouvrir un décompte détaillé.</div>';
-  }
-  function ownerAddress(owner){
-    const line1=[owner.street,owner.street_number].filter(Boolean).join(' ')||owner.address||'';
-    const line2=[owner.postal_code,owner.city].filter(Boolean).join(' ');
-    return [owner.display_name,line1,line2,owner.country].filter(Boolean).map(esc).join('<br>');
-  }
-  function pdfHtml(ownerId){
-    const {coproId,yearId}=selectedContext(),calc=buildOwner(ownerId,coproId,yearId),copro=(state.copros||[]).find(c=>c.id===coproId)||{};
-    const groups=groupLines(calc);
-    const commonRows=groups.map(g=>`<tr><td>${esc(g.label)}</td><td class="amount">${money(g.building)}</td><td class="amount">${money(g.owner)}</td><td class="amount">${money(g.occupant)}</td></tr>`).join('');
-    const consumptionRows=calc.consumptions.map(l=>`<tr><td>${esc(l.lot.lot_number||'')}</td><td>${esc(l.label)}</td><td>${l.indexStart} → ${l.indexEnd}</td><td class="amount">${money(l.owner)}</td></tr>`).join('');
-    const balanceRows=(calc.balanceRow.details||[]).map(d=>`<tr><td>${esc(d.date||'')}</td><td>${esc(d.journal_code||d.journal||'')}</td><td>${esc(d.label||'')}</td><td class="amount">${d.debit?money(d.debit):''}</td><td class="amount">${d.credit?money(d.credit):''}</td></tr>`).join('');
-    const deadline=byId('settlementPaymentDeadline')?.value||'';
-    const bank=(state.v28CoproBankAccounts||[]).find(b=>b.copro_id===coproId&&b.active!==false)||(state.bankAccounts||[]).find(b=>b.copro_id===coproId)||{};
-    const situation=byId('settlementIncludeSituation')?.checked!==false?`<section class="page">${agPdfHeaderV15('Situation de compte',copro.name||'')}<div class="window-address window-address-right">${ownerAddress(calc.owner)}</div><div class="with-window-space"><table><tr><th>Date</th><th>Journal</th><th>Libellé</th><th class="amount">Débit</th><th class="amount">Crédit</th></tr>${balanceRows}</table><div class="settlement-pay"><h2 class="${calc.final>=0?'debit':'credit'}">${calc.final>=0?'Montant à payer':'Montant à recevoir'} : ${money(Math.abs(calc.final))}</h2>${deadline?`<p><strong>Échéance :</strong> ${esc(deadline)}</p>`:''}${calc.final>=0?`<p><strong>IBAN :</strong> ${esc(bank.iban||'À compléter')}<br><strong>Communication structurée :</strong> ${esc(calc.owner.vcs||'À compléter')}</p>`:''}</div></div>${agPdfFooterV15('Décompte - situation')}</section>`:'';
-    return `<section class="page">${agPdfHeaderV15('Décompte individuel',copro.name||'')}<div class="window-address window-address-right">${ownerAddress(calc.owner)}</div><div class="with-window-space"><div class="box"><h2>${esc(calc.owner.code||'')} ${esc(calc.owner.display_name||'')}</h2><p><strong>Période :</strong> ${esc(calc.year?.starts_on||'')} au ${esc(calc.year?.ends_on||'')} · <strong>Lots :</strong> ${esc(calc.lots.map(l=>l.lot_number).join(', ')||'-')}</p></div><h2>Charges communes</h2><table><tr><th>Compte / clé</th><th class="amount">Total immeuble</th><th class="amount">Part propriétaire</th><th class="amount">Part occupant</th></tr>${commonRows}<tr><th>Total</th><th></th><th class="amount">${money(calc.common)}</th><th class="amount">${money(calc.occupant)}</th></tr></table><h2>Consommations et charges privatives</h2><table><tr><th>Lot</th><th>Libellé</th><th>Index</th><th class="amount">Montant</th></tr>${consumptionRows||'<tr><td colspan="4">Aucune consommation.</td></tr>'}<tr><th colspan="3">Total charges réelles</th><th class="amount">${money(calc.totalCharges)}</th></tr></table></div>${agPdfFooterV15('Décompte - charges')}</section>${situation}`;
-  }
-  function pdf(ownerId){
-    const owner=(state.owners||[]).find(o=>o.id===ownerId)||{};
-    openPrintWindowV16(`Décompte ${owner.display_name||''}`,pdfHtml(ownerId));
-  }
-  window.renderStatementsV17=render;
-  window.renderSettlementDetailV17=function(){if(state.selectedSettlementOwnerId)renderDetail(state.selectedSettlementOwnerId);};
-  window.settlementPdfForOwnerV17=pdfHtml;
-  window.printSettlementRowsV17=function(ids){
-    if(!(ids||[]).length)return alert('Sélectionne au moins un copropriétaire.');
-    openPrintWindowV16('Décomptes',ids.map(pdfHtml).join(''));
+  window.WAPI_ONE_VERSION='V34.8 — OCR intelligent';
+  const $=id=>document.getElementById(id);
+  const esc=v=>typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'');
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const moneyNumber=raw=>{
+    if(raw===null||raw===undefined||raw==='')return null;
+    let value=String(raw).replace(/[€\s']/g,'');
+    if(value.includes(',')&&value.includes('.')) value=value.lastIndexOf(',')>value.lastIndexOf('.')?value.replace(/\./g,'').replace(',','.'):value.replace(/,/g,'');
+    else value=value.replace(',','.');
+    const n=Number(value.replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:null;
   };
-  window.WapiSettlementV345={buildOwner,ownerRows,selectedContext,pdfHtml,pdf,render,renderDetail};
+  const lines=text=>String(text||'').replace(/\u00a0/g,' ').split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
 
-  document.addEventListener('click',e=>{
-    const open=e.target.closest('[data-v345-open-owner]');if(open){state.selectedSettlementOwnerId=open.dataset.v345OpenOwner;renderDetail(state.selectedSettlementOwnerId);}
-    if(e.target.closest('[data-close-settlement-detail]')){state.selectedSettlementOwnerId='';byId('settlementDetail')?.classList.remove('is-open');render();}
-    const one=e.target.closest('[data-v345-pdf-owner]');if(one)pdf(one.dataset.v345PdfOwner);
-  },true);
-  document.addEventListener('change',e=>{
-    const check=e.target.closest?.('[data-settlement-select]');
-    if(check && check.checked){state.selectedSettlementOwnerId=check.dataset.settlementSelect;renderDetail(state.selectedSettlementOwnerId);}
-  },true);
-  window.addEventListener('load',()=>{installSettlementOptions();setTimeout(render,250);});
+  function tokenScore(a,b){
+    const aa=new Set(norm(a).split(' ').filter(x=>x.length>2)),bb=new Set(norm(b).split(' ').filter(x=>x.length>2));
+    if(!aa.size||!bb.size)return 0;let same=0;aa.forEach(x=>{if(bb.has(x))same++;});
+    return same/Math.max(aa.size,bb.size);
+  }
+  function bestKnown(list,name,address){
+    let best=null,score=0;
+    for(const row of list||[]){
+      const rowName=row.display_name||row.name||'',rowAddress=[row.address,row.street,row.postal_code,row.city].filter(Boolean).join(' ');
+      const s=Math.max(tokenScore(name,rowName),tokenScore(address,rowAddress),norm(name)===norm(rowName)?1:0);
+      if(s>score){best=row;score=s;}
+    }
+    return {row:score>=.58?best:null,score};
+  }
+  function supplierGuess(text){
+    const ls=lines(text),vatLine=ls.findIndex(l=>/(?:TVA|VAT|BTW)[\s:.-]*(?:BE|FR|NL|LU)?\s*[0-9. ]{8,}/i.test(l)),ibanLine=ls.findIndex(l=>/\b[A-Z]{2}\s*\d{2}(?:\s*[A-Z0-9]){10,30}\b/i.test(l));
+    const boundary=[vatLine,ibanLine].filter(i=>i>=0).sort((a,b)=>a-b)[0]??Math.min(ls.length,8);
+    const forbidden=/facture|invoice|avoir|credit note|date|echeance|client|destinataire|facture a|bill to|ship to|association des coproprietaires|\bACP\b|residence|copropriete|total|tva|iban|bic|www\.|@/i;
+    const candidates=ls.slice(0,Math.max(3,boundary+1)).map((line,index)=>({line,index,score:0}))
+      .filter(x=>x.line.length>=3&&x.line.length<=80&&!forbidden.test(x.line)&&!/\d{4,}/.test(x.line));
+    candidates.forEach(x=>{
+      if(/srl|sprl|sa\b|s\.a\.|bv\b|nv\b|asbl|company|services|belgium/i.test(x.line))x.score+=35;
+      if(x.index<4)x.score+=18-x.index*3;
+      if(/^[A-Z0-9 &.'-]+$/.test(x.line))x.score+=8;
+    });
+    return candidates.sort((a,b)=>b.score-a.score)[0]?.line||'';
+  }
+  function coproGuess(text){
+    const ls=lines(text);
+    for(let i=0;i<ls.length;i++){
+      if(/association des copropri[eé]taires|\bACP\b|copropri[eé]t[eé]|r[eé]sidence|residence|immeuble|factur[eé]\s+[aà]|bill\s+to|client\s*:/i.test(ls[i])){
+        const inline=ls[i].replace(/^.*?(?:association des copropri[eé]taires|\bACP\b|copropri[eé]t[eé]|r[eé]sidence|residence|immeuble|factur[eé]\s+[aà]|bill\s+to|client\s*:)\s*[:\-]?\s*/i,'').trim();
+        if(inline.length>2)return inline;
+        if(ls[i+1])return ls[i+1];
+      }
+    }
+    return '';
+  }
+  function amountNear(text,patterns){
+    const ls=lines(text),rxMoney=/([0-9]{1,3}(?:[ .'][0-9]{3})*(?:[,.][0-9]{2})|[0-9]{1,8}(?:[,.][0-9]{2}))/g;
+    const found=[];
+    ls.forEach((line,index)=>{
+      const context=norm(`${ls[index-1]||''} ${line} ${ls[index+1]||''}`);
+      let score=0;patterns.forEach((p,i)=>{if(p.test(context))score+=100-i*5;});
+      if(!score)return;
+      const matches=[...line.matchAll(rxMoney)];
+      const source=matches.length?matches:[...(ls[index+1]||'').matchAll(rxMoney)];
+      source.forEach(m=>{const v=moneyNumber(m[1]);if(v!==null)found.push({v,score,index});});
+    });
+    return found.sort((a,b)=>b.score-a.score||b.v-a.v)[0]?.v??null;
+  }
+  function historyAccount(supplierId,coproId){
+    if(!supplierId)return '';
+    const counts=new Map();
+    (state.invoices||[]).filter(i=>i.supplier_id===supplierId&&(!coproId||i.copro_id===coproId)&&i.account_id)
+      .forEach(i=>counts.set(i.account_id,(counts.get(i.account_id)||0)+1));
+    return [...counts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+  }
+  function intelligentFields(text,fileName=''){
+    const supplierName=supplierGuess(text),coproName=coproGuess(text);
+    const supplierMatch=bestKnown(state.suppliers||[],supplierName,'');
+    const coproMatch=bestKnown(state.copros||[],coproName,coproName);
+    const htva=amountNear(text,[/total htva|total hors tva|hors taxe|subtotal|sous total|base imposable/]);
+    const vat=amountNear(text,[/montant tva|total tva|vat amount|btw bedrag/]);
+    let tvac=amountNear(text,[/net a payer|total a payer|total tvac|total ttc|grand total|balance due|montant total/]);
+    if(tvac===null&&htva!==null&&vat!==null)tvac=Number((htva+vat).toFixed(2));
+    let rate=null;
+    const rateMatch=String(text||'').match(/(?:TVA|VAT|BTW)[^0-9]{0,15}([0-9]{1,2}(?:[,.][0-9]+)?)\s*%/i);
+    if(rateMatch)rate=moneyNumber(rateMatch[1]);
+    if(rate===null&&htva&&vat!==null)rate=Number((vat/htva*100).toFixed(2));
+    return {supplier_name_guess:supplierName,copro_name_guess:coproName,amount_excl_vat:htva??'',vat_amount:vat??'',amount:tvac??'',vat_rate:rate??'',_supplier_match:supplierMatch,_copro_match:coproMatch};
+  }
+
+  const oldSupplierDetection=window.detectSupplierFromText;
+  if(typeof oldSupplierDetection==='function')window.detectSupplierFromText=function(text){
+    const old=oldSupplierDetection.apply(this,arguments)||{supplier:null,confidence:0};
+    const guess=supplierGuess(text),match=bestKnown(state.suppliers||[],guess,'');
+    const smart={supplier:match.row,confidence:match.row?Math.round(55+match.score*40):0,guessed_name:guess};
+    return Number(old.confidence||0)>=Number(smart.confidence||0)?{...old,guessed_name:guess}:smart;
+  };
+  const oldCoproDetection=window.detectCoproFromText;
+  if(typeof oldCoproDetection==='function')window.detectCoproFromText=function(text){
+    const old=oldCoproDetection.apply(this,arguments)||{copro:null,confidence:0};
+    const guess=coproGuess(text),match=bestKnown(state.copros||[],guess,guess);
+    const smart={copro:match.row,confidence:match.row?Math.round(55+match.score*40):0,guessed_name:guess};
+    /* L'ancien moteur utilisait parfois la copro active comme simple valeur par
+       défaut (confiance 40). Ce n'est pas une détection et ne doit pas remplir
+       automatiquement la facture. */
+    if(!match.row&&Number(old.confidence||0)<=40)return smart;
+    return Number(old.confidence||0)>=Number(smart.confidence||0)?{...old,guessed_name:guess}:smart;
+  };
+
+  const oldExtract19=window.extractInvoiceFieldsV19;
+  const oldExtract13=window.extractInvoiceFieldsV13;
+  function enhancedExtract(text,fileName=''){
+    const base=(typeof oldExtract19==='function'?oldExtract19(text,fileName):typeof oldExtract13==='function'?oldExtract13(text,fileName):{})||{};
+    const smart=intelligentFields(text,fileName);
+    const detectedSupplier=typeof window.detectSupplierFromText==='function'?window.detectSupplierFromText(text):{supplier:smart._supplier_match.row};
+    const detectedCopro=typeof window.detectCoproFromText==='function'?window.detectCoproFromText(text):{copro:smart._copro_match.row};
+    const supplierId=detectedSupplier.supplier?.id||'';
+    const coproId=detectedCopro.copro?.id||'';
+    const accountFromHistory=historyAccount(supplierId,coproId);
+    return {...base,
+      supplier_name_guess:smart.supplier_name_guess,
+      copro_name_guess:smart.copro_name_guess,
+      amount_excl_vat:smart.amount_excl_vat!==''?smart.amount_excl_vat:(base.amount_excl_vat||''),
+      vat_amount:smart.vat_amount!==''?smart.vat_amount:(base.vat_amount||''),
+      amount:smart.amount!==''?smart.amount:(base.amount||''),
+      vat_rate:smart.vat_rate!==''?smart.vat_rate:(base.vat_rate||''),
+      account_id:accountFromHistory||base.account_id||'',
+      account_detection_source:accountFromHistory?'Historique du fournisseur':(base.account_id?'Libellé de la facture':'')
+    };
+  }
+  if(typeof window.extractInvoiceFieldsV19==='function')window.extractInvoiceFieldsV19=enhancedExtract;
+  if(typeof window.extractInvoiceFieldsV13==='function')window.extractInvoiceFieldsV13=enhancedExtract;
+  if(typeof window.extractSimpleFieldsFromText==='function'){
+    const oldSimple=window.extractSimpleFieldsFromText;
+    window.extractSimpleFieldsFromText=function(text,fileName,type){return type==='invoice'?enhancedExtract(text,fileName):oldSimple.apply(this,arguments);};
+  }
+
+  const oldRender=window.renderInvoiceOcrV13;
+  if(typeof oldRender==='function')window.renderInvoiceOcrV13=function(){
+    const out=oldRender.apply(this,arguments);
+    setTimeout(enhanceOcrPanel,0);
+    return out;
+  };
+  function enhanceOcrPanel(){
+    const q=(state.validationQueue||[]).find(x=>x.id===state.ocrSelectedQueueId);if(!q)return;
+    const item=(state.importItems||[]).find(x=>x.id===q.item_id)||{},data={...(q.extracted_data||{}),...(q.corrected_data||{})};
+    const grid=document.querySelector('.ocr-fields .ocr-field-grid');if(!grid||$('ocrFieldAmountExclVat'))return;
+    const coproSelect=$('ocrFieldCopro'),supplierSelect=$('ocrFieldSupplier');
+    if(coproSelect&&!coproSelect.value&&data.copro_id)coproSelect.value=data.copro_id;
+    if(supplierSelect&&!supplierSelect.value&&data.supplier_id)supplierSelect.value=data.supplier_id;
+    if(coproSelect&&!coproSelect.value&&data.copro_name_guess){
+      coproSelect.closest('label')?.insertAdjacentHTML('afterend',`<div class="ocr-smart-suggestion"><strong>Copropriété lue sur la facture</strong><span>${esc(data.copro_name_guess)}</span><div class="muted-note">Non associée automatiquement : sélectionne la copropriété existante.</div></div>`);
+    }
+    if(supplierSelect&&!supplierSelect.value&&data.supplier_name_guess){
+      supplierSelect.closest('label')?.insertAdjacentHTML('afterend',`<div class="ocr-smart-suggestion"><strong>Fournisseur lu sur la facture</strong><span>${esc(data.supplier_name_guess)}</span><div class="muted-note">Ce fournisseur n’existe pas encore dans WAPI One.</div><div class="actions-inline"><button class="btn secondary small" id="ocrCreateDetectedSupplier" type="button">Créer ce fournisseur</button></div></div>`);
+    }
+    const amountInput=$('ocrFieldAmount');if(amountInput){
+      amountInput.closest('label')?.insertAdjacentHTML('beforebegin',`<label>Montant HTVA<input id="ocrFieldAmountExclVat" type="number" step="0.01" value="${esc(data.amount_excl_vat||'')}"></label>`);
+    }
+    const ht=Number(data.amount_excl_vat||0),vat=Number(data.vat_amount||0),ttc=Number(data.amount||0),ok=ht>0&&ttc>0&&Math.abs((ht+vat)-ttc)<.02;
+    grid.insertAdjacentHTML('beforeend',`<div class="ocr-amount-check ${ok?'is-valid':'is-warning'}"><div><span>HTVA</span><strong>${typeof money==='function'?money(ht):ht}</strong></div><div><span>TVA</span><strong>${typeof money==='function'?money(vat):vat}</strong></div><div><span>TVAC</span><strong>${typeof money==='function'?money(ttc):ttc}</strong></div></div>`);
+    if(data.account_detection_source&&$('ocrFieldAccount'))$('ocrFieldAccount').closest('label')?.insertAdjacentHTML('beforeend',`<span class="ocr-smart-source">${esc(data.account_detection_source)}</span>`);
+    $('ocrCreateDetectedSupplier')?.addEventListener('click',createDetectedSupplier);
+  }
+  async function createDetectedSupplier(){
+    const q=(state.validationQueue||[]).find(x=>x.id===state.ocrSelectedQueueId),data={...(q?.extracted_data||{}),...(q?.corrected_data||{})};
+    const name=String(data.supplier_name_guess||'').trim();if(!q||!name)return;
+    const {data:created,error}=await supabaseClient.from('compta_suppliers').insert({name,active:true,created_by:currentUser?.id||null}).select('*').single();
+    if(error)return alert(error.message);
+    const corrected={...data,supplier_id:created.id};
+    await supabaseClient.from('compta_validation_queue').update({corrected_data:corrected}).eq('id',q.id);
+    await loadAll();state.ocrSelectedQueueId=q.id;renderInvoiceOcrV13();
+  }
+  const oldPayload=window.getOcrPayloadFromFieldsV13;
+  if(typeof oldPayload==='function')window.getOcrPayloadFromFieldsV13=function(){
+    const payload=oldPayload.apply(this,arguments),q=(state.validationQueue||[]).find(x=>x.id===state.ocrSelectedQueueId),old={...(q?.extracted_data||{}),...(q?.corrected_data||{})};
+    return {...old,...payload,amount_excl_vat:$('ocrFieldAmountExclVat')?.value?Number($('ocrFieldAmountExclVat').value):null};
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(enhanceOcrPanel,600));else setTimeout(enhanceOcrPanel,600);
 })();

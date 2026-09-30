@@ -1,98 +1,72 @@
--- WAPI One V34.6 - Décomptes validés, report à la clôture, tiers actifs
+-- WAPI One V35.0 — intégration Outlook / Microsoft Graph
 
-CREATE TABLE IF NOT EXISTS public.compta_settlement_snapshots (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  copro_id uuid NOT NULL REFERENCES public.compta_copros(id) ON DELETE CASCADE,
-  fiscal_year_id uuid NOT NULL REFERENCES public.compta_fiscal_years(id) ON DELETE CASCADE,
-  owner_id uuid NOT NULL REFERENCES public.compta_owners(id) ON DELETE RESTRICT,
-  charges_total numeric(14,2) NOT NULL DEFAULT 0,
-  balance_before numeric(14,2) NOT NULL DEFAULT 0,
-  final_balance numeric(14,2) NOT NULL DEFAULT 0,
-  calculation_data jsonb NOT NULL DEFAULT '{}'::jsonb,
-  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','validated','cancelled')),
-  validated_at timestamptz,
-  validated_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (fiscal_year_id, owner_id)
+create table if not exists public.compta_mail_provider_settings (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null default 'microsoft'
+    check (provider in ('microsoft')),
+  tenant_id text not null default 'organizations',
+  client_id text,
+  redirect_uri text,
+  enabled boolean not null default false,
+  updated_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
-ALTER TABLE public.compta_settlement_snapshots ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "authenticated settlement snapshots" ON public.compta_settlement_snapshots;
-CREATE POLICY "authenticated settlement snapshots"
-ON public.compta_settlement_snapshots
-FOR ALL TO authenticated
-USING (true) WITH CHECK (true);
+create unique index if not exists uq_compta_mail_provider
+  on public.compta_mail_provider_settings(provider);
 
--- Un propriétaire est actif lorsqu'au moins un lot actif lui est actuellement attribué.
-CREATE OR REPLACE FUNCTION public.wapi_refresh_owner_activity()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  old_owner uuid := NULL;
-  new_owner uuid := NULL;
-BEGIN
-  IF TG_OP IN ('UPDATE','DELETE') THEN old_owner := OLD.owner_id; END IF;
-  IF TG_OP IN ('UPDATE','INSERT') THEN new_owner := NEW.owner_id; END IF;
-
-  IF old_owner IS NOT NULL THEN
-    UPDATE public.compta_owners o
-    SET active = EXISTS (
-      SELECT 1 FROM public.compta_lots l
-      WHERE l.owner_id = old_owner AND coalesce(l.active,true)
-    )
-    WHERE o.id = old_owner;
-  END IF;
-  IF new_owner IS NOT NULL AND new_owner IS DISTINCT FROM old_owner THEN
-    UPDATE public.compta_owners o
-    SET active = EXISTS (
-      SELECT 1 FROM public.compta_lots l
-      WHERE l.owner_id = new_owner AND coalesce(l.active,true)
-    )
-    WHERE o.id = new_owner;
-  END IF;
-  IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS trg_wapi_refresh_owner_activity ON public.compta_lots;
-CREATE TRIGGER trg_wapi_refresh_owner_activity
-AFTER INSERT OR UPDATE OF owner_id,active OR DELETE
-ON public.compta_lots
-FOR EACH ROW EXECUTE FUNCTION public.wapi_refresh_owner_activity();
-
-UPDATE public.compta_owners o
-SET active = EXISTS (
-  SELECT 1 FROM public.compta_lots l
-  WHERE l.owner_id=o.id AND coalesce(l.active,true)
+create table if not exists public.compta_user_mail_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  provider text not null default 'microsoft',
+  mailbox_email text,
+  mailbox_name text,
+  default_action text not null default 'draft'
+    check (default_action in ('draft','send')),
+  signature_html text,
+  last_connected_at timestamptz,
+  updated_at timestamptz not null default now()
 );
 
-CREATE OR REPLACE FUNCTION public.wapi_delete_owner_if_unused(p_owner_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY INVOKER
-AS $$
-DECLARE
-  linked_lots integer := 0;
-  linked_calls integer := 0;
-  linked_bank integer := 0;
-  linked_opening integer := 0;
-  linked_private integer := 0;
-  linked_settlements integer := 0;
-BEGIN
-  SELECT count(*) INTO linked_lots FROM public.compta_lots WHERE owner_id=p_owner_id;
-  SELECT count(*) INTO linked_calls FROM public.compta_owner_calls WHERE owner_id=p_owner_id;
-  SELECT count(*) INTO linked_bank FROM public.compta_bank_transactions WHERE tier_type='owner' AND tier_id=p_owner_id;
-  SELECT count(*) INTO linked_opening FROM public.compta_third_opening_balances WHERE tier_type='owner' AND tier_id=p_owner_id;
-  SELECT count(*) INTO linked_private FROM public.compta_invoices WHERE private_owner_id=p_owner_id;
-  SELECT count(*) INTO linked_settlements FROM public.compta_settlement_snapshots WHERE owner_id=p_owner_id;
+alter table public.compta_mail_provider_settings enable row level security;
+alter table public.compta_user_mail_settings enable row level security;
 
-  IF linked_lots+linked_calls+linked_bank+linked_opening+linked_private+linked_settlements>0 THEN
-    RETURN jsonb_build_object('deleted',false,'lots',linked_lots,
-      'accounting',linked_calls+linked_bank+linked_opening+linked_private+linked_settlements);
-  END IF;
-  DELETE FROM public.compta_owners WHERE id=p_owner_id;
-  RETURN jsonb_build_object('deleted',true,'lots',0,'accounting',0);
-END;
-$$;
+drop policy if exists "authenticated_read_mail_provider" on public.compta_mail_provider_settings;
+create policy "authenticated_read_mail_provider"
+  on public.compta_mail_provider_settings for select to authenticated
+  using (true);
+
+drop policy if exists "authenticated_write_mail_provider" on public.compta_mail_provider_settings;
+create policy "authenticated_write_mail_provider"
+  on public.compta_mail_provider_settings for all to authenticated
+  using (
+    exists (
+      select 1 from public.compta_user_profiles p
+      where p.id = auth.uid() and p.role = 'admin' and p.active = true
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.compta_user_profiles p
+      where p.id = auth.uid() and p.role = 'admin' and p.active = true
+    )
+  );
+
+drop policy if exists "user_read_own_mail_settings" on public.compta_user_mail_settings;
+create policy "user_read_own_mail_settings"
+  on public.compta_user_mail_settings for select to authenticated
+  using (user_id = auth.uid());
+
+drop policy if exists "user_write_own_mail_settings" on public.compta_user_mail_settings;
+create policy "user_write_own_mail_settings"
+  on public.compta_user_mail_settings for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+grant select, insert, update, delete on public.compta_mail_provider_settings to authenticated;
+grant select, insert, update, delete on public.compta_user_mail_settings to authenticated;
+
+alter table if exists public.compta_delivery_logs
+  add column if not exists provider text,
+  add column if not exists provider_message_id text,
+  add column if not exists provider_status text,
+  add column if not exists sent_by uuid references auth.users(id) on delete set null;

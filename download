@@ -1,0 +1,12 @@
+# Local / QA artefacts
+.DS_Store
+Thumbs.db
+node_modules/
+playwright-report/
+test-results/
+coverage/
+.env
+.env.*
+!.env.example
+tmp/
+tmp_pdf_inventory.txt

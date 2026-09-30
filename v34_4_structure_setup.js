@@ -1,433 +1,383 @@
-/* WAPI One V34 — interface unique inspirée d'Optipro, sans observateur ni boucle. */
-(() => {
+(function () {
   'use strict';
-  const $ = id => document.getElementById(id);
-  const appState = () => {
-    try { return typeof state !== 'undefined' ? state : null; }
-    catch (_) { return null; }
-  };
-  const appUser = () => {
-    try { return typeof currentUser !== 'undefined' ? currentUser : null; }
-    catch (_) { return null; }
-  };
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const iconPaths = {
-    Accueil:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5M9 21v-6h6v6"/>',
-    Pilotage:'<path d="M4 19V9m8 10V5m8 14v-7"/><path d="M2 19h20"/>',
-    Infrastructures:'<path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/>',
-    Comptabilite:'<path d="M4 3h16v18H4zM8 7h8M8 11h2m3 0h3M8 15h2m3 0h3"/>',
-    'Facturation syndic':'<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h6"/>',
-    'Etats comptables':'<path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/>',
-    'Assemblees generales':'<path d="M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm10 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 21v-2a5 5 0 0 1 5-5h2m13 7v-2a5 5 0 0 0-5-5h-2m-5 4 2 2 4-5"/>',
-    Configuration:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>'
-  };
-  const plain = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s/’-]/g,'').trim();
-  const icon = name => `<span class="w332-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${iconPaths[name] || iconPaths.Configuration}</svg></span>`;
-  const mainModules = [
-    ['home','Accueil','Accueil','dashboard'],
-    ['pilotage','Plan de travail','Pilotage','processing'],
-    ['copros','Infrastructures','Infrastructures','copros'],
-    ['compta','Comptabilité','Comptabilite','invoices'],
-    ['states','États comptables','Etats comptables','accountLookup'],
-    ['ag','Assemblées générales','Assemblees generales','meetings'],
-    ['syndic','Facturation syndic','Facturation syndic','syndicBilling'],
-    ['config','Configuration','Configuration','agency']
-  ];
 
-  function buildTopNavigation(){
-    const app = $('appScreen'), topbar = app?.querySelector('.topbar');
-    if (!app || !topbar || $('w332PrimaryNav')) return;
-    document.body.dataset.wapiV332 = 'ready';
-    document.body.dataset.wapiVersion = '34.4.1';
-    document.title = 'WAPI One — V34.4.1';
+  const VERSION = '34.4.1';
+  const byId = (id) => document.getElementById(id);
+  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const appState = () => typeof state !== 'undefined' ? state : null;
+  const list = (name) => Array.isArray(appState()?.[name]) ? appState()[name] : [];
+  const db = () => typeof supabaseClient !== 'undefined' ? supabaseClient : null;
+  const userId = () => typeof currentUser !== 'undefined' ? currentUser?.id || null : null;
+  const currentCoproId = () => appState()?.activeCoproId || byId('activeCoproSelect')?.value || '';
+  const fullAddress = (x) => [
+    [x?.street, x?.street_number].filter(Boolean).join(' '),
+    [x?.postal_code, x?.city].filter(Boolean).join(' '),
+    x?.country
+  ].filter(Boolean).join(', ');
 
-    const left = topbar.querySelector('.topbar-left');
-    const pageWrap = left?.querySelector('.page-title-wrap');
-    if (pageWrap) {
-      const pageHead = document.createElement('div');
-      pageHead.className = 'w332-page-head';
-      pageWrap.parentNode.removeChild(pageWrap);
-      pageHead.appendChild(pageWrap);
-      topbar.insertAdjacentElement('afterend', pageHead);
-    }
-    const brand = document.createElement('div');
-    brand.className = 'w332-brand';
-    brand.innerHTML = `<img src="assets/logo-wapi-one.png" alt="WAPI One"><div><strong>WAPI One</strong><small>Gestion de copropriétés</small></div>`;
-    if (left) {
-      const legacy = document.createElement('div');
-      legacy.className = 'w332-legacy-controls';
-      while (left.firstChild) legacy.appendChild(left.firstChild);
-      left.append(brand, legacy);
-    }
-
-    const nav = document.createElement('nav');
-    nav.id = 'w332PrimaryNav';
-    nav.className = 'w332-primary-nav';
-    mainModules.forEach(([id,label,iconName,defaultView], index) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `w332-nav-trigger${index === 0 ? ' active' : ''}`;
-      button.dataset.w332Module = id;
-      button.innerHTML = `${icon(iconName)}<span>${esc(label)}</span>`;
-      button.addEventListener('click', () => {
-        if (typeof window.switchToView === 'function') {
-          window.switchToView(defaultView);
-        } else {
-          const source = document.querySelector(`.nav [data-v331-module="${id}"]`);
-          if (source) source.click();
-        }
-        nav.querySelectorAll('.w332-nav-trigger').forEach(item => item.classList.toggle('active', item === button));
-      });
-      nav.appendChild(button);
-    });
-    left?.insertAdjacentElement('afterend', nav);
-    buildContext(topbar);
-    document.addEventListener('click', event => {
-      if (!event.target.closest('.w332-user-wrap')) document.querySelector('.w332-user-wrap.open')?.classList.remove('open');
+  function setVersion() {
+    document.querySelectorAll('[data-version-badge], .app-version, .version-badge').forEach((el) => {
+      if (/WAPI|V3|version/i.test(el.textContent || '')) el.textContent = `WAPI One — V${VERSION}`;
     });
   }
 
-  function buildContext(topbar){
-    const oldActions = [...topbar.querySelectorAll(':scope > .top-actions')].at(-1);
-    const fiscalSelect = $('activeFiscalYearSelect');
-    const context = document.createElement('div');
-    context.className = 'w332-context';
-    context.innerHTML = `
-      <label class="w332-context-field w332-copro-field"><span>Copropriété</span><span id="w332CoproHost"></span></label>
-      <button class="w332-icon-btn" id="w332CoproSettings" type="button" title="Réglages de la copropriété" aria-label="Réglages de la copropriété">${icon('Configuration')}</button>
-      <label class="w332-context-field w332-year-field"><span>Exercice</span><span class="w332-year-control"><span id="w332FiscalHost"></span><i id="w332FiscalStatus" class="w332-fiscal-dot unknown" aria-label="Statut de l’exercice"></i></span></label>
-      <button class="w332-icon-btn" id="w332GlobalSearch" type="button" title="Recherche globale" aria-label="Recherche globale"><span class="w332-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span></button>
-      <div class="w332-user-wrap">
-        <button class="w332-icon-btn" id="w332UserButton" type="button" title="Compte utilisateur" aria-label="Compte utilisateur"><span class="w332-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span></button>
-        <div class="w332-user-menu">
-          <div class="w332-user-name"><span id="w332UserName">Utilisateur</span><small id="w332UserEmail"></small></div>
-          <button type="button" id="w332FutureMail">Réglages e-mail <small>(prochainement)</small></button>
-          <button type="button" id="w332Logout">Déconnexion</button>
-        </div>
-      </div>`;
-    if (fiscalSelect) context.querySelector('#w332FiscalHost')?.appendChild(fiscalSelect);
-    if (oldActions) {
-      oldActions.classList.add('w332-legacy-controls');
-      oldActions.insertAdjacentElement('afterend', context);
-    } else {
-      topbar.appendChild(context);
+  function modal(title, body, footer, subtitle = '') {
+    if (typeof window.openAppModal === 'function') {
+      window.openAppModal(title, body, footer, { subtitle, size: 'wide' });
+      return;
     }
-    const coproHost = $('w332CoproHost'), coproSelect = $('activeCoproSelect');
-    if (coproHost && coproSelect) {
-      coproSelect.classList.remove('smart-combo-source');
-      coproSelect.dataset.smartComboReady = '1';
-      coproSelect.style.display = 'block';
-      coproSelect.style.position = 'static';
-      coproSelect.style.opacity = '1';
-      coproSelect.style.pointerEvents = 'auto';
-      coproHost.appendChild(coproSelect);
-      coproHost.querySelectorAll('.smart-combo').forEach(combo => combo.remove());
-    }
-    if (coproSelect) {
-      coproSelect.addEventListener('change', () => {
-        const coproId = coproSelect.value || '';
-        try { if (typeof setActiveCopro === 'function') setActiveCopro(coproId); } catch (_) {}
-        setTimeout(() => syncFiscalContext(true), 0);
-      });
-    }
-    fiscalSelect?.addEventListener('change', updateFiscalStatus);
-    fiscalSelect?.addEventListener('focus', () => syncFiscalContext(false));
-    $('w332UserButton')?.addEventListener('click', event => { event.stopPropagation(); event.currentTarget.closest('.w332-user-wrap').classList.toggle('open'); });
-    $('w332Logout')?.addEventListener('click', () => $('logoutBtn')?.click());
-    $('w332CoproSettings')?.addEventListener('click', () => {
-      const coproId = coproSelect?.value || appState()?.activeCoproId || '';
-      if (!coproId) return alert('Sélectionnez d’abord une copropriété.');
-      const st = appState();
-      if (st) st.activeCoproId = coproId;
-      try { localStorage.setItem('wapi-compta-active-copro', coproId); } catch (_) {}
-      if (typeof window.openCoproSettingsPopupV33 === 'function') {
-        window.openCoproSettingsPopupV33(coproId);
-        return;
-      }
-      if (typeof window.openCoproSettingsPopupV3234 === 'function') {
-        window.openCoproSettingsPopupV3234(coproId);
-        return;
-      }
-      const relay = document.createElement('button');
-      relay.type = 'button';
-      relay.hidden = true;
-      relay.dataset.v322CoproSettings = coproId;
-      document.body.appendChild(relay);
-      relay.click();
-      relay.remove();
-    });
-    $('w332GlobalSearch')?.addEventListener('click', () => {
-      const search = $('globalSearchInput') || $('searchInput');
-      if (search) { search.focus(); search.scrollIntoView({behavior:'smooth',block:'center'}); }
-      else alert('La recherche globale sera reliée ici lors de la prochaine étape.');
-    });
-    syncUser();
-    setTimeout(() => syncFiscalContext(true), 50);
+    const back = byId('globalModalBackdrop');
+    byId('globalModalTitle').textContent = title;
+    byId('globalModalSubtitle').textContent = subtitle;
+    byId('globalModalBody').innerHTML = body;
+    byId('globalModalFooter').innerHTML = footer;
+    back.classList.remove('hidden');
+    back.style.display = '';
+    back.style.pointerEvents = '';
   }
 
-  function fiscalYearsForActiveCopro(){
-    const st = appState();
-    const coproId = $('activeCoproSelect')?.value || st?.activeCoproId || '';
-    const seen = new Set();
-    return (st?.fiscalYears || []).filter(year => {
-      if (coproId && String(year.copro_id) !== String(coproId)) return false;
-      const key = String(year.id || [year.copro_id, year.code, year.year_code, year.label].join('|'));
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }
-  function fiscalLabel(year){
-    return [year?.year_code || year?.code || '', year?.label || ''].filter(Boolean).join(' — ') ||
-      [year?.starts_on || '', year?.ends_on || ''].filter(Boolean).join(' → ') || 'Exercice';
-  }
-  function syncFiscalContext(selectDefault){
-    const select = $('activeFiscalYearSelect');
-    const st = appState();
-    if (!select || !st) return;
-    const years = fiscalYearsForActiveCopro();
-    const previous = select.value || st.activeFiscalYearId || '';
-    select.innerHTML = '<option value="">Choisir un exercice</option>' +
-      years.map(year => `<option value="${esc(year.id)}">${esc(fiscalLabel(year))}</option>`).join('');
-    const selected = years.some(year => String(year.id) === String(previous))
-      ? previous
-      : (selectDefault ? (years.find(year => String(year.status || '').toLowerCase() !== 'closed') || years[0])?.id || '' : '');
-    select.value = selected;
-    if (selected && String(st.activeFiscalYearId || '') !== String(selected)) {
-      st.activeFiscalYearId = selected;
-      try { localStorage.setItem('wapi-one-active-fiscal-year', selected); } catch (_) {}
-    }
-    updateFiscalStatus();
-  }
-  function updateFiscalStatus(){
-    const dot = $('w332FiscalStatus');
-    const select = $('activeFiscalYearSelect');
-    const st = appState();
-    if (!dot || !select || !st) return;
-    const year = (st.fiscalYears || []).find(item => String(item.id) === String(select.value));
-    const closed = year && (String(year.status || '').toLowerCase() === 'closed' || Boolean(year.closed_at));
-    dot.className = `w332-fiscal-dot ${year ? (closed ? 'closed' : 'open') : 'unknown'}`;
-    dot.title = year ? (closed ? 'Exercice clôturé' : 'Exercice ouvert') : 'Aucun exercice sélectionné';
-    dot.setAttribute('aria-label', dot.title);
+  async function reload() {
+    if (typeof window.loadAll === 'function') await window.loadAll();
+    else if (typeof window.renderAll === 'function') window.renderAll();
+    setTimeout(refreshActiveCoproSelect, 0);
   }
 
-  function refreshCoproContext(){
-    document.title = 'WAPI One — V34.4.1';
-    const st = appState(), select = $('activeCoproSelect');
-    if (!st || !select) return;
-    const selected = st.activeCoproId || select.value || '';
-    const copros = Array.isArray(st.copros) ? st.copros : [];
-    select.classList.remove('smart-combo-source');
-    select.dataset.smartComboReady = '1';
-    select.style.display = 'block';
-    select.parentElement?.querySelectorAll('.smart-combo').forEach(combo => combo.remove());
-    select.innerHTML = '<option value="">Mode global</option>' +
-      copros.map(c => {
-        const label = [c.code || c.copro_code || c.optipro_ref || '', c.name || '']
-          .filter(Boolean).join(' — ') || 'Copropriété';
-        return `<option value="${esc(c.id)}">${esc(label)}</option>`;
+  function managerOptions(selected = '') {
+    return '<option value="">Aucun gestionnaire</option>' + list('userProfiles')
+      .filter((u) => u.active !== false)
+      .map((u) => {
+        const label = u.full_name || u.display_name || u.name || u.email || 'Utilisateur';
+        return `<option value="${esc(u.id)}" ${String(u.id) === String(selected) ? 'selected' : ''}>${esc(label)}</option>`;
       }).join('');
-    select.value = copros.some(c => String(c.id) === String(selected)) ? String(selected) : '';
-    if (select.value) st.activeCoproId = select.value;
-    syncFiscalContext(true);
   }
 
-  function syncTopUniverse(){
-    const source = document.querySelector('.nav [data-v331-module].active');
-    const moduleId = source?.dataset?.v331Module || 'home';
-    document.querySelectorAll('[data-w332-module]').forEach(button => {
-      button.classList.toggle('active', button.dataset.w332Module === moduleId);
-    });
+  function addressFields(prefix, record = {}) {
+    return `<div class="v344-address-grid">
+      <label class="v344-street">Rue<input id="${prefix}Street" value="${esc(record.street || '')}" autocomplete="street-address"></label>
+      <label>Numéro<input id="${prefix}StreetNumber" value="${esc(record.street_number || '')}"></label>
+      <label>Code postal<input id="${prefix}PostalCode" value="${esc(record.postal_code || '')}" inputmode="numeric"></label>
+      <label>Ville<input id="${prefix}City" value="${esc(record.city || '')}"></label>
+      <label>Pays<input id="${prefix}Country" value="${esc(record.country || 'Belgique')}"></label>
+    </div>`;
   }
 
-  function installStableRefreshHooks(){
-    try {
-      if (typeof renderAll === 'function' && !renderAll.__v34) {
-        const previous = renderAll;
-        const wrapped = function(){
-          const result = previous.apply(this, arguments);
-          if (!wrapped.pending) {
-            wrapped.pending = true;
-            setTimeout(() => {
-              wrapped.pending = false;
-              refreshCoproContext();
-              syncUser();
-              syncTopUniverse();
-              enhanceAccountLookup();
-            }, 0);
-          }
-          return result;
-        };
-        wrapped.__v34 = true;
-        renderAll = wrapped;
-      }
-      if (typeof loadAll === 'function' && !loadAll.__v34) {
-        const previousLoad = loadAll;
-        const wrappedLoad = async function(){
-          const result = await previousLoad.apply(this, arguments);
-          refreshCoproContext();
-          syncUser();
-          return result;
-        };
-        wrappedLoad.__v34 = true;
-        loadAll = wrappedLoad;
-      }
-    } catch (error) {
-      console.warn('V34 refresh hooks', error);
-    }
-  }
-
-  function profileList(){
-    const st = appState();
-    return st?.userProfiles || st?.profiles || st?.users || [];
-  }
-  function managerId(copro){ return copro?.manager_user_id || copro?.manager_id || ''; }
-  function populateManagers(){
-    const select = $('w332ManagerSelect'); if (!select) return;
-    const selected = localStorage.getItem('wapi_one_manager_filter_user_id') || '';
-    select.innerHTML = '<option value="">Toutes les copropriétés</option>' + profileList().filter(p => p.active !== false).map(p => `<option value="${esc(p.id)}">${esc(p.full_name || p.name || p.email || 'Utilisateur')}</option>`).join('');
-    select.value = selected;
-    select.addEventListener('change', () => applyManagerFilter(select.value));
-    select.addEventListener('focus', () => {
-      const current = select.value;
-      select.innerHTML = '<option value="">Toutes les copropriétés</option>' + profileList().filter(p => p.active !== false).map(p => `<option value="${esc(p.id)}">${esc(p.full_name || p.name || p.email || 'Utilisateur')}</option>`).join('');
-      select.value = current;
-    });
-    applyManagerFilter(selected, false);
-    setTimeout(() => {
-      const current = select.value;
-      select.innerHTML = '<option value="">Toutes les copropriétés</option>' + profileList().filter(p => p.active !== false).map(p => `<option value="${esc(p.id)}">${esc(p.full_name || p.name || p.email || 'Utilisateur')}</option>`).join('');
-      select.value = current;
-      applyManagerFilter(current, false);
-    }, 1200);
-  }
-  function applyManagerFilter(id, rerender=true){
-    if (!window.state) return;
-    window.state.managerFilterUserId = id || '';
-    if (id) localStorage.setItem('wapi_one_manager_filter_user_id', id); else localStorage.removeItem('wapi_one_manager_filter_user_id');
-    const all = window.state.copros || [];
-    const allowed = id ? all.filter(c => String(managerId(c)) === String(id)) : all;
-    const activeSelect = $('activeCoproSelect');
-    if (activeSelect) {
-      const current = window.state.activeCoproId || '';
-      activeSelect.innerHTML = '<option value="">Mode global</option>' + allowed.map(c => `<option value="${esc(c.id)}">${esc(c.name || c.code || 'Copropriété')}</option>`).join('');
-      if (current && allowed.some(c => String(c.id) === String(current))) activeSelect.value = current;
-      else if (current && id) {
-        window.state.activeCoproId = '';
-        activeSelect.value = '';
-      }
-    }
-    document.querySelectorAll('select[data-v3231-manager-filter], .v3231-manager-filter-row, .manager-filter-box, #wapiAdvancedFiltersBtn').forEach(el => el.closest('.v3231-manager-filter-row,.manager-filter-box')?.remove() || (el.style.display='none'));
-    if (rerender && typeof window.renderAll === 'function') window.renderAll();
-    if (id && !allowed.length) showManagerEmpty();
-  }
-  function showManagerEmpty(){
-    const view = document.querySelector('.view:not(.hidden) .card');
-    if (!view || view.querySelector('.w332-manager-empty')) return;
-    view.insertAdjacentHTML('afterbegin','<div class="w332-manager-empty">Aucune copropriété n’est attribuée à ce gestionnaire.</div>');
-  }
-  function syncUser(){
-    const user = appUser();
-    const email = user?.email || $('userPill')?.textContent || '';
-    const profile = profileList().find(p => String(p.id) === String(user?.id)) || {};
-    if ($('w332UserName')) $('w332UserName').textContent = profile.full_name || profile.name || 'Utilisateur connecté';
-    if ($('w332UserEmail')) $('w332UserEmail').textContent = email;
-  }
-
-  function closeGlobalModal(){
-    const backdrop = $('globalModalBackdrop');
-    const modal = $('globalModal');
-    if (!backdrop) return;
-    backdrop.classList.add('hidden');
-    backdrop.classList.remove('copro-settings-backdrop');
-    /* Ne jamais conserver display:none/pointer-events:none en style inline :
-       openAppModal retire la classe hidden lors de la prochaine ouverture. */
-    backdrop.style.removeProperty('display');
-    backdrop.style.removeProperty('pointer-events');
-    modal?.classList.remove('copro-settings-modal');
-  }
-
-  function bindModalControls(){
-    $('globalModalCloseBtn')?.addEventListener('click', closeGlobalModal);
-    document.addEventListener('click', event => {
-      if (event.target.closest('[data-modal-close]')) closeGlobalModal();
-    });
-  }
-
-  function accountRows(){
-    const code = ($('v28AccountLookupCode')?.value || '').trim().split(/\s+-\s+/)[0];
-    const coproId = appState()?.activeCoproId || $('v28AccountLookupCopro')?.value || '';
-    const from = $('v28AccountLookupFrom')?.value || '0000-01-01';
-    const to = $('v28AccountLookupTo')?.value || '9999-12-31';
-    if (typeof window.v31AccountingRows !== 'function') return [];
-    return window.v31AccountingRows().filter(r => (!code || String(r.code) === code || String(r.code).startsWith(code)) && (!coproId || String(r.copro_id) === String(coproId)) && (!r.date || (r.date >= from && r.date <= to))).sort((a,b) => String(a.date).localeCompare(String(b.date)));
-  }
-  function enhanceAccountLookup(){
-    const input = $('v28AccountLookupCode'), view = $('accountLookupView');
-    if (!input || !view || $('w332AccountSelect')) return;
-    const form = input.closest('.form-grid');
-    input.setAttribute('list','w332AccountDatalist');
-    input.placeholder = 'Tapez un numéro ou un libellé…';
-    const list = document.createElement('datalist'); list.id='w332AccountDatalist'; document.body.appendChild(list);
-    const select = document.createElement('select'); select.id='w332AccountSelect'; select.innerHTML='<option value="">Afficher tous les comptes…</option>';
-    const label = document.createElement('label'); label.textContent='Liste complète'; label.appendChild(select); form?.insertBefore(label, input.closest('label')?.nextSibling || null);
-    const toolbar = view.querySelector('.toolbar');
-    const pdf = document.createElement('button'); pdf.type='button'; pdf.className='btn secondary'; pdf.textContent='Exporter le compte en PDF'; pdf.addEventListener('click', exportAccountPdf); toolbar?.appendChild(pdf);
-    const refreshOptions = () => {
-      const accounts = appState()?.accounts || [];
-      list.innerHTML = accounts.map(a => `<option value="${esc(a.code)} - ${esc(a.label)}"></option>`).join('');
-      select.innerHTML = '<option value="">Afficher tous les comptes…</option>' + accounts.map(a => `<option value="${esc(a.code)}">${esc(a.code)} — ${esc(a.label)}</option>`).join('');
+  function readAddress(prefix) {
+    const out = {
+      street: byId(prefix + 'Street')?.value.trim() || null,
+      street_number: byId(prefix + 'StreetNumber')?.value.trim() || null,
+      postal_code: byId(prefix + 'PostalCode')?.value.trim() || null,
+      city: byId(prefix + 'City')?.value.trim() || null,
+      country: byId(prefix + 'Country')?.value.trim() || 'Belgique'
     };
-    refreshOptions();
-    select.addEventListener('change', () => { input.value=select.value; input.dispatchEvent(new Event('input',{bubbles:true})); });
-    input.addEventListener('change', () => { const found=(appState()?.accounts||[]).find(a => input.value.includes(a.code)); if(found){input.value=found.code;select.value=found.code;} });
-    setTimeout(refreshOptions,1000);
+    out.address = fullAddress(out);
+    return out;
   }
-  function printable(title, body, extraCss=''){
-    const popup = window.open('','_blank','noopener,noreferrer');
-    if (!popup) return alert('Le navigateur a bloqué la fenêtre PDF.');
-    popup.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;color:#1d2435;margin:20mm}h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;color:#5f6678;margin:0 0 16px}table{width:100%;border-collapse:collapse}th,td{padding:7px;border-bottom:1px solid #ddd;text-align:left}th{background:#f3f4f8}.num{text-align:right}.summary{display:flex;gap:18px;margin:14px 0;font-weight:bold}${extraCss}</style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
-    popup.document.close();
+
+  /* Assistant de création d'une copropriété et de sa structure initiale. */
+  let wizard = null;
+  function newWizard() {
+    const year = new Date().getFullYear();
+    return {
+      step: 1,
+      copro: { name: '', code: '', bce: '', street: '', street_number: '', postal_code: '', city: '', country: 'Belgique', manager_user_id: '' },
+      year: { create: true, label: String(year), code: `EX${String(year).slice(-2)}`, starts_on: `${year}-01-01`, ends_on: `${year}-12-31` },
+      lots: []
+    };
   }
-  function exportAccountPdf(){
-    const raw = ($('v28AccountLookupCode')?.value || '').trim();
-    const code = raw.split(/\s+-\s+/)[0];
-    const account = (appState()?.accounts || []).find(a => String(a.code) === code) || {};
-    if (!code) return alert('Sélectionnez un compte comptable.');
-    const renderedTable = $('v28AccountLookupTable')?.innerHTML || '<p>Aucune écriture.</p>';
-    printable(`Compte ${code}`, `<h1>Compte ${esc(code)}</h1><h2>${esc(account.label || '')}</h2><div class="summary"><span>Débit : ${esc($('v28AccountDebit')?.textContent || '')}</span><span>Crédit : ${esc($('v28AccountCredit')?.textContent || '')}</span><span>Solde : ${esc($('v28AccountSolde')?.textContent || '')}</span></div>${renderedTable}`);
+  function wizardSteps() {
+    return ['Copropriété', 'Exercice', 'Lots', 'Confirmation'].map((label, i) =>
+      `<span class="v344-step ${wizard.step === i + 1 ? 'active' : ''} ${wizard.step > i + 1 ? 'done' : ''}"><b>${i + 1}</b>${label}</span>`
+    ).join('');
   }
-  function exportBilanSideBySide(){
-    const actif=$('bilanActifTable')?.innerHTML||'', passif=$('bilanPassifTable')?.innerHTML||'', summary=$('bilanSummary')?.innerHTML||'';
-    const st = appState();
-    printable('Bilan comptable', `<h1>Bilan comptable</h1><h2>${esc((st?.copros||[]).find(c=>String(c.id)===String(st?.activeCoproId))?.name || 'Vue globale')}</h2><div class="bilan"><section><h3>ACTIF</h3>${actif}</section><section><h3>PASSIF</h3>${passif}</section></div><div class="summary">${summary}</div>`,'.bilan{display:grid;grid-template-columns:1fr 1fr;gap:10mm;align-items:start}.bilan h3{text-align:center;background:#172033;color:white;padding:8px;margin:0}.bilan button{display:none}.summary button{display:none}');
+  function saveWizardScreen() {
+    if (!wizard) return;
+    if (wizard.step === 1) {
+      wizard.copro = {
+        ...wizard.copro,
+        name: byId('v344NewName')?.value.trim() || '',
+        code: byId('v344NewCode')?.value.trim().toUpperCase() || '',
+        bce: byId('v344NewBce')?.value.trim() || '',
+        manager_user_id: byId('v344NewManager')?.value || '',
+        ...readAddress('v344New')
+      };
+    } else if (wizard.step === 2) {
+      wizard.year = {
+        create: byId('v344CreateYear')?.checked !== false,
+        label: byId('v344YearLabel')?.value.trim() || '',
+        code: byId('v344YearCode')?.value.trim().toUpperCase() || '',
+        starts_on: byId('v344YearStart')?.value || '',
+        ends_on: byId('v344YearEnd')?.value || ''
+      };
+    } else if (wizard.step === 3) {
+      wizard.lots = [...document.querySelectorAll('[data-v344-lot-row]')].map((row) => ({
+        lot_number: row.querySelector('[data-field="number"]').value.trim(),
+        lot_type: row.querySelector('[data-field="type"]').value,
+        quotities: Number(row.querySelector('[data-field="quotities"]').value || 0)
+      })).filter((x) => x.lot_number);
+    }
   }
-  document.addEventListener('click', event => {
-    const bilanBtn = event.target.closest('[data-v31-bilan-pdf],[data-v30-bilan-pdf],#v29BilanPdfBtn');
-    if (bilanBtn) { event.preventDefault(); event.stopImmediatePropagation(); exportBilanSideBySide(); }
-    if (event.target.closest('[data-v29-close-year]')) setTimeout(() => syncFiscalContext(false), 1200);
+  function wizardBody() {
+    let content = '';
+    if (wizard.step === 1) {
+      content = `<div class="form-grid">
+        <label>Nom de la copropriété<input id="v344NewName" value="${esc(wizard.copro.name)}" placeholder="Résidence..." autofocus></label>
+        <label>Code copro<input id="v344NewCode" value="${esc(wizard.copro.code)}" placeholder="ALB" maxlength="12"></label>
+        <label>BCE<input id="v344NewBce" value="${esc(wizard.copro.bce)}" placeholder="BE 0..."></label>
+        <label>Gestionnaire<select id="v344NewManager">${managerOptions(wizard.copro.manager_user_id)}</select></label>
+      </div><h3>Adresse</h3>${addressFields('v344New', wizard.copro)}`;
+    } else if (wizard.step === 2) {
+      content = `<label class="v344-check"><input id="v344CreateYear" type="checkbox" ${wizard.year.create ? 'checked' : ''}> Créer immédiatement le premier exercice comptable</label>
+        <div class="form-grid">
+          <label>Libellé<input id="v344YearLabel" value="${esc(wizard.year.label)}"></label>
+          <label>Code exercice<input id="v344YearCode" value="${esc(wizard.year.code)}" placeholder="EX26"></label>
+          <label>Date de début<input id="v344YearStart" type="date" value="${esc(wizard.year.starts_on)}"></label>
+          <label>Date de fin<input id="v344YearEnd" type="date" value="${esc(wizard.year.ends_on)}"></label>
+        </div><div class="notice">L'exercice apparaîtra aussi dans <strong>Exercices comptables</strong>. Une clé « Quotités générales » sera créée automatiquement.</div>`;
+    } else if (wizard.step === 3) {
+      content = `<div class="v344-lot-generator">
+        <label>Type<select id="v344LotType">${['Appartement','Parking','Garage','Cave','Commerce','Autre'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+        <label>Préfixe<input id="v344LotPrefix" value="A"></label>
+        <label>Nombre<input id="v344LotCount" type="number" min="1" value="5"></label>
+        <label>Départ<input id="v344LotStart" type="number" min="0" value="1"></label>
+        <button class="btn secondary" id="v344GenerateLots" type="button">Ajouter les lots</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>N° lot</th><th>Type</th><th>Quotités</th><th></th></tr></thead>
+      <tbody id="v344LotsBody">${wizard.lots.map((lot, i) => lotRow(lot, i)).join('') || '<tr class="v344-empty"><td colspan="4">Tu peux créer les lots maintenant ou les compléter plus tard.</td></tr>'}</tbody></table></div>`;
+    } else {
+      const totalQ = wizard.lots.reduce((sum, x) => sum + Number(x.quotities || 0), 0);
+      content = `<div class="v344-summary">
+        <div><span>Copropriété</span><strong>${esc(wizard.copro.code)} — ${esc(wizard.copro.name)}</strong><small>${esc(fullAddress(wizard.copro))}</small></div>
+        <div><span>Exercice</span><strong>${wizard.year.create ? esc(`${wizard.year.code} — ${wizard.year.label}`) : 'À créer plus tard'}</strong></div>
+        <div><span>Structure</span><strong>${wizard.lots.length} lot(s)</strong><small>${totalQ.toLocaleString('fr-BE')} quotités encodées</small></div>
+      </div><div class="notice">Après création, tu pourras compléter les propriétaires, les clés spéciales et les coordonnées bancaires depuis les modules habituels.</div>`;
+    }
+    return `<div class="v344-wizard"><div class="v344-steps">${wizardSteps()}</div><div class="v344-step-content">${content}</div></div>`;
+  }
+  function lotRow(lot, i) {
+    return `<tr data-v344-lot-row="${i}"><td><input data-field="number" value="${esc(lot.lot_number)}"></td>
+      <td><select data-field="type">${['Appartement','Parking','Garage','Cave','Commerce','Autre'].map(x=>`<option ${x===lot.lot_type?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input data-field="quotities" type="number" min="0" step="0.0001" value="${Number(lot.quotities || 0)}"></td>
+      <td><button class="btn danger small" type="button" data-v344-remove-lot="${i}">Supprimer</button></td></tr>`;
+  }
+  function showWizard() {
+    const footer = `<button class="btn secondary" type="button" data-modal-close>Annuler</button>
+      ${wizard.step > 1 ? '<button class="btn secondary" id="v344Prev" type="button">Retour</button>' : ''}
+      <button class="btn" id="${wizard.step === 4 ? 'v344CreateCopro' : 'v344Next'}" type="button">${wizard.step === 4 ? 'Créer la copropriété' : 'Continuer'}</button>`;
+    modal('Nouvelle copropriété', wizardBody(), footer, 'Créer l’essentiel en une seule fois');
+    byId('v344Prev')?.addEventListener('click', () => { saveWizardScreen(); wizard.step--; showWizard(); });
+    byId('v344Next')?.addEventListener('click', () => {
+      saveWizardScreen();
+      if (wizard.step === 1 && (!wizard.copro.name || !wizard.copro.code)) return alert('Le nom et le code copro sont obligatoires.');
+      if (wizard.step === 2 && wizard.year.create && (!wizard.year.code || !wizard.year.starts_on || !wizard.year.ends_on)) return alert('Complète le code et les dates de l’exercice.');
+      wizard.step++; showWizard();
+    });
+    byId('v344GenerateLots')?.addEventListener('click', () => {
+      saveWizardScreen();
+      const type = byId('v344LotType').value, prefix = byId('v344LotPrefix').value.trim();
+      const count = Math.max(1, Number(byId('v344LotCount').value || 1)), start = Number(byId('v344LotStart').value || 1);
+      for (let i = 0; i < count; i++) wizard.lots.push({ lot_number: `${prefix}${start + i}`, lot_type: type, quotities: 0 });
+      showWizard();
+    });
+    byId('v344CreateCopro')?.addEventListener('click', createCoproStructure);
+  }
+  async function createCoproStructure() {
+    const manager = list('userProfiles').find((u) => String(u.id) === String(wizard.copro.manager_user_id));
+    const pCopro = { ...wizard.copro, manager_name: manager?.full_name || manager?.display_name || manager?.email || '' };
+    const button = byId('v344CreateCopro'); button.disabled = true; button.textContent = 'Création…';
+    const { data, error } = await db().rpc('wapi_create_copro_structure', { p_copro: pCopro, p_year: wizard.year, p_lots: wizard.lots });
+    if (error) { button.disabled = false; button.textContent = 'Créer la copropriété'; return alert(error.message + '\n\nVérifie que la migration SQL V34.4 a bien été exécutée.'); }
+    if (typeof window.closeAppModal === 'function') window.closeAppModal();
+    if (appState()) {
+      state.activeCoproId = data?.copro_id || '';
+      state.activeFiscalYearId = data?.fiscal_year_id || '';
+      localStorage.setItem('compta_active_copro_id', state.activeCoproId);
+    }
+    await reload();
+    if (typeof window.switchToView === 'function') window.switchToView('copros');
+  }
+
+  /* Réglages copro : adresse structurée et création d'exercice. */
+  function enhanceSettings() {
+    const old = byId('v33CoproAddress');
+    if (!old || byId('v344SettingsStreet')) return;
+    const copro = list('copros').find((c) => String(c.id) === String(currentCoproId())) || {};
+    const label = old.closest('label');
+    const wrap = document.createElement('div');
+    wrap.className = 'v344-address-section';
+    wrap.innerHTML = `<h3>Adresse structurée</h3>${addressFields('v344Settings', copro)}`;
+    label.replaceWith(wrap);
+    const year = byId('v33FiscalYearSelect');
+    if (year && !byId('v344NewYearBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'v344NewYearBtn'; btn.type = 'button'; btn.className = 'btn secondary small'; btn.textContent = '+ Nouvel exercice';
+      year.closest('label').appendChild(btn);
+      btn.addEventListener('click', openNewYear);
+    }
+  }
+  function openNewYear() {
+    const id = currentCoproId(); if (!id) return alert('Sélectionne une copropriété.');
+    const year = new Date().getFullYear() + 1;
+    modal('Créer un exercice', `<div class="form-grid">
+      <label>Libellé<input id="v344NyLabel" value="${year}"></label><label>Code<input id="v344NyCode" value="EX${String(year).slice(-2)}"></label>
+      <label>Début<input id="v344NyStart" type="date" value="${year}-01-01"></label><label>Fin<input id="v344NyEnd" type="date" value="${year}-12-31"></label>
+    </div>`, '<button class="btn secondary" type="button" data-modal-close>Annuler</button><button class="btn" id="v344SaveYear" type="button">Créer</button>', 'Disponible immédiatement dans Exercices comptables');
+    byId('v344SaveYear').onclick = async () => {
+      const payload = { copro_id:id, label:byId('v344NyLabel').value.trim(), code:byId('v344NyCode').value.trim().toUpperCase(), year_code:byId('v344NyCode').value.trim().toUpperCase(), starts_on:byId('v344NyStart').value, ends_on:byId('v344NyEnd').value, status:'open', created_by:userId() };
+      const {data,error} = await db().from('compta_fiscal_years').insert(payload).select().single();
+      if(error) return alert(error.message);
+      if(appState()) state.activeFiscalYearId = data.id;
+      await reload();
+      window.openCoproSettingsPopupV33?.(id);
+    };
+  }
+  async function saveSettingsStructured(coproId) {
+    const managerId = byId('v33CoproManagerUser')?.value || null;
+    const manager = list('userProfiles').find((u) => String(u.id) === String(managerId));
+    const payload = {
+      code: byId('v33CoproCode').value.trim().toUpperCase(), name: byId('v33CoproName').value.trim(),
+      bce: byId('v33CoproBce').value.trim() || null, manager_user_id: managerId,
+      manager_name: manager?.full_name || manager?.display_name || manager?.email || '',
+      ...readAddress('v344Settings')
+    };
+    if (!payload.name) return alert('Le nom est obligatoire.');
+    const {error} = await db().from('compta_copros').update(payload).eq('id', coproId);
+    if(error) return alert(error.message);
+    const yearId = byId('v33FiscalYearSelect')?.value;
+    if(yearId) {
+      const code = byId('v33FiscalYearCode')?.value.trim().toUpperCase() || '';
+      const {error:yearError} = await db().from('compta_fiscal_years').update({code,year_code:code,last_internal_invoice_no:Number(byId('v33LastInternalInvoiceNo')?.value||0)}).eq('id',yearId);
+      if(yearError) return alert(yearError.message);
+    }
+    await reload();
+    alert('Réglages enregistrés.');
+    window.openCoproSettingsPopupV33?.(coproId);
+  }
+
+  /* Tiers : adresses structurées, VCS et suppression sécurisée. */
+  function enhanceIdentityModal() {
+    const old = byId('modalIdentityAddress');
+    if (!old || byId('v344IdentityStreet')) return;
+    const type = window.state?.selectedIdentityType || 'owner';
+    const id = window.state?.selectedIdentityId;
+    const source = type === 'supplier' ? list('suppliers') : type === 'occupant' ? list('occupants') : list('owners');
+    const record = source.find((x) => String(x.id) === String(id)) || {};
+    const label = old.closest('label'), wrap = document.createElement('div');
+    wrap.className = 'v344-address-section'; wrap.innerHTML = `<h3>Adresse structurée</h3>${addressFields('v344Identity', record)}`;
+    label.replaceWith(wrap);
+    if(type === 'owner') {
+      wrap.insertAdjacentHTML('afterend', `<label class="v344-vcs">Communication structurée VCS<input value="${esc(record.vcs || 'Générée automatiquement à l’enregistrement')}" readonly></label>`);
+      if(id && !byId('v344DeleteOwner')) {
+        byId('globalModalFooter').insertAdjacentHTML('afterbegin', '<button class="btn danger" id="v344DeleteOwner" type="button">Supprimer le copropriétaire</button>');
+        byId('v344DeleteOwner').onclick = () => deleteOwner(id);
+      }
+    }
+  }
+  async function saveIdentityStructured() {
+    const type=state.selectedIdentityType || 'owner', id=state.selectedIdentityId;
+    const name=byId('modalIdentityName').value.trim(); if(!name) return alert('Indique le nom / la dénomination.');
+    let table='compta_owners';
+    const payload={email:byId('modalIdentityEmail').value.trim()||null,phone:byId('modalIdentityPhone').value.trim()||null,iban:byId('modalIdentityIban').value.trim()||null,...readAddress('v344Identity')};
+    if(type==='owner'){payload.display_name=name;payload.delivery_preference=byId('modalIdentityDeliveryPreference')?.value||'email';}
+    if(type==='supplier'){table='compta_suppliers';payload.name=name;}
+    if(type==='occupant'){table='compta_occupants';payload.display_name=name;}
+    if(type!=='supplier'){payload.copro_id=byId('modalIdentityCopro')?.value||currentCoproId()||null;if(!payload.copro_id)return alert('Choisis une copropriété.');}
+    if(!id) payload.created_by=userId();
+    const request=id?db().from(table).update(payload).eq('id',id):db().from(table).insert(payload);
+    const {error}=await request;if(error)return alert(error.message);
+    window.closeAppModal?.();await reload();
+  }
+  async function deleteOwner(id) {
+    if(!confirm('Supprimer ce copropriétaire ? Cette action sera refusée si un lot ou une opération comptable lui est lié.')) return;
+    const {data,error}=await db().rpc('wapi_delete_owner_if_unused',{p_owner_id:id});
+    if(error) return alert(error.message);
+    if(!data?.deleted) return alert(`Suppression impossible : ${data?.lots||0} lot(s) et ${data?.accounting||0} opération(s) comptable(s) sont liés.`);
+    window.closeAppModal?.();await reload();
+  }
+  function renderOwnersV344() {
+    const host=byId('ownersTable');if(!host)return;
+    const type=state.selectedIdentityType||'owner', copro=currentCoproId();
+    let rows=type==='supplier'?list('suppliers').map(x=>({...x,_name:x.name,_type:'supplier'})):type==='occupant'?list('occupants').filter(x=>!copro||x.copro_id===copro).map(x=>({...x,_name:x.display_name,_type:'occupant'})):list('owners').filter(x=>!copro||x.copro_id===copro||list('lots').some(l=>l.copro_id===copro&&l.owner_id===x.id)).map(x=>({...x,_name:x.display_name,_type:'owner'}));
+    const vcsToolbar = type === 'owner' ? `<div class="v344-vcs-actions"><span class="v344-vcs-help">Les communications existantes sont conservées.</span><button class="btn secondary" id="v344GenerateAllVcs" type="button">Générer les VCS manquantes</button></div>` : '';
+    host.innerHTML=`<div class="v344-tier-toolbar"><div class="summary-line"><span class="badge">${rows.length} tiers</span></div>${vcsToolbar}</div><div class="table-wrap"><table><thead><tr><th>Code</th><th>Nom</th>${type==='owner'?'<th>Communication VCS</th>':''}<th>Email</th><th>Adresse</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(x=>`<tr><td><span class="code-pill">${esc(type==='supplier'?x.supplier_code:x.owner_code||'—')}</span></td><td>${esc(x._name)}</td>${type==='owner'?`<td><code>${esc(x.vcs||'À générer')}</code></td>`:''}<td>${esc(x.email||'')}</td><td>${esc(fullAddress(x)||x.address||'')}</td><td>${x.active===false?'<span class="badge">Inactif</span>':'<span class="badge ok">Actif</span>'}</td><td><button class="btn secondary small" data-open-identity="${x._type}|${x.id}">Ouvrir</button></td></tr>`).join('')||`<tr><td colspan="${type==='owner'?7:6}">Aucun tiers.</td></tr>`}</tbody></table></div>`;
+  }
+  async function generateMissingVcs() {
+    const button = byId('v344GenerateAllVcs');
+    if (button) { button.disabled = true; button.textContent = 'Génération…'; }
+    const {data,error} = await db().rpc('wapi_generate_missing_owner_vcs', {p_copro_id: currentCoproId() || null});
+    if(error) {
+      if(button){button.disabled=false;button.textContent='Générer les VCS manquantes';}
+      return alert(error.message + '\n\nExécute la migration SQL 031 de la V34.4.1.');
+    }
+    await reload();
+    renderOwnersV344();
+    alert(`${Number(data?.generated || 0)} VCS générée(s). ${Number(data?.already_present || 0)} communication(s) déjà présente(s) ont été conservées.`);
+  }
+
+  /* Copropriétés actives / archivées. */
+  let coproTab='active';
+  function filteredCopros() {
+    const base=typeof window.v33FilteredCopros==='function'?window.v33FilteredCopros():list('copros');
+    return base.filter(c=>coproTab==='archived'?c.active===false:c.active!==false);
+  }
+  function renderCoprosV344() {
+    const host=byId('coprosTable');if(!host)return;
+    const active=list('copros').filter(c=>c.active!==false).length, archived=list('copros').filter(c=>c.active===false).length, rows=filteredCopros();
+    host.innerHTML=`<div class="v344-copro-tabs"><button class="${coproTab==='active'?'active':''}" data-v344-copro-tab="active">Actives <b>${active}</b></button><button class="${coproTab==='archived'?'active':''}" data-v344-copro-tab="archived">Archivées <b>${archived}</b></button></div>
+    <div class="table-wrap"><table><thead><tr><th>Code</th><th>Nom</th><th>Adresse</th><th>Gestionnaire</th><th>Statut</th><th>Actions</th></tr></thead><tbody>${rows.map(c=>`<tr><td><span class="code-pill">${esc(c.code||'—')}</span></td><td><strong>${esc(c.name)}</strong></td><td>${esc(fullAddress(c)||c.address||'')}</td><td>${esc(c.manager_name||'Non attribué')}</td><td>${c.active===false?'<span class="badge">Archivée</span>':'<span class="badge ok">Active</span>'}</td><td class="v344-actions">${c.active!==false?`<button class="btn small" data-enter-copro="${c.id}">Entrer</button>`:''}<button class="btn secondary small" data-open-copro-settings="${c.id}">Réglages</button><button class="btn secondary small" data-v344-archive="${c.id}|${c.active===false?'restore':'archive'}">${c.active===false?'Désarchiver':'Archiver'}</button></td></tr>`).join('')||'<tr><td colspan="6">Aucune copropriété dans cette liste.</td></tr>'}</tbody></table></div>`;
+  }
+  async function archiveCopro(id, restore) {
+    const copro=list('copros').find(c=>String(c.id)===String(id));if(!copro)return;
+    if(!confirm(`${restore?'Désarchiver':'Archiver'} « ${copro.name} » ?`))return;
+    const payload=restore?{active:true,archived_at:null,archived_by:null}:{active:false,archived_at:new Date().toISOString(),archived_by:userId()};
+    const {error}=await db().from('compta_copros').update(payload).eq('id',id);if(error)return alert(error.message);
+    if(!restore&&String(currentCoproId())===String(id)){state.activeCoproId='';localStorage.removeItem('compta_active_copro_id');}
+    await reload();renderCoprosV344();
+  }
+  function refreshActiveCoproSelect() {
+    const select=byId('activeCoproSelect');if(!select)return;
+    const selected=state.activeCoproId||select.value||'';
+    const active=list('copros').filter(c=>c.active!==false);
+    select.innerHTML='<option value="">Mode global / toutes les copros</option>'+active.map(c=>`<option value="${esc(c.id)}">${esc([c.code,c.name].filter(Boolean).join(' — '))}</option>`).join('');
+    select.value=active.some(c=>String(c.id)===String(selected))?selected:'';
+  }
+
+  document.addEventListener('click',(e)=>{
+    if(e.target.closest('#saveCoproBtn')){e.preventDefault();e.stopImmediatePropagation();wizard=newWizard();showWizard();return;}
+    if(e.target.closest('#v344GenerateAllVcs')){e.preventDefault();e.stopImmediatePropagation();generateMissingVcs();return;}
+    const remove=e.target.closest('[data-v344-remove-lot]');if(remove){saveWizardScreen();wizard.lots.splice(Number(remove.dataset.v344RemoveLot),1);showWizard();return;}
+    const tab=e.target.closest('[data-v344-copro-tab]');if(tab){coproTab=tab.dataset.v344CoproTab;renderCoprosV344();return;}
+    const archive=e.target.closest('[data-v344-archive]');if(archive){const[id,action]=archive.dataset.v344Archive.split('|');archiveCopro(id,action==='restore');return;}
+    if(e.target.closest('[data-open-identity]'))setTimeout(enhanceIdentityModal,0);
+    if(e.target.closest('[data-open-copro-settings],#activeCoproSettingsBtn,[data-v322-copro-settings]'))setTimeout(enhanceSettings,0);
+    if(e.target.closest('#v33SaveCoproSettingsBtn')&&byId('v344SettingsStreet')){e.preventDefault();e.stopImmediatePropagation();saveSettingsStructured(currentCoproId());}
+    if(e.target.closest('#modalSaveIdentityBtn')&&byId('v344IdentityStreet')){e.preventDefault();e.stopImmediatePropagation();saveIdentityStructured();}
+  },true);
+
+  // Le gestionnaire de réglages historique écoute déjà en phase de capture
+  // sur document. L'écoute au niveau window permet d'améliorer le popup
+  // après son ouverture sans réintroduire de surveillance permanente.
+  window.addEventListener('click', (e) => {
+    if (e.target.closest?.('[data-open-copro-settings],#activeCoproSettingsBtn,[data-v322-copro-settings]')) {
+      setTimeout(enhanceSettings, 30);
+    }
   }, true);
 
-  function init(){
-    const st = appState();
-    if (st) st.managerFilterUserId = '';
-    try { localStorage.removeItem('wapi_one_manager_filter_user_id'); } catch (_) {}
-    buildTopNavigation();
-    installStableRefreshHooks();
-    bindModalControls();
-    try { if (typeof renderActiveCoproContext === 'function') renderActiveCoproContext(); } catch (_) {}
-    refreshCoproContext();
-    enhanceAccountLookup();
-    document.body.classList.remove('wapi-show-module-filters');
-    const version = document.createElement('span'); version.className='badge'; version.textContent='V34.4.1'; document.querySelector('.w332-page-head')?.appendChild(version);
-    // L'ancien moteur termine un chargement différé des profils ; on réaffirme
-    // une seule fois la version et le contexte, sans observateur ni intervalle.
-    setTimeout(() => {
-      document.title = 'WAPI One — V34.4.1';
-      refreshCoproContext();
-      syncTopUniverse();
-    }, 1600);
+  function install() {
+    setVersion();refreshActiveCoproSelect();
+    const modalBody = byId('globalModalBody');
+    if (modalBody && !modalBody.dataset.v344Observed) {
+      modalBody.dataset.v344Observed = 'true';
+      const observer = new MutationObserver(() => {
+        if (byId('v33CoproAddress') && !byId('v344SettingsStreet')) enhanceSettings();
+        if (byId('modalIdentityAddress') && !byId('v344IdentityStreet')) enhanceIdentityModal();
+      });
+      observer.observe(modalBody, { childList: true, subtree: true });
+    }
+    window.renderCopros=renderCoprosV344;window.v33RenderCoprosV322=renderCoprosV344;
+    window.renderOwners=renderOwnersV344;
+    const oldRender=window.renderAll;
+    if(typeof oldRender==='function'&&!oldRender.__v344){const wrapped=function(){const out=oldRender.apply(this,arguments);setTimeout(()=>{refreshActiveCoproSelect();renderCoprosV344();renderOwnersV344();setVersion();},0);return out;};wrapped.__v344=true;window.renderAll=wrapped;}
+    renderCoprosV344();renderOwnersV344();
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init,0), {once:true});
-  else setTimeout(init,0);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0));else setTimeout(install,0);
 })();
