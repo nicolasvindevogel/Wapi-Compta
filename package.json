@@ -1,11 +1,11 @@
 {
   "name": "wapi-one",
-  "version": "36.10.6",
+  "version": "37.0.0",
   "private": true,
   "description": "WAPI One - gestion de coproprietes et comptabilite WAPI-SYNDIK",
   "scripts": {
     "check:syntax": "node tests/syntax-check.cjs",
-    "test:unit": "node --test tests/invoice_document.test.cjs",
+    "test:unit": "node --test tests/invoice_document.test.cjs tests/v37_accounting_core.test.cjs tests/v37_migration_contract.test.cjs",
     "test": "npm run check:syntax && npm run test:unit",
     "test:browser": "node --test tests/browser-regressions.cjs"
   },

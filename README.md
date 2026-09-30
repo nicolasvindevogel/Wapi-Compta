@@ -2,7 +2,7 @@
 
 Application de gestion de copropriétés et de comptabilité développée pour WAPI-SYNDIK.
 
-**Version du dépôt : V36.10.6**
+**Version du dépôt : V37.0.0**
 
 ## Contenu du dépôt
 
@@ -59,3 +59,10 @@ Ne jamais commiter :
 
 - `docs/AUDIT-WAPI-ONE-2026-09-30.md`
 - `docs/MIGRATION-OPTIPRO-VERS-WAPI-ONE.md`
+- `docs/V37-COMPTA-SERVEUR.md`
+
+## V37 — cœur comptable serveur
+
+La migration `sql/057_v37_compta_serveur.sql` introduit le nouveau journal comptable PostgreSQL en mode parallèle. **Elle n’est pas appliquée automatiquement** par le dépôt. Après sauvegarde Supabase, suivre `docs/V37-COMPTA-SERVEUR.md` et commencer par une seule copropriété / un seul exercice.
+
+WAPI TWO reste inchangé pendant toute la transition OptiPro → WAPI One.

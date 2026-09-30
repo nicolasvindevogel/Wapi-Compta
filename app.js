@@ -1,6 +1,6 @@
 
-window.WAPI_ONE_VERSION = 'V36.9.2';
-window.WAPI_ONE_BUILD_DATE = '2026-08-28';
+window.WAPI_ONE_VERSION = 'V37.0.0';
+window.WAPI_ONE_BUILD_DATE = '2026-09-30';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";
     const ACTIVE_COPRO_KEY = "wapi_compta_active_copro_id";
@@ -10981,6 +10981,9 @@ function updateSidebarButtons() {
     if(groupId){ const del=await supabaseClient.from('compta_entries').delete().eq('od_group_id',groupId); if(del.error) return alert(del.error.message); }
     const rows=parsed.map((line,index)=>({copro_id:coproId,journal_code:journal,entry_date:date,reference:ref,label,description:line.description,status,account_id:line.account_id,debit:line.debit,credit:line.credit,od_group_id:gid,source_type:'od',source_id:gid,created_by:currentUser?.id||null}));
     const {error}=await supabaseClient.from('compta_entries').insert(rows); if(error) return alert(error.message);
+    // V37 : l'OD historique reste enregistrée comme avant, puis est répliquée
+    // vers le journal serveur. Une erreur V37 ne bloque jamais l'encodage V36.
+    if(window.WapiAccountingV37?.syncLegacyOd){ try{ await window.WapiAccountingV37.syncLegacyOd(gid); }catch(v37Error){ console.warn('Synchronisation OD V37',v37Error); } }
     closeAppModal(); if(typeof loadEntries==='function') await loadEntries(); else if(typeof loadAll==='function') await loadAll(); v31RenderAll();
   }
 
