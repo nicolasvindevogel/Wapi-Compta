@@ -1,5 +1,5 @@
 
-window.WAPI_ONE_VERSION = 'V37.0.0';
+window.WAPI_ONE_VERSION = 'V37.0.1';
 window.WAPI_ONE_BUILD_DATE = '2026-09-30';
 
     const CONFIG_KEY = "wapi_compta_supabase_config";

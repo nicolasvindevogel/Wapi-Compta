@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { VERSION, pure } = require('../js/v37_accounting_core.js');
 
 test('V37 exposes the expected version', () => {
-  assert.equal(VERSION, '37.0.0');
+  assert.equal(VERSION, '37.0.1');
 });
 
 test('balanced entry is detected in cents', () => {

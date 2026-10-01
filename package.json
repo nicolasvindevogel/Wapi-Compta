@@ -1,6 +1,6 @@
 {
   "name": "wapi-one",
-  "version": "37.0.0",
+  "version": "37.0.1",
   "private": true,
   "description": "WAPI One - gestion de coproprietes et comptabilite WAPI-SYNDIK",
   "scripts": {

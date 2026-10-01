@@ -9,7 +9,7 @@
 })(typeof window !== 'undefined' ? window : null, function(root){
   'use strict';
 
-  const VERSION = '37.0.0';
+  const VERSION = '37.0.1';
   const MODE_KEY = 'wapi_v37_report_mode';
 
   const pure = {
@@ -279,11 +279,9 @@
     document.addEventListener('input',(event)=>{ if(event.target?.id==='v37LedgerSearch') renderLedger(); });
     document.addEventListener('click',(event)=>{ if(event.target?.id==='v37LedgerRefresh') loadLedger(); });
 
-    if(typeof renderAll==='function' && !root.__wapiV37RenderWrapped){
-      root.__wapiV37RenderWrapped=true;
-      const original=renderAll;
-      renderAll=function(){ const out=original.apply(this,arguments); setTimeout(()=>{updateModeBars(); if(runtime.mode==='server') refresh({render:true});},0); return out; };
-    }
+    // V37.0.1 : ne plus envelopper renderAll(). Le coeur V37 se rafraichit via
+    // les evenements de contexte et l'ouverture des vues comptables. Cela evite
+    // d'interferer avec les modules historiques qui reconstruisent les selecteurs.
   }
 
   function init(){
