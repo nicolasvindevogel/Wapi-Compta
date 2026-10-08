@@ -257,8 +257,8 @@
   function enhanceIdentityModal() {
     const old = byId('modalIdentityAddress');
     if (!old || byId('v344IdentityStreet')) return;
-    const type = window.state?.selectedIdentityType || 'owner';
-    const id = window.state?.selectedIdentityId;
+    const type = appState()?.selectedIdentityType || 'owner';
+    const id = appState()?.selectedIdentityId;
     const source = type === 'supplier' ? list('suppliers') : type === 'occupant' ? list('occupants') : list('owners');
     const record = source.find((x) => String(x.id) === String(id)) || {};
     const label = old.closest('label'), wrap = document.createElement('div');

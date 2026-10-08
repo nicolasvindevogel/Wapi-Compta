@@ -67,7 +67,10 @@ const base=path.resolve(__dirname,'..');
     },bytes);
     assert.equal(embedded.fields.amount,1210);assert.equal(embedded.fields.date,'2026-09-08');assert.equal(embedded.fields.due_date,'2026-10-08');assert.equal(embedded.text.split('\f').length,6);
     console.log('PASS real PDF.js: six-page PDF, amount, reference, invoice date and due date');
-    const proximusBytes=Array.from(fs.readFileSync(path.resolve(base,'..','..','outputs','facture-test-proximus-acp-concorde.pdf')));
+    const proximusDoc=await PDFDocument.create(),proximusFont=await proximusDoc.embedFont(StandardFonts.Helvetica);
+    const proximusPage=proximusDoc.addPage();
+    ['Proximus - facture de test','Facture n° TEST-PROX-2026-0914','Date facture : 14/09/2026','Échéance : 14/10/2026','Total HTVA : 99,00 EUR','Total TVA : 20,79 EUR','Total TVAC : 119,79 EUR'].forEach((text,index)=>proximusPage.drawText(text,{x:50,y:760-index*50,size:14,font:proximusFont}));
+    const proximusBytes=Array.from(await proximusDoc.save());
     const proximus=await pdfPage.evaluate(async bytes=>{
       const text=await WapiInvoiceDocument.readPdf(new Blob([new Uint8Array(bytes)],{type:'application/pdf'}),{forceOcr:false});
       return {text,fields:WapiInvoiceDocument.extract(text,'corde.pdf')};
