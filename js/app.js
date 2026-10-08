@@ -2457,22 +2457,46 @@ function updateSidebarButtons() {
       renderManualStatementDraftLines();
     }
 
+    function manualStatementCoproId() {
+      const account = state.bankAccounts.find((a)=>a.id===$('manualModalAccount')?.value);
+      return account?.copro_id || state.activeCoproId || '';
+    }
+
+    function manualTierBelongsToCopro(type, id, coproId) {
+      const rows = type === 'owner' ? state.owners : type === 'occupant' ? state.occupants : type === 'supplier' ? state.suppliers : [];
+      return rows.some((x)=>x.id===id && (type==='supplier' || x.copro_id===coproId));
+    }
+
+    function manualLineContextError(line, coproId) {
+      if (!manualTierBelongsToCopro(line.tier_type,line.tier_id,coproId)) return 'choisis un tiers de cette copropriété.';
+      if (!line.letter_target_id) return '';
+      const invoice = line.movement_type==='debit' && line.tier_type==='supplier';
+      const call = line.movement_type==='credit' && line.tier_type==='owner';
+      const docs = invoice ? state.invoices : call ? state.ownerCalls : [];
+      const document = docs.find((x)=>x.id===line.letter_target_id && x.copro_id===coproId && (invoice ? x.supplier_id===line.tier_id : x.owner_id===line.tier_id));
+      return document ? '' : 'le document à lettrer ne correspond pas à ce tiers et à cette copropriété.';
+    }
+
     function tierOptionsForType(type, selected = '') {
       let list = [];
       if (type === 'owner') list = state.owners;
       if (type === 'supplier') list = state.suppliers;
       if (type === 'occupant') list = state.occupants;
+      const coproId = manualStatementCoproId();
+      if (type !== 'supplier') list = list.filter((x)=>x.copro_id===coproId);
       return '<option value="">Choisir...</option>' + list.map((x) => `<option value="${x.id}" ${selected===x.id?'selected':''}>${escapeHtml(x.display_name || x.name || '')}</option>`).join('');
     }
 
     function letterableOptionsForLine(line, selected = '') {
       if (!line.tier_id) return '<option value="">Choisis un tiers</option>';
+      const coproId = manualStatementCoproId();
+      if (!manualTierBelongsToCopro(line.tier_type,line.tier_id,coproId)) return '<option value="">Choisis un tiers de cette copropriété</option>';
       if (line.movement_type === 'debit' && line.tier_type === 'supplier') {
-        const docs = state.invoices.filter((i)=>i.supplier_id===line.tier_id && invoicePaymentStatus(i)!=='paid');
+        const docs = state.invoices.filter((i)=>i.copro_id===coproId && i.supplier_id===line.tier_id && invoicePaymentStatus(i)!=='paid');
         return '<option value="">Pas de lettrage</option>' + docs.map((i)=>`<option value="${i.id}" ${selected===i.id?'selected':''}>${escapeHtml(i.invoice_number || 'Facture')} - ${money(Number(i.amount_total||0)-paidAmountForInvoice(i.id))}</option>`).join('');
       }
       if (line.movement_type === 'credit' && line.tier_type === 'owner') {
-        const docs = state.ownerCalls.filter((c)=>c.owner_id===line.tier_id && c.status!=='paid');
+        const docs = state.ownerCalls.filter((c)=>c.copro_id===coproId && c.owner_id===line.tier_id && c.status!=='paid');
         return '<option value="">Pas de lettrage</option>' + docs.map((c)=>`<option value="${c.id}" ${selected===c.id?'selected':''}>${escapeHtml(c.label || 'Appel')} - ${money(Number(c.amount_due||0)-Number(c.amount_paid||0))}</option>`).join('');
       }
       return '<option value="">Aucun document lettrable</option>';
@@ -3885,6 +3909,8 @@ function updateSidebarButtons() {
         if (!String(line.label||'').trim()) return alert(`Ligne ${idx+1} : indique le libellé.`);
         if (!line.movement_type) return alert(`Ligne ${idx+1} : choisis paiement ou encaissement.`);
         if (!line.tier_type || !line.tier_id) return alert(`Ligne ${idx+1} : choisis le tiers.`);
+        const contextError = manualLineContextError(line, account.copro_id);
+        if (contextError) return alert(`Ligne ${idx+1} : ${contextError}`);
         if (!Number(line.amount||0)) return alert(`Ligne ${idx+1} : indique le montant.`);
       }
       if (statementId && !confirm('Tu modifies un extrait existant. Les anciennes lignes seront remplacées et les balances/lettrages peuvent être impactés. Continuer ?')) return;

@@ -211,7 +211,8 @@
     const st = appState();
     if (!dot || !select || !st) return;
     const year = (st.fiscalYears || []).find(item => String(item.id) === String(select.value));
-    const closed = year && (String(year.status || '').toLowerCase() === 'closed' || Boolean(year.closed_at));
+    const status = String(year?.status || '').toLowerCase();
+    const closed = year && (status ? status === 'closed' : Boolean(year.closed_at));
     dot.className = `w332-fiscal-dot ${year ? (closed ? 'closed' : 'open') : 'unknown'}`;
     dot.title = year ? (closed ? 'Exercice clôturé' : 'Exercice ouvert') : 'Aucun exercice sélectionné';
     dot.setAttribute('aria-label', dot.title);

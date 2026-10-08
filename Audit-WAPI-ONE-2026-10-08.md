@@ -2,7 +2,7 @@
 
 ## État de livraison
 
-Les correctifs sont préparés et testés localement, puis déposés sur la branche codex/wapi-one-audit-20261008. Demande de fusion : https://github.com/nicolasvindevogel/Wapi-Compta/pull/1. Les deux contrôles GitHub du premier lot ont réussi. Le second lot est en cours de vérification. Aucun déploiement sur GitHub Pages à ce stade.
+Les correctifs sont préparés et testés localement, puis déposés sur la branche codex/wapi-one-audit-20261008. Demande de fusion : https://github.com/nicolasvindevogel/Wapi-Compta/pull/1. La demande #1 a été intégrée au commit b92a1cbcd01fff592d9bc7164554cc477ef0dda0. Les deux contrôles GitHub et le déploiement Pages ont réussi. Vérification réelle : exercices accessibles, numéros internes distincts, codes fournisseurs et PDF ouvrant une fenêtre dans la page ; utilisateurs affichés. Un nouveau lot bancaire est préparé séparément.
 
 Source : branche `main` de https://github.com/nicolasvindevogel/Wapi-Compta, commit affiché `5c84ae293ff8fee4ab0eefad5b0e6f54a66e5971`. Archive téléchargée pendant l'audit. `package.json` annonce 37.0.1 ; l'interface publiée affiche V36.10.5 à cause des anciens scripts de version.
 
@@ -30,7 +30,7 @@ Les URLs des scripts modifiés dans `index.html` ont un nouveau paramètre de ca
 ## Tests exécutés
 
 - Contrôle de syntaxe : **34 fichiers JavaScript valides**.
-- `npm test` : **64 tests unitaires réussis, zéro échec**.
+- `npm test` : **74 tests unitaires réussis, zéro échec**.
 - `npm run test:ui` : **3 scénarios Playwright réussis, zéro échec**.
 - Page complète chargée depuis les vrais fichiers HTML/JS/CSS, avec Supabase simulé : navigation des modules, affichage utilisateurs, passage entre deux copropriétés et deux exercices. Aucun fichier local manquant, aucune exception JavaScript, aucune écriture simulée.
 - Suite navigateur historique : scénario budgets réussi (enregistrement brouillon, retour, réouverture, conservation des montants, erreur d'enregistrement). La suite s'arrête ensuite sur le téléchargement externe de PDF.js : **elle n'est pas entièrement validée**.
@@ -90,5 +90,14 @@ Ce rapport décrit un premier lot de stabilisation validé localement. **L'audit
 
 Le propriétaire confirme le 8 octobre que tout l’encodage WAPI ONE est du test. Une modification réversible de la référence du lot TEST/A1 a été enregistrée et relue, puis la référence initiale vide a été restaurée. Aucune mutation de propriété ou suppression de lot.
 
-Défaut supplémentaire reproduit : la fiche JEAN affiche une VCS à générer alors que la liste affiche une VCS existante. Le module de fiche lit window.state, alors que l’état applicatif est une variable lexicale. Correction : utiliser appState() pour le type et l’identifiant du tiers, ce qui restaure la lecture de la VCS et de l’adresse structurée. Trois tests supplémentaires couvrent copropriétaire, fournisseur et occupant. Total : 64 tests unitaires et 3 scénarios navigateur réussis.
+Défaut supplémentaire reproduit : la fiche JEAN affiche une VCS à générer alors que la liste affiche une VCS existante. Le module de fiche lit window.state, alors que l’état applicatif est une variable lexicale. Correction : utiliser appState() pour le type et l’identifiant du tiers, ce qui restaure la lecture de la VCS et de l’adresse structurée. Trois tests supplémentaires couvrent copropriétaire, fournisseur et occupant. Total : 74 tests unitaires et 3 scénarios navigateur réussis.
+
+
+## Lot bancaire et indicateur d’exercice
+
+Le formulaire Nouvel extrait manuel de TEST propose les copropriétaires de toutes les copropriétés. Correction locale : filtrer propriétaires et occupants selon la copropriété du compte bancaire, filtrer factures/appels à lettrer et refuser un tiers/document d’une autre copropriété avant toute écriture. Les fournisseurs restent globaux. Six tests couvrent le filtrage et l’enregistrement réel sans écriture en cas d’erreur.
+
+EX26 affiche open dans la liste des exercices, mais clôturé dans l’indicateur supérieur en présence d’un ancien closed_at. Correction locale : le statut explicite prévaut pour cet indicateur, avec repli sur closed_at pour les anciens enregistrements sans statut. Quatre tests.
+
+Facture fictive AUDIT-20261008-FACT-01 créée en brouillon, relue (date 08/10/2026, montant 12,34 EUR, compte 650, fournisseur TEST FOUR, numéro interne TEST-EX26-028), puis statut passé à validée. Aucun paiement bancaire réel ni envoi de message.
 
