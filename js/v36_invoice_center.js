@@ -47,9 +47,10 @@
   const previousStrictExtractor=window.extractInvoiceFieldsV19||window.extractInvoiceFieldsV13;
   function strictInvoiceExtract(text,fileName=''){
     const base=typeof previousStrictExtractor==='function'?previousStrictExtractor(text,fileName)||{}:{};
-    const fields={...base,...window.WapiInvoiceDocument.extract(text,fileName)},file=String(fileName||'').trim(),bare=file.replace(/\.[^.]+$/,'');
+    // L'extracteur documentaire ne prend jamais le numéro dans le nom du fichier.
+    // Un numéro réellement lu dans le PDF peut légitimement être le nom du PDF.
+    const fields={...base,...window.WapiInvoiceDocument.extract(text,fileName)};
     fields.ocr_warnings=[...(fields.ocr_warnings||[])];
-    if(fields.reference&&(/\.(?:pdf|png|jpe?g|tiff?|webp)$/i.test(fields.reference)||norm(fields.reference)===norm(file)||norm(fields.reference)===norm(bare))){fields.reference='';fields.ocr_warnings.push('Le numéro proposé venait du nom du fichier, pas du PDF.');}
     return fields;
   }
   window.extractInvoiceFieldsV19=strictInvoiceExtract;
