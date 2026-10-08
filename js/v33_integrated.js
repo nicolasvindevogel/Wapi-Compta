@@ -70,50 +70,8 @@
   function ownerLabel(o){ return `${ownerCode(o) ? '['+ownerCode(o)+'] ' : ''}${o?.display_name || ''}`; }
   function supplierLabel(s){ return `${supplierCode(s) ? '['+supplierCode(s)+'] ' : ''}${s?.name || ''}`; }
 
-  function fiscalYearForInvoice(inv){
-    const d = inv?.invoice_date || inv?.created_at || '';
-    return (state.fiscalYears || []).find(y => (!inv?.copro_id || y.copro_id === inv.copro_id) && d && String(d) >= String(y.starts_on || '0000-01-01') && String(d) <= String(y.ends_on || '9999-12-31')) || null;
-  }
-  function fallbackCoproCode(copro){
-    const src = (copro?.code || copro?.copro_code || copro?.optipro_ref || copro?.name || 'COP');
-    const clean = String(src).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');
-    return (clean || 'COP').slice(0,5);
-  }
-  function fallbackYearCode(year, date){
-    if (year?.code || year?.year_code) return year.code || year.year_code;
-    const yy = String(date || new Date().toISOString().slice(0,10)).slice(2,4);
-    return 'EX' + yy;
-  }
   function invoiceInternalNo(inv){
-    if (inv?.internal_invoice_number) return inv.internal_invoice_number;
-    const copro = state.copros.find(c=>c.id===inv?.copro_id);
-    const year = fiscalYearForInvoice(inv);
-    const prefix = `${fallbackCoproCode(copro)}-${fallbackYearCode(year, inv?.invoice_date)}`;
-    const same = (state.invoices || []).filter(i => String(i.internal_invoice_number || '').startsWith(prefix + '-'));
-    const seq = same.length + 1;
-    return `${prefix}-${String(seq).padStart(3,'0')}`;
-  }
-
-  async function ensureMissingInternalInvoiceNumbers(){
-    if (!supabaseClient || !state?.invoices || state.__v322BackfillRunning) return;
-    const missing = state.invoices.filter(i => !i.internal_invoice_number && i.copro_id && (i.invoice_date || i.created_at)).slice(0, 50);
-    if (!missing.length) return;
-    state.__v322BackfillRunning = true;
-    try {
-      const used = new Set((state.invoices || []).map(i=>i.internal_invoice_number).filter(Boolean));
-      for (const inv of missing) {
-        let candidate = invoiceInternalNo(inv);
-        let n = 1;
-        while (used.has(candidate)) {
-          const prefix = candidate.replace(/-\d{3,}$/,'');
-          candidate = `${prefix}-${String(++n).padStart(3,'0')}`;
-        }
-        used.add(candidate);
-        const { error } = await supabaseClient.from('compta_invoices').update({ internal_invoice_number: candidate }).eq('id', inv.id);
-        if (!error) inv.internal_invoice_number = candidate;
-      }
-    } catch(e){ console.warn('Numérotation interne V32.2', e.message || e); }
-    finally { state.__v322BackfillRunning = false; }
+    return inv?.internal_invoice_number || '—';
   }
 
   function sortValueInvoice(inv, key){
@@ -135,7 +93,13 @@
     const tableEl = id('invoicesTable'); if (!tableEl) return;
     const s = state.invoiceSort || { key:'invoice_date', dir:'desc' };
     const dir = s.dir === 'asc' ? 1 : -1;
-    const rows = (state.invoices || []).filter(i => !state.activeCoproId || i.copro_id === state.activeCoproId).slice().sort((a,b)=>{
+    const activeYear = (state.fiscalYears || []).find(year => String(year.id) === String(state.activeFiscalYearId || ''));
+    const rows = (state.invoices || []).filter(i =>
+      (!state.activeCoproId || i.copro_id === state.activeCoproId) &&
+      (!activeYear || (String(i.copro_id) === String(activeYear.copro_id) && i.invoice_date &&
+        (!activeYear.starts_on || i.invoice_date >= activeYear.starts_on) &&
+        (!activeYear.ends_on || i.invoice_date <= activeYear.ends_on)))
+    ).slice().sort((a,b)=>{
       const va = sortValueInvoice(a, s.key), vb = sortValueInvoice(b, s.key);
       if (typeof va === 'number' || typeof vb === 'number') return (Number(va||0)-Number(vb||0))*dir;
       return String(va||'').localeCompare(String(vb||''),'fr',{numeric:true,sensitivity:'base'})*dir;
@@ -153,11 +117,11 @@
       <th>${thSort('Paiement','payment')}</th>
       <th>PDF</th><th>Actions</th></tr></thead><tbody>${rows.map(i=>{
         const acc = (state.accounts || []).find(a=>a.id===i.account_id);
-        const sup = i.compta_suppliers || (state.suppliers||[]).find(s=>s.id===i.supplier_id) || {};
+        const sup = {...((state.suppliers||[]).find(s=>s.id===i.supplier_id)||{}),...(i.compta_suppliers||{})};
         const supplierDisplay = supplierLabel(sup) || '';
         const rowCls = typeof invoiceRowClass === 'function' ? invoiceRowClass(i) : '';
         const status = typeof invoicePaymentStatus === 'function' ? invoicePaymentStatus(i) : (i.status || '');
-        return `<tr class="${rowCls}"><td>${esc(i.invoice_date || '')}</td><td>${esc(i.compta_copros?.name || (state.copros||[]).find(c=>c.id===i.copro_id)?.name || '')}</td><td>${esc(supplierDisplay)}</td><td>${supplierCode(sup) ? `<span class="code-pill">${esc(supplierCode(sup))}</span>` : '-'}</td><td>${esc(acc ? `${acc.code} - ${acc.label || ''}` : 'A classer')}</td><td>${esc(i.invoice_number || '')}</td><td><span class="code-pill">${esc(invoiceInternalNo(i))}</span></td><td>${fmt(i.amount_total)}</td><td>${typeof paymentStatusBadge === 'function' ? paymentStatusBadge(status) : esc(status)}</td><td>${i.file_data_url ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`;
+        return `<tr class="${rowCls}"><td>${esc(i.invoice_date || '')}</td><td>${esc(i.compta_copros?.name || (state.copros||[]).find(c=>c.id===i.copro_id)?.name || '')}</td><td>${esc(supplierDisplay)}</td><td>${supplierCode(sup) ? `<span class="code-pill">${esc(supplierCode(sup))}</span>` : '-'}</td><td>${esc(acc ? `${acc.code} - ${acc.label || ''}` : 'A classer')}</td><td>${esc(i.invoice_number || '')}</td><td><span class="code-pill">${esc(invoiceInternalNo(i))}</span></td><td>${fmt(i.amount_total)}</td><td>${typeof paymentStatusBadge === 'function' ? paymentStatusBadge(status) : esc(status)}</td><td>${(i.file_data_url||i.file_name||i.pdf_mime_type) ? `<button class="pdf-pill" data-show-pdf="${i.id}" type="button">Afficher PDF</button>` : '-'}</td><td><div class="actions-inline"><button class="btn secondary small" data-edit-invoice="${i.id}" type="button">Modifier</button><button class="btn danger small" data-delete-invoice="${i.id}" type="button">Supprimer</button></div></td></tr>`;
       }).join('') || `<tr><td colspan="${colCount}">Aucune facture.</td></tr>`}</tbody></table></div>`;
   }
 
@@ -303,7 +267,7 @@
         const oldLoadAll = loadAll;
         loadAll = async function(){
           const res = await oldLoadAll.apply(this, arguments);
-          await ensureMissingInternalInvoiceNumbers();
+          // Reading or refreshing invoices must not rewrite accounting identifiers.
           afterRender();
           return res;
         };
@@ -1369,6 +1333,8 @@
 
   function refreshViewRender(viewName){
     try{
+      if(viewName === 'users' && typeof window.v367RenderUsers === 'function') setTimeout(window.v367RenderUsers, 0);
+      if(['ledger','balance','journals'].includes(viewName) && window.WapiAccountingV37) setTimeout(() => window.WapiAccountingV37.refresh({render:true}), 0);
       if(viewName === 'accountLookup' && typeof window.renderAccountLookupV33 === 'function') setTimeout(window.renderAccountLookupV33, 0);
       if(viewName === 'codaPilot' && typeof window.v33RenderCodaPilotV322 === 'function') setTimeout(window.v33RenderCodaPilotV322, 0);
       if(viewName === 'invoices' && typeof window.v33RenderInvoicesV322 === 'function') setTimeout(window.v33RenderInvoicesV322, 0);

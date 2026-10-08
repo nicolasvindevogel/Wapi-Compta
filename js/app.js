@@ -194,10 +194,13 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     async function loadFiscalYears() {
       const { data, error } = await supabaseClient
         .from("compta_fiscal_years")
-        .select("*, compta_copros(name)")
+        .select("*")
         .order("starts_on", { ascending: false });
-      if (error) { console.warn(error.message); state.fiscalYears = []; return; }
-      state.fiscalYears = data || [];
+      if (error) { console.warn(error.message); return; }
+      state.fiscalYears = (data || []).map(year => ({
+        ...year,
+        compta_copros: { name: state.copros.find(copro => String(copro.id) === String(year.copro_id))?.name || '' }
+      }));
     }
 
     async function loadBudgetHeaders() {
@@ -296,7 +299,7 @@ window.WAPI_ONE_BUILD_DATE = '2026-08-28';
     async function loadInvoices() {
       const { data, error } = await supabaseClient
         .from("compta_invoices")
-        .select("id,copro_id,supplier_id,account_id,ocr_source_item_id,invoice_number,invoice_date,amount_total,status,payment_status,description,source,file_name,pdf_mime_type,created_by,created_at,updated_at,paid_at,amount_paid,sent_to_payment,sent_to_payment_at,is_direct_debit,do_not_pay_reason,payment_batch_ref,payment_batch_status,compta_copros(name),compta_suppliers(name)")
+        .select("id,copro_id,supplier_id,account_id,ocr_source_item_id,internal_invoice_number,invoice_number,invoice_date,amount_total,status,payment_status,description,source,file_name,pdf_mime_type,created_by,created_at,updated_at,paid_at,amount_paid,sent_to_payment,sent_to_payment_at,is_direct_debit,do_not_pay_reason,payment_batch_ref,payment_batch_status,compta_copros(name),compta_suppliers(name)")
         .order("created_at", { ascending: false })
         .limit(2000);
       if (error) { console.warn('Chargement factures :', error.message); state.invoices = []; return; }
