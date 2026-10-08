@@ -5,7 +5,7 @@
   "description": "WAPI One - gestion de coproprietes et comptabilite WAPI-SYNDIK",
   "scripts": {
     "check:syntax": "node tests/syntax-check.cjs",
-    "test:unit": "node --test tests/invoice_document.test.cjs tests/v37_accounting_core.test.cjs tests/v37_migration_contract.test.cjs tests/fiscal_loading.test.cjs tests/deployment.test.cjs tests/billing_period.test.cjs tests/invoice_listing.test.cjs tests/identity_modal.test.cjs",
+    "test:unit": "node --test tests/invoice_document.test.cjs tests/v37_accounting_core.test.cjs tests/v37_migration_contract.test.cjs tests/fiscal_loading.test.cjs tests/deployment.test.cjs tests/billing_period.test.cjs tests/invoice_listing.test.cjs tests/identity_modal.test.cjs tests/manual_context.test.cjs tests/fiscal_status.test.cjs",
     "test:ui": "node --test tests/ui-regressions.cjs",
     "test": "npm run check:syntax && npm run test:unit",
     "test:browser": "node --test tests/browser-regressions.cjs"
@@ -15,3 +15,5 @@
     "playwright": "^1.55.0"
   }
 }
+
+
